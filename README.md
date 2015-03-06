@@ -4,10 +4,10 @@ AoC MGZ parsing in Python 2.x.
 
 ### Usage
  - Complete file:
-   - mgz.parse(file)
+   - mgz.parse_stream(file)
  - Incomplete file (spec):
-   - header.parse(file)
-   - Loop: body.command.parse(file)
+   - header.parse_stream(file)
+   - Loop: body.command.parse_stream(file)
 
 ### Caveats
  - Parses only portions useful for multiplayer recorded game analysis
