@@ -8,6 +8,7 @@ AoC MGZ parsing in Python 2.x.
  - Incomplete file (spec):
    - header.parse_stream(file)
    - Loop: body.command.parse_stream(file)
+   - Handle your own buffering
 
 ### Caveats
  - Parses only portions useful for multiplayer recorded game analysis
