@@ -53,7 +53,6 @@ General format of the file, noting interesting parts.
   - Achievements[]
   - Scenario
     - Instructions
-    - Players[]
     - Victory condition
     - Map type
     - Difficulty
