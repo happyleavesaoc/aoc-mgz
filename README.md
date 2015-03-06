@@ -21,7 +21,7 @@ AoC MGZ parsing in Python 2.x.
 
 ### Resources
  - aoc-mgx-format: https://github.com/stefan-kolb/aoc-mgx-format
- - node-aoe-rec: https://github.com/goto-bus-stop/node-aoe-rec
+ - recage: https://github.com/goto-bus-stop/recage
  - recanalyst: http://sourceforge.net/p/recanalyst/
  - bari-mgx-format: https://web.archive.org/web/20090215065209/http://members.at.infoseek.co.jp/aocai/mgx_format.html
 
