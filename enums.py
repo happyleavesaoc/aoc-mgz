@@ -13,6 +13,7 @@ def ObjectEnum(ctx):
 		sheep = 594,
 		deer = 65,
 		boar = 48,
+		javelina = 822,
 		wolf = 126,
 		jaguar = 812,
 		hawk = 96,
@@ -50,6 +51,14 @@ def ObjectEnum(ctx):
 		cliff_8 = 271,
 		cliff_9 = 272,
 		cliff_10 = 273,
+		_default_ = Pass
+	)
+
+"""Buildings: action context"""
+def BuildingEnum(ctx):
+	return Enum(ctx,
+		dock = 45,
+		tc = 621,
 		_default_ = Pass
 	)
 
