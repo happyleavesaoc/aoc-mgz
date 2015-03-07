@@ -75,8 +75,8 @@ stance = Struct("stance",
 )
 
 guard = Struct("guard",
+    Byte("selected"),
     Padding(2),
-    ULInt32("selected"),
     ULInt32("guarded_unit_id"),
     Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
 )
@@ -106,7 +106,7 @@ build = Struct("build",
     ULInt16("player_id"),
     LFloat32("x"),
     LFloat32("y"),
-    ULInt32("building_type"),
+    BuildingEnum(ULInt32("building_type")),
     Padding(8),
     Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
 )
@@ -140,7 +140,7 @@ attackground = Struct("attackground",
 )
 
 tribute = Struct("tribute",
-    Byte("player_id_from"),
+    Byte("player_id"),
     Byte("player_id_to"),
     ResourceEnum(Byte("resource_type")),
     LFloat32("amount"),
@@ -195,11 +195,18 @@ townbell = Struct("townbell",
     ULInt32("active")
 )
 
+"""Patrol
+
+10 X-coordinates followed by 10 Y-coordinates
+First of each is popped off for consistency with other actions
+"""
 patrol = Struct("patrol",
     Byte("selected"),
     ULInt16("waypoints"),
-    Array(10, LFloat32("x")),
-    Array(10, LFloat32("y")),
+    LFloat32("x"),
+    Array(9, LFloat32("x_more")),
+    LFloat32("y"),
+    Array(9, LFloat32("y_more")),
     Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
 )
 
