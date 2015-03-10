@@ -36,11 +36,13 @@ def ObjectEnum(ctx):
 		tc_2 = 618,
 		tc_3 = 619,
 		tc_4 = 620,
-		wall = 117,
-		gate_1 = 64,
-		gate_2 = 81,
-		gate_3 = 88,
-		gate_4 = 95,
+		palisade_wall = 72,
+		stone_wall = 117,
+		stone_gate_1 = 64,
+		stone_gate_2 = 81,
+		stone_gate_3 = 88,
+		stone_gate_4 = 95,
+		fortified_wall = 155,
 		cliff_1 = 264,
 		cliff_2 = 265,
 		cliff_3 = 266,
@@ -85,6 +87,7 @@ def ObjectTypeEnum(ctx):
 def PlayerTypeEnum(ctx):
 	return Enum(ctx,
 		invalid = 0,
+		unknown = 1,
 		human = 2,
 		computer = 4
 	)
