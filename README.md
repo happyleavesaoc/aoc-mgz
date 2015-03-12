@@ -14,6 +14,12 @@ AoC MGZ parsing in Python 2.x.
 ### Dependencies
  - construct: https://github.com/construct/construct
 
+### Improvements Needed
+ - Parse objects fully (units, buildings, etc)
+ - Enum expansion
+ - Support for previous versions
+ - Resolve unknown bytes
+
 ### Contribution
  - Pull requests & patches welcome
 
