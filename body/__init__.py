@@ -8,6 +8,7 @@ An Operation can be:
  - Action: Player input that materially affects the game
  - Message: Either a start-of-game indicator, or chat
  - Synchronization: Time increment and view coordinates of recording player
+ - Saved Chapter: Embedded header structure
 """
 
 """Action"""
@@ -85,6 +86,20 @@ message = Struct("message",
 	)
 )
 
+"""Saved Chapter
+
+A saved chapter is a header structure embedded in the body.
+There is no command identifier, so the command type is actually
+the first field of the header - length. Therefore, just skip the
+number of bytes indicated in `type`.
+
+If you wanted to check the game state at this point, you could apply
+the header Struct, accounting for having already read the first 4 bytes.
+"""
+savedchapter = Struct("saved_chapter",
+	Padding(lambda ctx: ctx.type)
+)
+
 """Operation"""
 operation = Struct("operation",
 	OperationEnum(ULInt32("type")),
@@ -93,6 +108,7 @@ operation = Struct("operation",
 			"action": action,
 			"sync": sync,
 			"message": message,
+			"savedchapter": savedchapter
 		}
 	))
 )

@@ -70,7 +70,7 @@ player = Struct("players",
 """Initial state"""
 initial = Struct("initial",
 	ULInt32("restore_time"), # zero for non-restored
-	Find("start_of_players", b'\x98\x9E\x00\x00\x02\x0B', 10000),
+	Find("start_of_players", b'\x98\x9E\x00\x00\x02\x0B'),
 	Array(lambda ctx: ctx._.replay.num_players, player),
 	Padding(19),
 )
