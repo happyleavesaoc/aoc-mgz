@@ -55,6 +55,8 @@ def ObjectEnum(ctx):
 		cliff_8 = 271,
 		cliff_9 = 272,
 		cliff_10 = 273,
+		outpost = 598,
+		map_revealer = 837,
 		_default_ = Pass
 	)
 

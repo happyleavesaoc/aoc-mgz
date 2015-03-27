@@ -28,6 +28,12 @@ resource_header = Struct("resource_header",
 	LFloat32("amount"),
 )
 
+"""Other - seems to be items under Units > Other in the scenario editor """
+other = Struct("other",
+	Embed(existing_object_header),
+	Padding(37)
+)
+
 """Units - typically villagers, scout, and any sheep within LOS"""
 unit = Struct("unit",
 	Embed(existing_object_header),
@@ -89,12 +95,14 @@ fish = Struct("fish",
 existing_object = Struct("objects",
 	ObjectTypeEnum(Byte("type")),
 	Byte("player_id"),
+	Anchor("OK"),
 	Embed(Switch("properties", lambda ctx: ctx.type,
 		{
 			"gaia": gaia,
 			"unit": unit,
 			"building": building,
 			"fish": fish,
+			"other": other
 		}
 	)),
 	# These boundary bytes can occur in the middle of a set of objects, and at the end
