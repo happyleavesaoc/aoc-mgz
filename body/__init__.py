@@ -90,19 +90,21 @@ message = Struct("message",
 
 A saved chapter is a header structure embedded in the body.
 There is no command identifier, so the command type is actually
-the first field of the header - length. Therefore, just skip the
-number of bytes indicated in `type`.
+the first field of the header - length/offset. Therefore, just skip the
+number of bytes indicated in `type` minus the current position.
 
 If you wanted to check the game state at this point, you could apply
 the header Struct, accounting for having already read the first 4 bytes.
 """
 savedchapter = Struct("saved_chapter",
-	Padding(lambda ctx: ctx.type)
+	Anchor("start"),
+	Padding(lambda ctx: ctx.op - ctx.start),
 )
 
 """Operation"""
 operation = Struct("operation",
-	OperationEnum(ULInt32("type")),
+	Peek(OperationEnum(ULInt32("type"))),
+	ULInt32("op"),
 	Embed(Switch("data", lambda ctx: ctx.type,
 		{
 			"action": action,
