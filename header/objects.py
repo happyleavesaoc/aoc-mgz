@@ -31,7 +31,14 @@ resource_header = Struct("resource_header",
 """Other - seems to be items under Units > Other in the scenario editor """
 other = Struct("other",
 	Embed(existing_object_header),
-	Padding(37)
+	Padding(32),
+	# The following sections can be refined with further research.
+	# There are clearly some patterns.
+	Byte("has_extra"),
+	If(lambda ctx: ctx.has_extra == 2,
+		Padding(34)
+	),
+	Padding(4)
 )
 
 """Units - typically villagers, scout, and any sheep within LOS"""
@@ -95,7 +102,6 @@ fish = Struct("fish",
 existing_object = Struct("objects",
 	ObjectTypeEnum(Byte("type")),
 	Byte("player_id"),
-	Anchor("OK"),
 	Embed(Switch("properties", lambda ctx: ctx.type,
 		{
 			"gaia": gaia,
@@ -111,7 +117,7 @@ existing_object = Struct("objects",
 	Peek(UBInt32("extension2")),
 	If(lambda ctx: ctx.extension1 == 11 and ctx.extension2 > 720898,
 		Padding(10)
-	),
+	)
 )
 
 """Default values for objects, nothing of real interest"""

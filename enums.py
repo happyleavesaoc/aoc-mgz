@@ -21,6 +21,7 @@ def ObjectEnum(ctx):
 		macaw = 816,
 		shore_fish = 69,
 		fish_1 = 455,
+		fish_2 = 456,
 		fish_4 = 458,
 		fish_3 = 457,
 		marlin_1 = 450,
@@ -56,6 +57,7 @@ def ObjectEnum(ctx):
 		cliff_9 = 272,
 		cliff_10 = 273,
 		outpost = 598,
+		shipwreck = 722,
 		map_revealer = 837,
 		_default_ = Pass
 	)
