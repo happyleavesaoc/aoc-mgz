@@ -1,0 +1,96 @@
+MAP_NAMES = {
+    9: 'Arabia',
+    10: 'Archipelago',
+    11: 'Baltic',
+    12: 'Black Forest',
+    13: 'Coastal',
+    14: 'Continental',
+    15: 'Crater Lake',
+    16: 'Fortress',
+    17: 'Gold Rush',
+    18: 'Highland',
+    19: 'Islands',
+    20: 'Mediterranean',
+    21: 'Migration',
+    22: 'Rivers',
+    23: 'Team Islands',
+    24: 'Random',
+    25: 'Scandinavia',
+    26: 'Mongolia',
+    27: 'Yucatan',
+    28: 'Salt Marsh',
+    29: 'Arena',
+    30: 'King of the Hill',
+    31: 'Oasis',
+    32: 'Ghost Lake',
+    33: 'Nomad',
+    34: 'Iberia',
+    35: 'Britain',
+    36: 'Mideast',
+    37: 'Texas',
+    38: 'Italy',
+    39: 'Central America',
+    40: 'France',
+    41: 'Norse Lands',
+    42: 'Sea of Japan (East Sea)',
+    43: 'Byzantinum',
+    48: 'Blind Random',
+}
+
+MAP_SIZES = {
+    120: 'tiny',
+    144: 'small',
+    168: 'medium',
+    200: 'normal',
+    220: 'large',
+    240: 'giant'
+}
+
+CIVILIZATION_NAMES = {
+    1: 'Britons',
+    2: 'Franks',
+    3: 'Goths',
+    4: 'Teutons',
+    5: 'Japanese',
+    6: 'Chinese',
+    7: 'Byzantines',
+    8: 'Persians',
+    9: 'Saracens',
+    10: 'Turks',
+    11: 'Vikings',
+    12: 'Mongols',
+    13: 'Celts',
+    14: 'Spanish',
+    15: 'Aztecs',
+    16: 'Mayans',
+    17: 'Huns',
+    18: 'Koreans',
+    19: 'Italians',
+    20: 'Indians',
+    21: 'Incas',
+    22: 'Magyars',
+    23: 'Slavs'
+}
+
+PLAYER_COLORS = {
+    0: 'blue',
+    1: 'red',
+    2: 'green',
+    3: 'yellow',
+    4: 'teal',
+    5: 'purple',
+    6: 'gray',
+    7: 'orange'
+}
+
+COMPASS = {
+    'northwest': [1/3.0, 0],
+    'southeast': [1/3.0, 2/3.0],
+    'southwest': [0, 1/3.0],
+    'northeast': [2/3.0, 1/3.0],
+    'center': [1/3.0, 1/3.0],
+    'west': [0, 0],
+    'north': [2/3.0, 0],
+    'east': [2/3.0, 2/3.0],
+    'south': [0, 2/3.0]
+}

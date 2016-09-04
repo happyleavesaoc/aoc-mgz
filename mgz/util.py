@@ -3,6 +3,13 @@ from construct import Adapter, Subconstruct, Construct
 import struct
 import zlib
 
+def convert_to_timestamp(time):
+    time *= 1000
+    hour = time/1000/3600
+    minute = (time/1000/60) % 60
+    second = (time/1000) % 60
+    return str(hour).zfill(2)+":"+str(minute).zfill(2)+":"+str(second).zfill(2)
+
 class ZlibCompressor():
     """Decompress via zlib"""
     def decode(self, d):
@@ -11,11 +18,7 @@ class ZlibCompressor():
 class TimeSecAdapter(Adapter):
     """Conversion to readable time"""
     def _decode(self, time, ctx):
-        time *= 1000
-        hour = time/1000/3600
-        minute = (time/1000/60) % 60
-        second = (time/1000) % 60
-        return str(hour).zfill(2)+":"+str(minute).zfill(2)+":"+str(second).zfill(2)
+        return convert_to_timestamp(time)
 
 class BoolAdapter(Adapter):
     """Bools of with potential padding"""
