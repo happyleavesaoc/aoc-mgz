@@ -1,66 +1,66 @@
 from construct import *
-from aoc.mgz.body.achievements import *
-from aoc.mgz.enums import *
+from mgz.body.achievements import *
+from mgz.enums import *
 
 """Not all actions are defined, not all actions are complete"""
 
 attack = Struct("attack",
-	Byte("player_id"),
-	Magic("\x00\x00"),
-	ULInt32("target_id"),
-	ULInt32("selected"),
-	LFloat32("x"),
-	LFloat32("y"),
-	If(lambda ctx: ctx.selected < 0xff,
-		Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
-	)
+    Byte("player_id"),
+    Const("\x00\x00"),
+    ULInt32("target_id"),
+    ULInt32("selected"),
+    LFloat32("x"),
+    LFloat32("y"),
+    If(lambda ctx: ctx.selected < 0xff,
+        Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
+    )
 )
 
 move = Struct("move",
-	Byte("player_id"),
-	Magic("\x00\x00"),
-	Padding(4),
-	ULInt32("selected"),
-	LFloat32("x"),
-	LFloat32("y"),
-	If(lambda ctx: ctx.selected < 0xff,
-		Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
-	)
+    Byte("player_id"),
+    Const("\x00\x00"),
+    Padding(4),
+    ULInt32("selected"),
+    LFloat32("x"),
+    LFloat32("y"),
+    If(lambda ctx: ctx.selected < 0xff,
+        Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
+    )
 )
 
 resign = Struct("resign",
-	Byte("player_id"),
-	Byte("player_num"),
-	Flag("disconnected")
+    Byte("player_id"),
+    Byte("player_num"),
+    Flag("disconnected")
 )
 
 train = Struct("train",
-	Padding(3),
-	ULInt32("building_id"),
-	ULInt16("unit_type"),
-	ULInt16("number"),
+    Padding(3),
+    ULInt32("building_id"),
+    ULInt16("unit_type"),
+    ULInt16("number"),
 )
 
 research = Struct("research",
-	Padding(3),
-	ULInt32("building_id"),
-	ULInt16("player_id"),
-	ULInt16("technology_type"),
-	Padding(4),
+    Padding(3),
+    ULInt32("building_id"),
+    ULInt16("player_id"),
+    ULInt16("technology_type"),
+    Padding(4),
 )
 
 sell = Struct("sell",
-	Byte("player_id"),
-	ResourceEnum(Byte("resource_type")),
-	Byte("amount"),
-	Padding(4)
+    Byte("player_id"),
+    ResourceEnum(Byte("resource_type")),
+    Byte("amount"),
+    Padding(4)
 )
 
 buy = Struct("buy",
-	Byte("player_id"),
-	ResourceEnum(Byte("resource_type")),
-	Byte("amount"),
-	Padding(4)
+    Byte("player_id"),
+    ResourceEnum(Byte("resource_type")),
+    Byte("amount"),
+    Padding(4)
 )
 
 stop = Struct("stop",

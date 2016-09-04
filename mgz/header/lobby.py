@@ -1,5 +1,5 @@
 from construct import *
-from aoc.mgz.enums import *
+from mgz.enums import *
 
 """Player inputs in the lobby, and several host settings"""
 lobby = Struct("lobby",
