@@ -12,9 +12,9 @@ An Operation can be:
 """
 
 """Action"""
-action_data = Struct("action",
-    ActionEnum(Byte("type")),
-    Embed(Switch("action", lambda ctx: ctx.type,
+action_data = "action"/Struct(
+    ActionEnum("type"/Byte),
+    Embedded("action"/Switch(lambda ctx: ctx.type,
         {
             "attack": attack,
             "move": move,
@@ -50,35 +50,35 @@ action_data = Struct("action",
 )
 
 """Action - length followed by data"""
-action = Struct("action",
-    ULInt32("length"),
+action = "action"/Struct(
+    "length"/Int32ul,
     action_data
 )
 
 """Synchronization"""
-sync = Struct("sync",
-    ULInt32("time_increment"),
-    ULInt32("flag"),
+sync = "sync"/Struct(
+    "time_increment"/Int32ul,
+    "flag"/Int32ul,
     If(lambda ctx: not ctx.flag,
         Padding(28)
     ),
-    Struct("view",
-        LFloat32("x"),
-        LFloat32("y")
+    "view"/Struct(
+        "x"/Float32l,
+        "y"/Float32l
     ),
-    ULInt32("player_id")
+    "player_id"/Int32ul
 )
 
 """Chat variation of Message"""
-chat = Struct("chat",
-    ULInt32("length"),
-    String("text", lambda ctx: ctx.length, padchar = '\x00', trimdir = 'right')
+chat = "chat"/Struct(
+    "length"/Int32ul,
+    "text"/String(lambda ctx: ctx.length, padchar = b'\x00', trimdir = 'right', encoding='latin1')
 )
 
 """Message"""
-message = Struct("message",
-    MessageEnum(ULInt32("subtype")),
-    Switch("data", lambda ctx: ctx.subtype,
+message = "message"/Struct(
+    MessageEnum("subtype"/Int32ul),
+    "data"/Switch(lambda ctx: ctx.subtype,
         {
             "start": Padding(20),
             "chat": chat,
@@ -96,16 +96,16 @@ number of bytes indicated in `type` minus the current position.
 If you wanted to check the game state at this point, you could apply
 the header Struct, accounting for having already read the first 4 bytes.
 """
-savedchapter = Struct("saved_chapter",
-    Anchor("start"),
+savedchapter = "saved_chapter"/Struct(
+    "start"/Tell,
     Padding(lambda ctx: ctx.op - ctx.start),
 )
 
 """Operation"""
-operation = Struct("operation",
-    Peek(OperationEnum(ULInt32("type"))),
-    ULInt32("op"),
-    Embed(Switch("data", lambda ctx: ctx.type,
+operation = "operation"/Struct(
+    Peek(OperationEnum("type"/Int32ul)),
+    "op"/Int32ul,
+    Embedded("data"/Switch(lambda ctx: ctx.type,
         {
             "action": action,
             "sync": sync,

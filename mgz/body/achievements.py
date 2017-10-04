@@ -1,64 +1,65 @@
 from construct import *
 from mgz.util import TimeSecAdapter
 
-"""UserPatch 1.4 achievements - appended to recorded game"""
+"""UserPatch 1.4+ achievements - appended to recorded game"""
 
-military = Struct("military",
-    ULInt16("score"),
-    ULInt16("units_killed"),
-    Padding(2),
-    ULInt16("units_lost"),
-    ULInt16("buildings_razed"),
-    Padding(2),
-    ULInt16("buildings_lost"),
-    ULInt16("units_converted")
+military = "military"/Struct(
+    "score"/Int16ul,
+    "units_killed"/Int16ul,
+    "hit_points_killed"/Int16ul,
+    "units_lost"/Int16ul,
+    "buildings_razed"/Int16ul,
+    "hit_points_razed"/Int16ul,
+    "buildings_lost"/Int16ul,
+    "units_converted"/Int16ul
 )
 
-economy = Struct("economy",
-    ULInt16("score"),
+economy = "economy"/Struct(
+    "score"/Int16ul,
     Padding(2),
-    ULInt32("food_collected"),
-    ULInt32("wood_collected"),
-    ULInt32("stone_collected"),
-    ULInt32("gold_collected"),
-    ULInt16("tribute_sent"),
-    ULInt16("tribute_received"),
-    ULInt16("trade_gold"),
-    ULInt16("relic_gold")
+    "food_collected"/Int32ul,
+    "wood_collected"/Int32ul,
+    "stone_collected"/Int32ul,
+    "gold_collected"/Int32ul,
+    "tribute_sent"/Int16ul,
+    "tribute_received"/Int16ul,
+    "trade_gold"/Int16ul,
+    "relic_gold"/Int16ul
 )
 
-technology = Struct("technology",
-    ULInt16("score"),
+technology = "technology"/Struct(
+    "score"/Int16ul,
     Padding(2),
-    TimeSecAdapter(ULInt32("feudal_time")),
-    TimeSecAdapter(ULInt32("castle_time")),
-    TimeSecAdapter(ULInt32("imperial_time")),
-    Byte("explored_percent"),
-    Byte("research_count"),
-    Byte("research_percent")
+    TimeSecAdapter("feudal_time"/Int32sl),
+    TimeSecAdapter("castle_time"/Int32sl),
+    TimeSecAdapter("imperial_time"/Int32sl),
+    "explored_percent"/Byte,
+    "research_count"/Byte,
+    "research_percent"/Byte
 )
 
-society = Struct("society",
-    ULInt16("score"),
-    Byte("total_wonders"),
-    Byte("total_castles"),
-    Byte("relics_captured"),
+society = "society"/Struct(
+    "score"/Int16ul,
+    "total_wonders"/Byte,
+    "total_castles"/Byte,
+    "relics_captured"/Byte,
     Padding(1),
-    ULInt16("villager_high"),
+    "villager_high"/Int16ul,
 )
 
-achievements = Struct("achievements",
-    String("player_name", 16, padchar = '\x00', trimdir = 'right'),
-    ULInt16("total_score"),
-    Array(8, ULInt16("total_scores")),
-    Byte("victory"),
-    Byte("civilization"),
-    Byte("color_id"),
-    Byte("team"),
-    Padding(2),
-    Byte("medal"),
+achievements = "achievements"/Struct(
+    "player_name"/String(16, padchar = b'\x00', trimdir = 'right'),
+    "total_score"/Int16ul,
+    Array(8, "total_scores"/Int16ul),
+    "victory"/Flag,
+    "civilization"/Byte,
+    "color_id"/Byte,
+    "team"/Byte,
+    "ally_count"/Byte,
+    Padding(1),
+    "mvp"/Flag,
     Padding(3),
-    Byte("result"),
+    "result"/Flag,
     Padding(3),
     military,
     Padding(32),

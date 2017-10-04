@@ -59,7 +59,7 @@ def ObjectEnum(ctx):
         outpost = 598,
         shipwreck = 722,
         map_revealer = 837,
-        _default_ = Pass
+        default = Pass
     )
 
 """Buildings: action context"""
@@ -67,7 +67,7 @@ def BuildingEnum(ctx):
     return Enum(ctx,
         dock = 45,
         tc = 621,
-        _default_ = Pass
+        default = Pass
     )
 
 def GameTypeEnum(ctx):
@@ -87,7 +87,7 @@ def ObjectTypeEnum(ctx):
         projectile = 60,
         unit = 70,
         building = 80,
-        _default_ = Pass
+        default = Pass
     )
 
 def PlayerTypeEnum(ctx):
@@ -111,6 +111,7 @@ def GameSpeedEnum(ctx):
     return Enum(ctx,
         slow = 100,
         standard = 150,
+        what = 178,
         fast = 200,
     )
 
@@ -119,13 +120,13 @@ def OperationEnum(ctx):
         action = 1,
         sync = 2,
         message = 4,
-        _default_ = "savedchapter"
+        default = "savedchapter"
     )
 
 def MessageEnum(ctx):
     return Enum(ctx,
         start = 500,
-        _default_ = "chat"
+        default = "chat"
     )
 
 def ResourceEnum(ctx):
@@ -136,7 +137,7 @@ def ResourceEnum(ctx):
         gold = 3,
         decay = 12,
         fish = 17,
-        _default_ = Pass # lots of resource types exist
+        default = Pass # lots of resource types exist
     )
 
 def VictoryEnum(ctx):
@@ -166,12 +167,14 @@ def RevealMapEnum(ctx):
 
 def StartingAgeEnum(ctx):
     return Enum(ctx,
+        what = -2,
         unset = -1,
         dark = 0,
         feudal = 1,
         castle = 2,
         imperial = 3,
-        post_imperial = 4
+        postimperial = 4,
+        dmpostimperial = 6
     )
 
 def TheirDiplomacyEnum(ctx):
@@ -227,5 +230,5 @@ def ActionEnum(ctx):
         townbell = 127,
         backtowork = 128,
         postgame = 255,
-        _default_ = Pass
+        default = Pass
     )

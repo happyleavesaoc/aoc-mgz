@@ -1,6 +1,6 @@
 # mgz
 
-AoC MGZ parsing in Python 2.x.
+AoC MGZ parsing in Python 3.
 
 ### Usage
  - header.parse_stream(file)
@@ -9,7 +9,7 @@ AoC MGZ parsing in Python 2.x.
 
 ### Caveats
  - Parses only portions useful for multiplayer recorded game analysis
- - UserPatch 1.4 only
+ - UserPatch 1.4, 1.5 only
 
 ### Dependencies
  - construct: https://github.com/construct/construct

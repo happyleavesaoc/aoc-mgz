@@ -4,10 +4,12 @@ import struct
 import zlib
 
 def convert_to_timestamp(time):
-    time *= 1000
-    hour = time/1000/3600
-    minute = (time/1000/60) % 60
-    second = (time/1000) % 60
+    if time == -1:
+        return None
+    time = int(time*1000)
+    hour = time//1000//3600
+    minute = (time//1000//60) % 60
+    second = (time//1000) % 60
     return str(hour).zfill(2)+":"+str(minute).zfill(2)+":"+str(second).zfill(2)
 
 class ZlibCompressor():
@@ -29,12 +31,12 @@ class Find(Construct):
     """Find bytes, and read past them"""
     __slots__ = ["find", "maxLength"]
 
-    def __init__(self, name, find, maxLength):
-        Construct.__init__(self, name)
+    def __init__(self, find, maxLength):
+        Construct.__init__(self)
         self.find = find
         self.maxLength = maxLength
 
-    def _parse(self, stream, context):
+    def _parse(self, stream, context, path):
         start = stream.tell()
         bytes = ""
         if self.maxLength:
@@ -52,10 +54,10 @@ class RepeatUpTo(Subconstruct):
     def __init__(self, find, subcon):
         Subconstruct.__init__(self, subcon)
         self.find = find
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
+        #self._clear_flag(self.FLAG_COPY_CONTEXT)
+        #self._set_flag(self.FLAG_DYNAMIC)
 
-    def _parse(self, stream, context):
+    def _parse(self, stream, context, path):
         objs = []
         while True:
             start = stream.tell()
@@ -64,7 +66,7 @@ class RepeatUpTo(Subconstruct):
             if test == self.find:
                 break
             else:
-                subobj = self.subcon._parse(stream, context)
+                subobj = self.subcon._parse(stream, context, path)
                 objs.append(subobj)
         return objs
 
@@ -73,10 +75,10 @@ class GotoObjectsEnd(Construct):
 
     Necessary since we can't parse objects from a resume game (yet)
     """
-    def __init__(self, name):
-        Construct.__init__(self, name)
+    def __init__(self):
+        Construct.__init__(self)
 
-    def _parse(self, stream, context):
+    def _parse(self, stream, context, path):
         num_players = context._._.replay.num_players
         start = stream.tell()
         # Have to read everything to be able to use find()

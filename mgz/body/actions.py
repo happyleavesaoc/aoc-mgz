@@ -4,195 +4,195 @@ from mgz.enums import *
 
 """Not all actions are defined, not all actions are complete"""
 
-attack = Struct("attack",
-    Byte("player_id"),
-    Const("\x00\x00"),
-    ULInt32("target_id"),
-    ULInt32("selected"),
-    LFloat32("x"),
-    LFloat32("y"),
+attack = "attack"/Struct(
+    "player_id"/Byte,
+    Const(b"\x00\x00"),
+    "target_id"/Int32ul,
+    "selected"/Int32ul,
+    "x"/Float32l,
+    "y"/Float32l,
     If(lambda ctx: ctx.selected < 0xff,
-        Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
+        Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
     )
 )
 
-move = Struct("move",
-    Byte("player_id"),
-    Const("\x00\x00"),
+move = "move"/Struct(
+    "player_id"/Byte,
+    Const(b"\x00\x00"),
     Padding(4),
-    ULInt32("selected"),
-    LFloat32("x"),
-    LFloat32("y"),
+    "selected"/Int32ul,
+    "x"/Float32l,
+    "y"/Float32l,
     If(lambda ctx: ctx.selected < 0xff,
-        Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
+        Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
     )
 )
 
-resign = Struct("resign",
-    Byte("player_id"),
-    Byte("player_num"),
-    Flag("disconnected")
+resign = "resign"/Struct(
+    "player_id"/Byte,
+    "player_num"/Byte,
+    "disconnected"/Flag
 )
 
-train = Struct("train",
+train = "train"/Struct(
     Padding(3),
-    ULInt32("building_id"),
-    ULInt16("unit_type"),
-    ULInt16("number"),
+    "building_id"/Int32ul,
+    "unit_type"/Int16ul,
+    "number"/Int16ul,
 )
 
-research = Struct("research",
+research = "research"/Struct(
     Padding(3),
-    ULInt32("building_id"),
-    ULInt16("player_id"),
-    ULInt16("technology_type"),
+    "building_id"/Int32ul,
+    "player_id"/Int16ul,
+    "technology_type"/Int16ul,
     Padding(4),
 )
 
-sell = Struct("sell",
-    Byte("player_id"),
-    ResourceEnum(Byte("resource_type")),
-    Byte("amount"),
+sell = "sell"/Struct(
+    "player_id"/Byte,
+    ResourceEnum("resource_type"/Byte),
+    "amount"/Byte,
     Padding(4)
 )
 
-buy = Struct("buy",
-    Byte("player_id"),
-    ResourceEnum(Byte("resource_type")),
-    Byte("amount"),
+buy = "buy"/Struct(
+    "player_id"/Byte,
+    ResourceEnum("resource_type"/Byte),
+    "amount"/Byte,
     Padding(4)
 )
 
-stop = Struct("stop",
-    Byte("selected"),
-    Array(lambda ctx: ctx.selected, ULInt32("object_ids"))
+stop = "stop"/Struct(
+    "selected"/Byte,
+    Array(lambda ctx: ctx.selected, "object_ids"/Int32ul)
 )
 
-stance = Struct("stance",
-    Byte("selected"),
-    Byte("stance_type"),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+stance = "stance"/Struct(
+    "selected"/Byte,
+    "stance_type"/Byte,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-guard = Struct("guard",
-    Byte("selected"),
+guard = "guard"/Struct(
+    "selected"/Byte,
     Padding(2),
-    ULInt32("guarded_unit_id"),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+    "guarded_unit_id"/Int32ul,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-follow = Struct("follow",
-    Byte("selected"),
+follow = "follow"/Struct(
+    "selected"/Byte,
     Padding(2),
-    ULInt32("followed_unit_id"),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+    "followed_unit_id"/Int32ul,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-formation = Struct("formation",
-    Byte("selected"),
-    ULInt16("player_id"),
-    ULInt32("formation_type"),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+formation = "formation"/Struct(
+    "selected"/Byte,
+    "player_id"/Int16ul,
+    "formation_type"/Int32ul,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-multiplayersave = Struct("multiplayersave",
-    ULInt16("player_id"),
+multiplayersave = "multiplayersave"/Struct(
+    "player_id"/Int16ul,
     Padding(5),
-    CString("filename")
+    "filename"/CString()
 )
 
-build = Struct("build",
-    Byte("selected"),
-    ULInt16("player_id"),
-    LFloat32("x"),
-    LFloat32("y"),
-    BuildingEnum(ULInt32("building_type")),
+build = "build"/Struct(
+    "selected"/Byte,
+    "player_id"/Int16ul,
+    "x"/Float32l,
+    "y"/Float32l,
+    BuildingEnum("building_type"/Int32ul),
     Padding(8),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-gamespeed = Struct("gamespeed",
+gamespeed = "gamespeed"/Struct(
     Padding(15),
 )
 
-wall = Struct("wall",
-    Byte("selected"),
-    Byte("player_id"),
+wall = "wall"/Struct(
+    "selected"/Byte,
+    "player_id"/Byte,
     Padding(4),
     Padding(1),
-    ULInt32("building_id"),
+    "building_id"/Int32ul,
     Padding(4),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
 )
 
-delete = Struct("delete",
+delete = "delete"/Struct(
     Padding(3),
-    ULInt32("object_id"),
-    ULInt32("player_id")
+    "object_id"/Int32ul,
+    "player_id"/Int32ul
 )
 
-attackground = Struct("attackground",
-    Byte("selected"),
+attackground = "attackground"/Struct(
+    "selected"/Byte,
     Padding(2),
-    LFloat32("x"),
-    LFloat32("y"),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+    "x"/Float32l,
+    "y"/Float32l,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-tribute = Struct("tribute",
-    Byte("player_id"),
-    Byte("player_id_to"),
-    ResourceEnum(Byte("resource_type")),
-    LFloat32("amount"),
-    LFloat32("fee")
+tribute = "tribute"/Struct(
+    "player_id"/Byte,
+    "player_id_to"/Byte,
+    ResourceEnum("resource_type"/Byte),
+    "amount"/Float32l,
+    "fee"/Float32l
 )
 
-unload = Struct("unload",
-    ULInt16("selected"),
+unload = "unload"/Struct(
+    "selected"/Int16ul,
     Padding(1),
-    LFloat32("x"), # -1 if none
-    LFloat32("y"), # -1 if none
+    "x"/Float32l, # -1 if none
+    "y"/Float32l, # -1 if none
     Padding(4),
     Padding(4), # 0xffffffff
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-flare = Struct("flare",
+flare = "flare"/Struct(
     Padding(7),
-    Array(9, Byte("player_ids")),
+    Array(9, "player_ids"/Byte),
     Padding(3),
-    LFloat32("x"),
-    LFloat32("y"),
-    Byte("player_id"),
-    Byte("player_number"),
+    "x"/Float32l,
+    "y"/Float32l,
+    "player_id"/Byte,
+    "player_number"/Byte,
     Padding(2)
 )
 
-garrison = Struct("garrison",
-    Byte("selected"),
+garrison = "garrison"/Struct(
+    "selected"/Byte,
     Padding(2),
-    SLInt32("building_id"), # -1 cancels production queue
-    ULInt32("u0"),
-    LFloat32("x"),
-    LFloat32("y"),
+    "building_id"/Int32sl, # -1 cancels production queue
+    "u0"/Int32ul,
+    "x"/Float32l,
+    "y"/Float32l,
     Padding(4), # const
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
 )
 
-gatherpoint = Struct("gatherpoint",
-    Byte("selected"),
+gatherpoint = "gatherpoint"/Struct(
+    "selected"/Byte,
     Padding(2),
-    ULInt32("target_id"),
-    ULInt32("target_type"),
-    LFloat32("x"),
-    LFloat32("y"),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids"))
+    "target_id"/Int32ul,
+    "target_type"/Int32ul,
+    "x"/Float32l,
+    "y"/Float32l,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-townbell = Struct("townbell",
+townbell = "townbell"/Struct(
     Padding(3),
-    ULInt32("towncenter_id"),
-    ULInt32("active")
+    "towncenter_id"/Int32ul,
+    "active"/Int32ul
 )
 
 """Patrol
@@ -200,44 +200,46 @@ townbell = Struct("townbell",
 10 X-coordinates followed by 10 Y-coordinates
 First of each is popped off for consistency with other actions
 """
-patrol = Struct("patrol",
-    Byte("selected"),
-    ULInt16("waypoints"),
-    LFloat32("x"),
-    Array(9, LFloat32("x_more")),
-    LFloat32("y"),
-    Array(9, LFloat32("y_more")),
-    Array(lambda ctx: ctx.selected, ULInt32("unit_ids")),
+patrol = "patrol"/Struct(
+    "selected"/Byte,
+    "waypoints"/Int16ul,
+    "x"/Float32l,
+    Array(9, "x_more"/Float32l),
+    "y"/Float32l,
+    Array(9, "y_more"/Float32l),
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
 )
 
-backtowork = Struct("backtowork",
+backtowork = "backtowork"/Struct(
     Padding(3),
-    ULInt32("towncenter_id")
+    "towncenter_id"/Int32ul
 )
 
-postgame = Struct("achievements",
+postgame = "achievements"/Struct(
     Padding(3),
-    String("scenario_filename", 32, padchar = '\x00', trimdir = 'right'),
-    Byte("player_num"),
-    Byte("computer_num"),
+    "scenario_filename"/String(32, padchar = b'\x00', trimdir = 'right'),
+    "player_num"/Byte,
+    "computer_num"/Byte,
     Padding(2),
-    TimeSecAdapter(ULInt32("duration")),
-    Flag("cheats"),
-    Flag("complete"),
+    TimeSecAdapter("duration"/Int32ul),
+    "cheats"/Flag,
+    "complete"/Flag,
     Padding(14),
-    Byte("map_size"),
-    Byte("map_id"),
-    Byte("population"),
+    "map_size"/Byte,
+    "map_id"/Byte,
+    "population"/Byte,
     Padding(1),
-    VictoryEnum(Byte("victory_type")),
-    StartingAgeEnum(Byte("starting_age")),
-    ResourceLevelEnum(Byte("resource_level")),
-    Flag("all_techs"),
-    Flag("team_together", truth = 0, falsehood = 1),
-    RevealMapEnum(Byte("reveal_map")),
-    Padding(3),
-    Flag("lock_teams"),
-    Flag("lock_speed"),
+    VictoryEnum("victory_type"/Byte),
+    StartingAgeEnum("starting_age"/Byte),
+    ResourceLevelEnum("resource_level"/Byte),
+    "all_techs"/Flag,
+    "team_together"/Flag, #(truth = 0, falsehood = 1),
+    RevealMapEnum("reveal_map"/Byte),
+    "is_deathmatch"/Flag,
+    "is_regicide"/Flag,
+    Padding(1),
+    "lock_teams"/Flag,
+    "lock_speed"/Flag,
     Padding(1),
     Array(lambda ctx: ctx.player_num, achievements),
     Padding(4),

@@ -1,3 +1,3 @@
 from construct import *
 
-ai = ULInt32("has_ai") # if true, parse AI
+ai = "has_ai"/Int32ul # if true, parse AI
