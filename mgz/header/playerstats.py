@@ -1,9 +1,11 @@
-from construct import *
+"""Player stats."""
 
-"""Snapshot taken at the start of the recorded game
+from construct import Float32l, Struct
 
-current_age and pop_max are both useful though not much else is
-"""
+# pylint: disable=invalid-name
+
+
+# Snapshot taken at the start of the recorded game.
 player_stats = "player_stats"/Struct(
     "resources"/Struct(
         "food"/Float32l,

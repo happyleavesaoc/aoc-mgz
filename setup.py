@@ -9,9 +9,7 @@ setup(
     author='happyleaves',
     author_email='happyleaves.tfr@gmail.com',
     packages=find_packages(),
-    install_requires=[
-        'construct>=2.8.16', 'voobly>=1.0.0'
-    ],
+    install_requires=['construct>=2.8.16', 'voobly>=1.0.0'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',

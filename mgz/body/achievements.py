@@ -1,7 +1,12 @@
-from construct import *
+"""UserPatch 1.4+ achievements - appended to recorded game."""
+
+from construct import (Array, Byte, Flag, Int16ul, Int32sl, Int32ul, Padding,
+                       String, Struct)
+
 from mgz.util import TimeSecAdapter
 
-"""UserPatch 1.4+ achievements - appended to recorded game"""
+# pylint: disable=invalid-name
+
 
 military = "military"/Struct(
     "score"/Int16ul,
@@ -48,7 +53,7 @@ society = "society"/Struct(
 )
 
 achievements = "achievements"/Struct(
-    "player_name"/String(16, padchar = b'\x00', trimdir = 'right'),
+    "player_name"/String(16, padchar=b'\x00', trimdir='right'),
     "total_score"/Int16ul,
     Array(8, "total_scores"/Int16ul),
     "victory"/Flag,

@@ -7,12 +7,13 @@ and computes a variety of useful metadata.
 import datetime
 import os.path
 from collections import defaultdict
-import mgz
-import mgz.body
-import mgz.util
-import mgz.const
+
 import voobly
 
+import mgz
+import mgz.body
+import mgz.const
+import mgz.util
 
 VOOBLY_LADDERS = {
     'RM 1v1': 131,
@@ -22,6 +23,7 @@ VOOBLY_LADDERS = {
 }
 
 
+# pylint: disable=too-few-public-methods
 class ChatMessage():
     """Parse a chat message."""
 
@@ -114,17 +116,20 @@ class ChatMessage():
     def __repr__(self):
         """Printable representation."""
         if self.data['type'] == 'chat':
-            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['to'], self.data['player'], self.data['message'])
+            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['to'],
+                                           self.data['player'], self.data['message'])
         elif self.data['type'] == 'rating':
             return '{}: {}'.format(self.data['player'], self.data['rating'])
         elif self.data['type'] == 'ladder':
             return 'Ladder: {}'.format(self.data['ladder'])
         elif self.data['type'] == 'injected':
-            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['source'], self.data['name'], self.data['message'])
+            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['source'],
+                                           self.data['name'], self.data['message'])
         elif self.data['type'] == 'voobly':
             return 'Voobly: {}'.format(self.data['message'])
 
 
+# pylint: disable=too-few-public-methods
 class Sync():
     """Synchronization wrapper."""
 
@@ -137,6 +142,7 @@ class Sync():
         return ','.join([str(self._view.x), str(self._view.y)])
 
 
+# pylint: disable=too-few-public-methods
 class Action():
     """Action wrapper."""
 
@@ -156,8 +162,8 @@ class Map():
 
     def __init__(self, map_id, x, y, instructions):
         """Initialize."""
-        self.x = x
-        self.y = y
+        self.size_x = x
+        self.size_y = y
         self._size = mgz.const.MAP_SIZES[x]
         if map_id in mgz.const.MAP_NAMES:
             self._name = mgz.const.MAP_NAMES[map_id]
@@ -185,6 +191,7 @@ class Map():
         return self._name
 
 
+# pylint: disable=too-many-instance-attributes
 class RecordedGame():
     """Recorded game wrapper."""
 
@@ -207,7 +214,8 @@ class RecordedGame():
         self._compute_diplomacy()
         self._voobly_session = voobly.get_session(voobly_api_key)
         self._summary = {}
-        self._map = Map(self._header.scenario.game_settings.map_id, self._header.map_info.size_x, self._header.map_info.size_y, self._header.scenario.messages.instructions)
+        self._map = Map(self._header.scenario.game_settings.map_id, self._header.map_info.size_x,
+                        self._header.map_info.size_y, self._header.scenario.messages.instructions)
         self._parse_lobby_chat(self._header.lobby.messages)
 
     def _num_players(self):
@@ -229,11 +237,13 @@ class RecordedGame():
             self._parse_chat(chat)
 
     def _parse_action(self, action):
-        """Parse a player action."""
+        """Parse a player action.
+
+        TODO: handle cancels
+        """
         if action.action_type == 'research':
             name = mgz.const.TECHNOLOGIES[action.data.technology_type]
             self._research[action.data.player_id][name] = action.timestamp
-        # TODO: handle cancels
 
 
     def operations(self, op_types=None):
@@ -257,7 +267,8 @@ class RecordedGame():
             elif operation.type == 'action' and operation.action.type != 'postgame':
                 yield Action(operation, current_time)
             elif operation.type == 'message' and operation.subtype == 'chat':
-                chat = ChatMessage(operation.data.text, current_time, self._players(), self._diplomacy['type'])
+                chat = ChatMessage(operation.data.text, current_time,
+                                   self._players(), self._diplomacy['type'])
                 self._parse_chat(chat)
                 yield chat
 
@@ -269,11 +280,12 @@ class RecordedGame():
     def summarize(self):
         """Summarize game."""
         if not self._achievements_summarized:
-            for _ in self.operations(): pass
+            for _ in self.operations():
+                pass
         return self._summary
 
     def is_nomad(self):
-        """Is this game nomad?
+        """Is this game nomad.
 
         TODO: Can we get from UP 1.4 achievements?
         """
@@ -285,7 +297,7 @@ class RecordedGame():
         return nomad
 
     def is_regicide(self):
-        """Is this game regicide?"""
+        """Is this game regicide."""
         for i in range(1, self._header.replay.num_players):
             for obj in self._header.initial.players[i].objects:
                 if obj.type == 'unit' and obj.object_type == 'king':
@@ -293,7 +305,7 @@ class RecordedGame():
         return False
 
     def is_arena(self):
-        """Is this game arena?
+        """Is this game arena.
 
         TODO: include hideout?
         """
@@ -317,9 +329,11 @@ class RecordedGame():
     def _parse_player(self, index, attributes, achievements, game_type):
         """Parse a player."""
         try:
-            voobly_user = voobly.user(self._voobly_session, attributes.player_name, ladder_ids=VOOBLY_LADDERS.values())
+            voobly_user = voobly.user(self._voobly_session, attributes.player_name,
+                                      ladder_ids=VOOBLY_LADDERS.values())
             voobly_ladder = '{} {}'.format(game_type, self._diplomacy['type'])
-            voobly_rating = voobly_user['ladders'].get(VOOBLY_LADDERS.get(voobly_ladder)).get('rating')
+            voobly_ladder_id = VOOBLY_LADDERS.get(voobly_ladder)
+            voobly_rating = voobly_user['ladders'].get(voobly_ladder_id).get('rating')
         except voobly.VooblyError:
             voobly_user = None
             voobly_rating = None
@@ -368,15 +382,16 @@ class RecordedGame():
 
     def _compass_position(self, player_x, player_y):
         """Get compass position of player."""
-        map_dim = self._map.x
+        map_dim = self._map.size_x
         third = map_dim * (1/3.0)
         for direction in mgz.const.COMPASS:
             point = mgz.const.COMPASS[direction]
-            xl = point[0] * map_dim
-            xu = (point[0] * map_dim) + third
-            yl = point[1] * map_dim
-            yu = (point[1] * map_dim) + third
-            if player_x >= xl and player_x < xu and player_y >= yl and player_y < yu:
+            xlower = point[0] * map_dim
+            xupper = (point[0] * map_dim) + third
+            ylower = point[1] * map_dim
+            yupper = (point[1] * map_dim) + third
+            if (player_x >= xlower and player_x < xupper and
+                    player_y >= ylower and player_y < yupper):
                 return direction
 
     def _players(self):
@@ -408,27 +423,27 @@ class RecordedGame():
         """Compute diplomacy."""
         self._diplomacy = {
             'teams': self.teams(),
-            'ffa': len(self.teams()) == self._player_num + self._computer_num and self._player_num + self._computer_num > 2,
+            'ffa': len(self.teams()) == (self._player_num + self._computer_num and
+                                         self._player_num + self._computer_num > 2),
             'team_game':  len(self.teams()) == 2 and self._player_num + self._computer_num > 2,
             '1v1': self._player_num + self._computer_num == 2,
         }
-        self._diplomacy['type'] = self._diplomacy_type(self._diplomacy)
+        if self._diplomacy['ffa']:
+            self._diplomacy['type'] = 'ffa'
+        if self._diplomacy['team_game']:
+            self._diplomacy['type'] = 'team_game'
+        if self._diplomacy['1v1']:
+            self._diplomacy['type'] = '1v1'
 
-    def _diplomacy_type(self, diplomacy):
-        """Compute diplomacy type."""
-        if diplomacy['ffa']: return 'ffa'
-        if diplomacy['team_game']: return 'team_game'
-        if diplomacy['1v1']: return '1v1'
-
-    def _won_in(self, summary):
+    def _won_in(self):
         """Get age the game was won in."""
-        if not summary['finished']:
+        if not self._summary['finished']:
             return
-        starting_age = summary['settings']['starting_age'].lower()
+        starting_age = self._summary['settings']['starting_age'].lower()
         if starting_age == 'post imperial':
             starting_age = 'imperial'
         ages_reached = set([starting_age])
-        for player in summary['players']:
+        for player in self._summary['players']:
             for age, reached in player['ages'].items():
                 if reached:
                     ages_reached.add(age)
@@ -436,6 +451,23 @@ class RecordedGame():
         for age in ages:
             if age in ages_reached:
                 return age
+
+    def _rec_owner_number(self):
+        """Get rec owner number."""
+        player = self._header.initial.players[self._header.replay.rec_player]
+        return player.attributes.player_color + 1
+
+    # pylint: disable=no-self-use
+    def _get_starting_age(self, data):
+        """Get starting age."""
+        if data.starting_age not in ['postimperial', 'dmpostimperial']:
+            return data.starting_age.title()
+        return 'Post Imperial'
+
+    def _get_timestamp(self):
+        """Get modification timestamp from rec file."""
+        mtime = os.path.getmtime(self._path)
+        datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
 
     def _summarize(self, postgame):
         """Game summary implementation."""
@@ -446,7 +478,7 @@ class RecordedGame():
             'chat': self._chat,
             'players': list(self.players(data.achievements, game_type)),
             'diplomacy': self._diplomacy,
-            'rec_owner_number': self._header.initial.players[self._header.replay.rec_player].attributes.player_color + 1,
+            'rec_owner_number': self._rec_owner_number(),
             'settings': {
                 'type': game_type,
                 'difficulty': self._header.scenario.game_settings.difficulty,
@@ -454,7 +486,7 @@ class RecordedGame():
                 'population_limit': self._header.lobby.population_limit * 25,
                 'speed': self._header.replay.game_speed,
                 'reveal_map': data.reveal_map,
-                'starting_age': data.starting_age.title() if data.starting_age not in ['postimperial', 'dmpostimperial'] else 'Post Imperial',
+                'starting_age': self._get_starting_age(data),
                 'victory_condition': data.victory_type,
                 'team_together': data.team_together,
                 'all_technologies': data.all_techs,
@@ -472,7 +504,8 @@ class RecordedGame():
             },
             'restore': {
                 'restored': self._header.initial.restore_time > 0,
-                'start_time': mgz.util.convert_to_timestamp(self._header.initial.restore_time / 1000)
+                'start_time': mgz.util.convert_to_timestamp(self._header.initial.restore_time /
+                                                            1000)
             },
             'voobly': {
                 'ladder': self._ladder,
@@ -485,8 +518,7 @@ class RecordedGame():
             'file': {
                 'version': mgz.const.VERSIONS[self._header.version],
                 'filename': os.path.basename(self._path),
-                'timestamp': datetime.datetime.fromtimestamp(os.path.getmtime(self._path)).strftime('%Y-%m-%d %H:%M:%S')
+                'timestamp': self._get_timestamp()
             }
         }
-        self._summary['diplomacy']['type'] = self._diplomacy_type(self._summary['diplomacy'])
-        self._summary['won_in'] = self._won_in(self._summary).title()
+        self._summary['won_in'] = self._won_in().title()

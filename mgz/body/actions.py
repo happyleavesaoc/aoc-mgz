@@ -1,8 +1,16 @@
-from construct import *
-from mgz.body.achievements import *
-from mgz.enums import *
+"""Actions."""
 
-"""Not all actions are defined, not all actions are complete"""
+from construct import (Array, Byte, Const, CString, Flag, Float32l, If,
+                       Int16ul, Int32sl, Int32ul, Padding, String, Struct)
+
+from mgz.body.achievements import achievements
+from mgz.enums import (BuildingEnum, ResourceEnum, ResourceLevelEnum,
+                       RevealMapEnum, StartingAgeEnum, VictoryEnum)
+from mgz.util import TimeSecAdapter
+
+# pylint: disable=invalid-name
+
+# Not all actions are defined, not all actions are complete.
 
 attack = "attack"/Struct(
     "player_id"/Byte,
@@ -11,9 +19,9 @@ attack = "attack"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    If(lambda ctx: ctx.selected < 0xff,
-        Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
-    )
+    If(lambda ctx: ctx.selected < 0xff, Array(
+        lambda ctx: ctx.selected, "unit_ids"/Int32ul
+    ))
 )
 
 move = "move"/Struct(
@@ -23,9 +31,9 @@ move = "move"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    If(lambda ctx: ctx.selected < 0xff,
-        Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
-    )
+    If(lambda ctx: ctx.selected < 0xff, Array(
+        lambda ctx: ctx.selected, "unit_ids"/Int32ul
+    ))
 )
 
 resign = "resign"/Struct(
@@ -217,7 +225,7 @@ backtowork = "backtowork"/Struct(
 
 postgame = "achievements"/Struct(
     Padding(3),
-    "scenario_filename"/String(32, padchar = b'\x00', trimdir = 'right'),
+    "scenario_filename"/String(32, padchar=b'\x00', trimdir='right'),
     "player_num"/Byte,
     "computer_num"/Byte,
     Padding(2),

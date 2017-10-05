@@ -1,6 +1,11 @@
-from construct import *
+"""Achievements."""
 
-"""Achievements snapshot taken at the start of the recorded game, not the end"""
+from construct import Array, Float32l, Int32ul, Padding, Struct
+
+# pylint: disable=invalid-name
+
+
+# Achievements snapshot taken at the start of the recorded game, not the end.
 player_achievements = "ach"/Struct(
     Padding(13),
     "total_points"/Int32ul,
@@ -31,7 +36,7 @@ player_achievements = "ach"/Struct(
     Padding(28),
     "relic_castle"/Float32l,
     Padding(28),
-    "relice_castle2"/Float32l,
+    "relic_castle2"/Float32l,
     Padding(28),
     "wonder"/Float32l,
     Padding(28),

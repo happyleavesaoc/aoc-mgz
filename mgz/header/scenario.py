@@ -1,8 +1,15 @@
-from construct import *
-from mgz.enums import *
-from mgz.util import *
+"""Scenario."""
 
-"""Scenario Header"""
+from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
+                       PascalString, String, Struct)
+
+from mgz.enums import DifficultyEnum, PlayerTypeEnum, StartingAgeEnum
+from mgz.util import Find
+
+# pylint: disable=invalid-name
+
+
+# Scenario header.
 scenario_header = "scenario_header"/Struct(
     "next_uid"/Int32ul,
     "constant"/Int32ul,
@@ -16,10 +23,10 @@ scenario_header = "scenario_header"/Struct(
     )),
     Padding(5),
     "elapsed_time"/Float32l,
-    "scenario_filename"/PascalString(lengthfield = "scenario_filename_length"/Int16ul),
+    "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),
 )
 
-"""Scenarios have intro text, a bitmap, and cinematics"""
+# Scenarios have intro text, a bitmap, and cinematics.
 messages = "messages"/Struct(
     "instruction_id"/Int32ul,
     "hints_id"/Int32ul,
@@ -27,16 +34,17 @@ messages = "messages"/Struct(
     "defeat_id"/Int32ul,
     "history_id"/Int32ul,
     "scouts_id"/Int32ul,
-    "instructions"/PascalString(lengthfield = "instructions_length"/Int16ul, encoding='latin1'), # this contains the map name
-    "hints"/PascalString(lengthfield = "hints_length"/Int16ul),
-    "victory"/PascalString(lengthfield = "victory_length"/Int16ul),
-    "defeat"/PascalString(lengthfield = "defeat_length"/Int16ul),
-    "history"/PascalString(lengthfield = "history_length"/Int16ul),
-    "scouts"/PascalString(lengthfield = "scouts_length"/Int16ul),
-    "pg_cin"/PascalString(lengthfield = "pg_cin_length"/Int16ul),
-    "vict_cin"/PascalString(lengthfield = "vict_cin_length"/Int16ul),
-    "loss_cin"/PascalString(lengthfield = "loss_cin_length"/Int16ul),
-    "background"/PascalString(lengthfield = "background_length"/Int16ul),
+    "instructions"/PascalString(lengthfield="instructions_length"/Int16ul,
+                                encoding='latin1'), # this contains the map name
+    "hints"/PascalString(lengthfield="hints_length"/Int16ul),
+    "victory"/PascalString(lengthfield="victory_length"/Int16ul),
+    "defeat"/PascalString(lengthfield="defeat_length"/Int16ul),
+    "history"/PascalString(lengthfield="history_length"/Int16ul),
+    "scouts"/PascalString(lengthfield="scouts_length"/Int16ul),
+    "pg_cin"/PascalString(lengthfield="pg_cin_length"/Int16ul),
+    "vict_cin"/PascalString(lengthfield="vict_cin_length"/Int16ul),
+    "loss_cin"/PascalString(lengthfield="loss_cin_length"/Int16ul),
+    "background"/PascalString(lengthfield="background_length"/Int16ul),
     "bitmap_included"/Int32ul,
     "bitmap_x"/Int32ul,
     "bitmap_y"/Int32ul,
@@ -45,10 +53,10 @@ messages = "messages"/Struct(
     Padding(64), # 16 nulls
 )
 
-"""Scenario player definitions"""
+# Scenario player definitions.
 scenario_players = "players"/Struct(
-    Array(16, "ai_names"/PascalString(lengthfield = "ai_name_length"/Int16ul)),
-    Array(16, "ai"/Struct( Padding(8), "file"/PascalString(lengthfield = "ai_file_length"/Int32ul))),
+    Array(16, "ai_names"/PascalString(lengthfield="ai_name_length"/Int16ul)),
+    Array(16, "ai"/Struct(Padding(8), "file"/PascalString(lengthfield="ai_file_length"/Int32ul))),
     Padding(4),
     Array(16, "resources"/Struct(
         "gold"/Int32ul,
@@ -57,10 +65,10 @@ scenario_players = "players"/Struct(
         "stone"/Int32ul,
         Padding(8),
     )),
-    Array(16, Padding(1)), # 0x01 x 16
+    Array(16, Padding(1)) # 0x01 x 16
 )
 
-"""Victory conditions"""
+# Victory conditions.
 victory = "victory"/Struct(
     Padding(4),
     "is_conquest"/Int32ul,
@@ -75,7 +83,7 @@ victory = "victory"/Struct(
     "time"/Int32ul,
 )
 
-"""Disabled techs, units, and buildings"""
+# Disabled techs, units, and buildings.
 disables = "disables"/Struct(
     Padding(4),
     Padding(64),
@@ -88,7 +96,7 @@ disables = "disables"/Struct(
     Padding(12),
 )
 
-"""Game settings"""
+# Game settings.
 game_settings = "game_settings"/Struct(
     Array(16, StartingAgeEnum("starting_ages"/Int32sl)),
     Padding(4),
@@ -96,20 +104,24 @@ game_settings = "game_settings"/Struct(
     "map_id"/Int32ul,
     DifficultyEnum("difficulty"/Int32ul),
     Padding(4),
-    Array(9, "player_info"/Struct("data_ref"/Int32ul, PlayerTypeEnum("type"/Int32ul), "name"/PascalString( lengthfield = "name_length"/Int32ul))),
+    Array(9, "player_info"/Struct(
+        "data_ref"/Int32ul,
+        PlayerTypeEnum("type"/Int32ul),
+        "name"/PascalString(lengthfield="name_length"/Int32ul)
+    )),
     Padding(36),
     Padding(4),
     "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f', None),
 )
 
-"""Triggers"""
+# Triggers.
 triggers = "triggers"/Struct(
     Padding(1),
     "num_triggers"/Int32ul,
     # parse if num > 0
 )
 
-"""Scenario metadata"""
+# Scenario metadata.
 scenario = "scenario"/Struct(
     scenario_header,
     messages,
@@ -118,5 +130,5 @@ scenario = "scenario"/Struct(
     Padding(12544), # unknown
     disables,
     game_settings,
-    triggers,
+    triggers
 )

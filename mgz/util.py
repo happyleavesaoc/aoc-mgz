@@ -1,9 +1,44 @@
-from collections import deque
-from construct import Adapter, Subconstruct, Construct
+"""MGZ parsing utilities."""
+
 import struct
 import zlib
+from io import BytesIO
+
+import construct.core
+from construct import Adapter, Construct, Subconstruct, Tunnel
+
+# pylint: disable=abstract-method,protected-access
+
+
+class MgzPrefixed(Subconstruct):
+    """Like `Prefixed`, but accepting arbitrary length."""
+
+    __slots__ = ["name", "length", "subcon"]
+
+    def __init__(self, length, subcon):
+        """Initialize."""
+        super(MgzPrefixed, self).__init__(subcon)
+        self.length = length
+
+    def _parse(self, stream, context, path):
+        """Parse tunnel."""
+        length = self.length(context)
+        new_stream = BytesIO(construct.core._read_stream(stream, length))
+        return self.subcon._parse(new_stream, context, path)
+
+
+class ZlibCompressed(Tunnel):
+    """Like Compressed, but only does header-less zlib."""
+
+    __slots__ = []
+
+    def _decode(self, data, context):
+        """Decode zlib without header bytes."""
+        return zlib.decompressobj().decompress(b'x\x9c' + data)
+
 
 def convert_to_timestamp(time):
+    """Convert int to timestamp string."""
     if time == -1:
         return None
     time = int(time*1000)
@@ -12,52 +47,59 @@ def convert_to_timestamp(time):
     second = (time//1000) % 60
     return str(hour).zfill(2)+":"+str(minute).zfill(2)+":"+str(second).zfill(2)
 
-class ZlibCompressor():
-    """Decompress via zlib"""
-    def decode(self, d):
-        return zlib.decompressobj().decompress('x\x9c' + d)
 
 class TimeSecAdapter(Adapter):
-    """Conversion to readable time"""
-    def _decode(self, time, ctx):
-        return convert_to_timestamp(time)
+    """Conversion to readable time."""
+
+    def _decode(self, obj, context):
+        """Decode timestamp to string."""
+        return convert_to_timestamp(obj)
+
 
 class BoolAdapter(Adapter):
-    """Bools of with potential padding"""
-    def _decode(self, val, ctx):
-        return val == 1
+    """Bools with potential padding."""
+
+    def _decode(self, obj, context):
+        """Decode bool."""
+        return obj == 1
+
 
 class Find(Construct):
-    """Find bytes, and read past them"""
-    __slots__ = ["find", "maxLength"]
+    """Find bytes, and read past them."""
 
-    def __init__(self, find, maxLength):
+    __slots__ = ["find", "max_length"]
+
+    def __init__(self, find, max_length):
+        """Initiallize."""
         Construct.__init__(self)
         self.find = find
-        self.maxLength = maxLength
+        self.max_length = max_length
 
     def _parse(self, stream, context, path):
+        """Parse stream to find a given byte string."""
         start = stream.tell()
-        bytes = ""
-        if self.maxLength:
-            bytes = stream.read(self.maxLength)
+        read_bytes = ""
+        if self.max_length:
+            read_bytes = stream.read(self.max_length)
         else:
-            bytes = stream.read()
-        skip = bytes.find(self.find) + len(self.find)
+            read_bytes = stream.read()
+        skip = read_bytes.find(self.find) + len(self.find)
         stream.seek(start + skip)
         return skip
 
+
 class RepeatUpTo(Subconstruct):
-    """Like RepeatUntil, but doesn't include the last element in the return value"""
+    """Like RepeatUntil, but doesn't include the last element in the return value."""
+
     __slots__ = ["find"]
 
     def __init__(self, find, subcon):
+        """Initialize."""
         Subconstruct.__init__(self, subcon)
         self.find = find
-        #self._clear_flag(self.FLAG_COPY_CONTEXT)
-        #self._set_flag(self.FLAG_DYNAMIC)
 
     def _parse(self, stream, context, path):
+        """Parse until a given byte string is found."""
         objs = []
         while True:
             start = stream.tell()
@@ -70,34 +112,34 @@ class RepeatUpTo(Subconstruct):
                 objs.append(subobj)
         return objs
 
-class GotoObjectsEnd(Construct):
-    """Find the end of a player's objects list
 
-    Necessary since we can't parse objects from a resume game (yet)
+class GotoObjectsEnd(Construct):
+    """Find the end of a player's objects list.
+
+    Necessary since we can't parse objects from a resume game (yet).
     """
-    def __init__(self):
-        Construct.__init__(self)
 
     def _parse(self, stream, context, path):
+        """Parse until the end of objects data."""
         num_players = context._._.replay.num_players
         start = stream.tell()
         # Have to read everything to be able to use find()
-        bytes = stream.read()
+        read_bytes = stream.read()
         # Try to find the first marker, a portion of the next player structure
-        marker = bytes.find(b"\x16\xc6\x00\x00\x00\x21")
+        marker = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
         # If it exists, we're not on the last player yet
         if marker > 0:
             # Backtrack through the player name
-            c = 0
-            while struct.unpack("<H", bytes[marker-2:marker])[0] != c:
+            count = 0
+            while struct.unpack("<H", read_bytes[marker-2:marker])[0] != count:
                 marker -= 1
-                c += 1
+                count += 1
             # Backtrack through the rest of the next player structure
             backtrack = 43 + num_players
         # Otherwise, this is the last player
         else:
             # Search for the scenario header
-            marker = bytes.find(b"\xf6\x28\x9c\x3f")
+            marker = read_bytes.find(b"\xf6\x28\x9c\x3f")
             # Backtrack through the achievements and initial structure footer
             backtrack = ((1817 * (num_players - 1)) + 4 + 19)
         # Seek to the position we found

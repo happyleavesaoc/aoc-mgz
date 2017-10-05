@@ -1,7 +1,13 @@
-from construct import *
-from mgz.enums import *
+"""Replay."""
 
-"""Basic information about the recorded game"""
+from construct import Byte, Const, Float32l, Int16ul, Int32ul, Padding, Struct
+
+from mgz.enums import GameSpeedEnum
+
+# pylint: disable=invalid-name
+
+
+# Basic information about the recorded game
 replay = "replay"/Struct(
     Padding(12),
     GameSpeedEnum("game_speed"/Int32ul),

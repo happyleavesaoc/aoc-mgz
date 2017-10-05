@@ -1,9 +1,12 @@
+"""Constants."""
+
 VERSIONS = {
     'VER 9.B': 'userpatch 1.4',
     'VER 9.C': 'userpatch 1.4',
     'VER 9.D': 'userpatch 1.4',
     'VER 9.E': 'userpatch 1.5'
 }
+
 
 MAP_NAMES = {
     9: 'Arabia',
@@ -100,6 +103,7 @@ MAP_NAMES = {
     105: 'The Eye'
 }
 
+
 MAP_SIZES = {
     120: 'tiny',
     144: 'small',
@@ -108,6 +112,7 @@ MAP_SIZES = {
     220: 'large',
     240: 'giant'
 }
+
 
 CIVILIZATION_NAMES = {
     1: 'Britons',
@@ -143,6 +148,7 @@ CIVILIZATION_NAMES = {
     31: 'Vietnamese'
 }
 
+
 PLAYER_COLORS = {
     0: 'blue',
     1: 'red',
@@ -153,6 +159,7 @@ PLAYER_COLORS = {
     6: 'gray',
     7: 'orange'
 }
+
 
 COMPASS = {
     'northwest': [1/3.0, 0],
@@ -165,6 +172,7 @@ COMPASS = {
     'east': [2/3.0, 2/3.0],
     'south': [0, 2/3.0]
 }
+
 
 TECHNOLOGIES = {
     2: 'Elite Tarkan',

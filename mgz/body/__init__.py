@@ -1,8 +1,6 @@
-from construct import *
-from mgz.enums import *
-from mgz.body.actions import *
+"""Body.
 
-"""An mgz body is a stream of Operations
+An mgz body is a stream of Operations
 
 An Operation can be:
  - Action: Player input that materially affects the game
@@ -11,57 +9,65 @@ An Operation can be:
  - Saved Chapter: Embedded header structure
 """
 
-"""Action"""
+from construct import (Struct, Byte, Switch, Embedded, Padding,
+                       Int32ul, Peek, Tell, Float32l, String, If)
+from mgz.enums import ActionEnum, OperationEnum, MessageEnum
+from mgz.body import actions
+
+
+# pylint: disable=invalid-name
+
+
+# Action.
 action_data = "action"/Struct(
     ActionEnum("type"/Byte),
-    Embedded("action"/Switch(lambda ctx: ctx.type,
-        {
-            "attack": attack,
-            "move": move,
-            "stop": stop,
-            "stance": stance,
-            "guard": guard,
-            "follow": follow,
-            "formation": formation,
-            "multiplayersave": multiplayersave,
-            "build": build,
-            "gamespeed": gamespeed,
-            "patrol": patrol,
-            "wall": wall,
-            "delete": delete,
-            "attackground": attackground,
-            "unload": unload,
-            "flare": flare,
-            "garrison": garrison,
-            "gatherpoint": gatherpoint,
-            "townbell": townbell,
-            "resign": resign,
-            "tribute": tribute,
-            "train": train,
-            "research": research,
-            "sell": sell,
-            "buy": buy,
-            "backtowork": backtowork,
-            "postgame": postgame
-        },
-        default = Padding(lambda ctx: ctx._.length - 1),
-    )),
+    Embedded("action"/Switch(lambda ctx: ctx.type, {
+        "attack": actions.attack,
+        "move": actions.move,
+        "stop": actions.stop,
+        "stance": actions.stance,
+        "guard": actions.guard,
+        "follow": actions.follow,
+        "formation": actions.formation,
+        "multiplayersave": actions.multiplayersave,
+        "build": actions.build,
+        "gamespeed": actions.gamespeed,
+        "patrol": actions.patrol,
+        "wall": actions.wall,
+        "delete": actions.delete,
+        "attackground": actions.attackground,
+        "unload": actions.unload,
+        "flare": actions.flare,
+        "garrison": actions.garrison,
+        "gatherpoint": actions.gatherpoint,
+        "townbell": actions.townbell,
+        "resign": actions.resign,
+        "tribute": actions.tribute,
+        "train": actions.train,
+        "research": actions.research,
+        "sell": actions.sell,
+        "buy": actions.buy,
+        "backtowork": actions.backtowork,
+        "postgame": actions.postgame
+    }, default=Padding(lambda ctx: ctx._.length - 1))),
     Padding(4)
 )
 
-"""Action - length followed by data"""
+
+# Action - length followed by data.
 action = "action"/Struct(
     "length"/Int32ul,
     action_data
 )
 
-"""Synchronization"""
+
+# Synchronization.
 sync = "sync"/Struct(
     "time_increment"/Int32ul,
     "flag"/Int32ul,
-    If(lambda ctx: not ctx.flag,
-        Padding(28)
-    ),
+    If(lambda ctx: not ctx.flag, Padding(
+        28
+    )),
     "view"/Struct(
         "x"/Float32l,
         "y"/Float32l
@@ -69,21 +75,21 @@ sync = "sync"/Struct(
     "player_id"/Int32ul
 )
 
-"""Chat variation of Message"""
+
+# Chat variation of Message.
 chat = "chat"/Struct(
     "length"/Int32ul,
-    "text"/String(lambda ctx: ctx.length, padchar = b'\x00', trimdir = 'right', encoding='latin1')
+    "text"/String(lambda ctx: ctx.length, padchar=b'\x00', trimdir='right', encoding='latin1')
 )
 
-"""Message"""
+
+# Message.
 message = "message"/Struct(
     MessageEnum("subtype"/Int32ul),
-    "data"/Switch(lambda ctx: ctx.subtype,
-        {
-            "start": Padding(20),
-            "chat": chat,
-        }
-    )
+    "data"/Switch(lambda ctx: ctx.subtype, {
+        "start": Padding(20),
+        "chat": chat
+    })
 )
 
 """Saved Chapter
@@ -101,16 +107,15 @@ savedchapter = "saved_chapter"/Struct(
     Padding(lambda ctx: ctx.op - ctx.start),
 )
 
-"""Operation"""
+
+# Operation.
 operation = "operation"/Struct(
     Peek(OperationEnum("type"/Int32ul)),
     "op"/Int32ul,
-    Embedded("data"/Switch(lambda ctx: ctx.type,
-        {
-            "action": action,
-            "sync": sync,
-            "message": message,
-            "savedchapter": savedchapter
-        }
-    ))
+    Embedded("data"/Switch(lambda ctx: ctx.type, {
+        "action": action,
+        "sync": sync,
+        "message": message,
+        "savedchapter": savedchapter
+    }))
 )
