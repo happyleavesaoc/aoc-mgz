@@ -22,9 +22,6 @@ attributes = "attributes"/Struct(
     "num_header_data"/Int32ul, # always 198
     Padding(1), # 0x21
     player_stats,
-    If(lambda ctx: ctx.num_header_data > 198, Padding(
-        42 * 4
-    )),
     Padding(1),
     "camera_x"/Float32l,
     "camera_y"/Float32l,

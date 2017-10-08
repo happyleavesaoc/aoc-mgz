@@ -1,6 +1,6 @@
 """Player stats."""
 
-from construct import Float32l, Struct
+from construct import Embedded, Float32l, If, Struct
 
 # pylint: disable=invalid-name
 
@@ -207,4 +207,48 @@ player_stats = "player_stats"/Struct(
     "construction_rate_mod"/Float32l,
     "hun_wonder_bonus"/Float32l,
     "spies_discount"/Float32l,
+    Embedded(If(lambda ctx: ctx._.num_header_data > 198, Struct(
+        "unk1"/Float32l,
+        "unk2"/Float32l,
+        "unk3"/Float32l,
+        "unk4"/Float32l,
+        "unk5"/Float32l,
+        "unk6"/Float32l,
+        "unk7"/Float32l,
+        "trickle_food"/Float32l,
+        "trickle_wood"/Float32l,
+        "trickle_stone"/Float32l,
+        "trickle_gold"/Float32l,
+        "reveal_enemy"/Float32l,
+        "reveal_class_1"/Float32l,
+        "reveal_class_2"/Float32l,
+        "unk15"/Float32l,
+        "unk16"/Float32l,
+        "unk17"/Float32l,
+        "unk18"/Float32l,
+        "unk19"/Float32l,
+        "unk20"/Float32l,
+        "unk21"/Float32l,
+        "unk22"/Float32l,
+        "unk23"/Float32l,
+        "unk24"/Float32l,
+        "unk25"/Float32l,
+        "unk26"/Float32l,
+        "unk27"/Float32l,
+        "unk28"/Float32l,
+        "unk29"/Float32l,
+        "unk30"/Float32l,
+        "unk31"/Float32l,
+        "unk32"/Float32l,
+        "unk33"/Float32l,
+        "unk34"/Float32l,
+        "unk35"/Float32l,
+        "unk36"/Float32l,
+        "unk37"/Float32l,
+        "unk38"/Float32l,
+        "unk39"/Float32l,
+        "unk40"/Float32l,
+        "unk41"/Float32l,
+        "unk42"/Float32l
+    )))
 )

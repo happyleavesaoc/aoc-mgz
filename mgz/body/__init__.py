@@ -29,14 +29,22 @@ action_data = "action"/Struct(
         "guard": actions.guard,
         "follow": actions.follow,
         "formation": actions.formation,
+        "waypoint": actions.waypoint,
+        "aiwaypoint": actions.aiwaypoint,
+        "aiattack": actions.aiattack,
+        "aimove": actions.aimove,
+        "aitrain": actions.aitrain,
         "multiplayersave": actions.multiplayersave,
+        "saveandexit": actions.saveandexit,
         "build": actions.build,
         "gamespeed": actions.gamespeed,
         "patrol": actions.patrol,
         "wall": actions.wall,
         "delete": actions.delete,
         "attackground": actions.attackground,
+        "repair": actions.repair,
         "unload": actions.unload,
+        "togglegate": actions.togglegate,
         "flare": actions.flare,
         "garrison": actions.garrison,
         "gatherpoint": actions.gatherpoint,
@@ -82,12 +90,21 @@ chat = "chat"/Struct(
     "text"/String(lambda ctx: ctx.length, padchar=b'\x00', trimdir='right', encoding='latin1')
 )
 
+# Game start
+start = "start"/Struct(
+    "unk1"/Int32ul,
+    "rec_owner"/Int32ul,
+    "unk2"/Int32ul,
+    "unk3"/Int32ul,
+    "unk4"/Int32ul
+)
+
 
 # Message.
 message = "message"/Struct(
     MessageEnum("subtype"/Int32ul),
     "data"/Switch(lambda ctx: ctx.subtype, {
-        "start": Padding(20),
+        "start": start,
         "chat": chat
     })
 )

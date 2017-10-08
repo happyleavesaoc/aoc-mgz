@@ -4,8 +4,8 @@ from construct import (Array, Byte, Const, CString, Flag, Float32l, If,
                        Int16ul, Int32sl, Int32ul, Padding, String, Struct)
 
 from mgz.body.achievements import achievements
-from mgz.enums import (BuildingEnum, ResourceEnum, ResourceLevelEnum,
-                       RevealMapEnum, StartingAgeEnum, VictoryEnum)
+from mgz.enums import (ResourceEnum, ResourceLevelEnum, RevealMapEnum,
+                       StartingAgeEnum, VictoryEnum)
 from mgz.util import TimeSecAdapter
 
 # pylint: disable=invalid-name
@@ -17,6 +17,18 @@ attack = "attack"/Struct(
     Const(b"\x00\x00"),
     "target_id"/Int32ul,
     "selected"/Int32ul,
+    "x"/Float32l,
+    "y"/Float32l,
+    If(lambda ctx: ctx.selected < 0xff, Array(
+        lambda ctx: ctx.selected, "unit_ids"/Int32ul
+    ))
+)
+
+aiattack = "aiattack"/Struct(
+    Padding(3),
+    "target_id"/Int32ul,
+    "selected"/Byte,
+    Padding(3),
     "x"/Float32l,
     "y"/Float32l,
     If(lambda ctx: ctx.selected < 0xff, Array(
@@ -36,6 +48,22 @@ move = "move"/Struct(
     ))
 )
 
+aimove = "aimove"/Struct(
+    "selected"/Byte,
+    "player_id"/Byte,
+    "player_num"/Byte,
+    Padding(4),
+    Padding(4),
+    "target_id"/Int32ul,
+    Padding(1),
+    Padding(3),
+    "x"/Float32l,
+    "y"/Float32l,
+    If(lambda ctx: ctx.selected > 0x01, Array(
+        lambda ctx: ctx.selected, "unit_ids"/Int32ul
+    ))
+)
+
 resign = "resign"/Struct(
     "player_id"/Byte,
     "player_num"/Byte,
@@ -47,6 +75,14 @@ train = "train"/Struct(
     "building_id"/Int32ul,
     "unit_type"/Int16ul,
     "number"/Int16ul,
+)
+
+aitrain = "aitrain"/Struct(
+    Padding(3),
+    "building_id"/Int32ul,
+    "player_id"/Int16ul,
+    "unit_type"/Int16ul,
+    Padding(4)
 )
 
 research = "research"/Struct(
@@ -109,18 +145,32 @@ multiplayersave = "multiplayersave"/Struct(
     "filename"/CString()
 )
 
+saveandexit = "saveandexit"/Struct(
+    "exited"/Flag,
+    "player_id"/Byte,
+    Padding(253) # checksum?
+)
+
 build = "build"/Struct(
     "selected"/Byte,
     "player_id"/Int16ul,
     "x"/Float32l,
     "y"/Float32l,
-    BuildingEnum("building_type"/Int32ul),
+    "building_type"/Int32ul,
     Padding(8),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
+# Diplomacy, game speed, and cheats
 gamespeed = "gamespeed"/Struct(
-    Padding(15),
+    "mode"/Byte,
+    "player_id"/Byte,
+    Padding(1),
+    "option"/Byte,
+    Padding(3),
+    "unk"/Float32l,
+    "diplomatic_stance"/Byte,
+    Padding(3)
 )
 
 wall = "wall"/Struct(
@@ -155,6 +205,13 @@ tribute = "tribute"/Struct(
     "fee"/Float32l
 )
 
+repair = "repair"/Struct(
+    "selected"/Byte,
+    Padding(2),
+    "repaired_id"/Int32ul,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
+)
+
 unload = "unload"/Struct(
     "selected"/Int16ul,
     Padding(1),
@@ -163,6 +220,11 @@ unload = "unload"/Struct(
     Padding(4),
     Padding(4), # 0xffffffff
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
+)
+
+togglegate = "togglegate"/Struct(
+    Padding(3),
+    "gate_id"/Int32ul
 )
 
 flare = "flare"/Struct(
@@ -216,6 +278,24 @@ patrol = "patrol"/Struct(
     "y"/Float32l,
     Array(9, "y_more"/Float32l),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
+)
+
+waypoint = "waypoint"/Struct(
+    Padding(1),
+    "selected"/Byte,
+    "x"/Byte,
+    "y"/Byte,
+    "building_ids"/If(lambda ctx: ctx.selected != 255, Array(
+        lambda ctx: ctx.selected, Int32ul
+    ))
+)
+
+aiwaypoint = "aiwaypoint"/Struct(
+    "selected"/Byte,
+    "waypoint_count"/Byte,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
+    Array(lambda ctx: ctx.waypoint_count, "x_more"/Byte),
+    Array(lambda ctx: ctx.waypoint_count, "y_more"/Byte)
 )
 
 backtowork = "backtowork"/Struct(

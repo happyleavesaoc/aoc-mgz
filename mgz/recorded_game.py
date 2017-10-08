@@ -191,12 +191,15 @@ class Map():
         return self._name
 
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-arguments
 class RecordedGame():
     """Recorded game wrapper."""
 
-    def __init__(self, path, voobly_api_key=None):
+    def __init__(self, path, voobly_api_key=None, chat=False, timeline=False, coords=False):
         """Initialize."""
+        self._show_chat = chat
+        self._show_timeline = timeline
+        self._show_coords = coords
         self._handle = open(path, 'rb')
         self._handle.seek(0, 2)
         self._eof = self._handle.tell()
@@ -211,6 +214,8 @@ class RecordedGame():
         self._chat = []
         self._path = path
         self._num_players()
+        self._timeline = []
+        self._coords = []
         self._compute_diplomacy()
         self._voobly_session = voobly.get_session(voobly_api_key)
         self._summary = {}
@@ -236,7 +241,7 @@ class RecordedGame():
             chat = ChatMessage(message.message, '00:00:00', self._players())
             self._parse_chat(chat)
 
-    def _parse_action(self, action):
+    def _parse_action(self, action, current_time):
         """Parse a player action.
 
         TODO: handle cancels
@@ -244,6 +249,19 @@ class RecordedGame():
         if action.action_type == 'research':
             name = mgz.const.TECHNOLOGIES[action.data.technology_type]
             self._research[action.data.player_id][name] = action.timestamp
+        elif action.action_type == 'build':
+            self._timeline.append({
+                'action': 'build',
+                'building': mgz.const.UNITS[action.data.building_type],
+                'timestamp': current_time
+            })
+        elif action.action_type == 'train':
+            for _ in range(0, int(action.data.number)):
+                self._timeline.append({
+                    'action': 'train',
+                    'unit': mgz.const.UNITS[action.data.unit_type],
+                    'timestamp': current_time
+                })
 
 
     def operations(self, op_types=None):
@@ -259,7 +277,7 @@ class RecordedGame():
                 self._summarize(operation)
             if operation.type == 'action':
                 action = Action(operation, current_time)
-                self._parse_action(action)
+                self._parse_action(action, current_time)
             if operation.type not in op_types:
                 continue
             if operation.type == 'sync':
@@ -469,13 +487,18 @@ class RecordedGame():
         mtime = os.path.getmtime(self._path)
         datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
 
+    def _is_wololokingdoms(self):
+        sample = self._header.initial.players[0].attributes.player_stats
+        if 'trickle_food' in sample and sample.trickle_food:
+            return True
+        return False
+
     def _summarize(self, postgame):
         """Game summary implementation."""
         self._achievements_summarized = True
         data = postgame.action
         game_type = 'DM' if data.is_deathmatch else 'RM'
         self._summary = {
-            'chat': self._chat,
             'players': list(self.players(data.achievements, game_type)),
             'diplomacy': self._diplomacy,
             'rec_owner_number': self._rec_owner_number(),
@@ -502,6 +525,9 @@ class RecordedGame():
                 'regicide': self.is_regicide(),
                 'arena': self.is_arena()
             },
+            'mods': {
+                'wololokingdoms': self._is_wololokingdoms(),
+            },
             'restore': {
                 'restored': self._header.initial.restore_time > 0,
                 'start_time': mgz.util.convert_to_timestamp(self._header.initial.restore_time /
@@ -522,3 +548,9 @@ class RecordedGame():
             }
         }
         self._summary['won_in'] = self._won_in().title()
+        if self._show_chat:
+            self._summary['chat'] = self._chat
+        if self._show_timeline:
+            self._summary['timeline'] = self._timeline
+        if self._show_coords:
+            self._summary['coords'] = self._coords
