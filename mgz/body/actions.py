@@ -227,19 +227,9 @@ game = "game"/Struct(
     Padding(3)
 )
 
-"""
-# Diplomacy, game speed, and cheats
-gamespeed = "gamespeed"/Struct(
-    "mode"/Byte,
-    "player_id"/Byte,
-    Padding(1),
-    "option"/Byte,
-    Padding(3),
-    "unk"/Float32l,
-    "diplomatic_stance"/Byte,
-    Padding(3)
+droprelic = "droprelic"/Struct(
+    Padding(lambda ctx: ctx._._.length - 1)
 )
-"""
 
 wall = "wall"/Struct(
     "selected"/Byte,
@@ -334,19 +324,6 @@ order = "order"/Struct(
     Padding(4), # const
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
 )
-
-"""
-garrison = "garrison"/Struct(
-    "selected"/Byte,
-    Padding(2),
-    "building_id"/Int32sl, # -1 cancels production queue
-    "u0"/Int32ul,
-    "x"/Float32l,
-    "y"/Float32l,
-    Padding(4), # const
-    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
-)
-"""
 
 gatherpoint = "gatherpoint"/Struct(
     "selected"/Byte,

@@ -50,6 +50,7 @@ action_data = "action"/Struct(
         "togglegate": actions.togglegate,
         "flare": actions.flare,
         "order": actions.order,
+        "droprelic": actions.droprelic,
         "gatherpoint": actions.gatherpoint,
         "townbell": actions.townbell,
         "resign": actions.resign,
@@ -62,6 +63,7 @@ action_data = "action"/Struct(
         "backtowork": actions.backtowork,
         "postgame": actions.postgame
     }, default=Struct(
+        "unk_action"/Computed(lambda ctx: ctx._.type),
         "bytes"/Bytes(lambda ctx: ctx._._.length - 1),
         Probe()
     ))),

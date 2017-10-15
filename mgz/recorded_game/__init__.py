@@ -1,5 +1,6 @@
 """Parse a recorded game.
 
+
 Parses an "mgz" recorded game, extracts notable information,
 and computes a variety of useful metadata.
 """
@@ -19,6 +20,7 @@ from mgz.recorded_game.map import Map
 from mgz.recorded_game.sync import Sync
 from mgz.recorded_game.action import Action, ACTIONS_WITH_PLAYER_ID
 
+
 VOOBLY_LADDERS = {
     'RM 1v1': 131,
     'RM TG': 132,
@@ -26,6 +28,7 @@ VOOBLY_LADDERS = {
     'DM TG': 162
 }
 MATCH_DATE = '(?P<year>[0-9]{4}).*?(?P<month>[0-9]{2}).*?(?P<day>[0-9]{2})'
+
 
 def _find_date(filename):
     """Find date in recorded game default(ish) filename."""
@@ -48,7 +51,9 @@ def _calculate_apm(index, player_actions, other_actions, duration):
     player_proportion = apm_per_player[index] / total_attributed
     player_unattributed = total_unattributed * player_proportion
     apm = (apm_per_player[index] + player_unattributed) / (duration / 60)
-    return apm
+    return int(apm)
+
+
 # pylint: disable=too-many-instance-attributes, too-many-arguments
 class RecordedGame():
     """Recorded game wrapper."""
@@ -234,8 +239,6 @@ class RecordedGame():
                 'y': attributes.camera_y
             },
             'action_histogram': dict(self._actions_by_player[index]),
-            'minutes': postgame.duration_int / 60,
-            'dur': postgame.duration,
             'apm': _calculate_apm(index, self._actions_by_player,
                                   self._actions_without_player, postgame.duration_int),
             'name': attributes.player_name,
@@ -330,6 +333,8 @@ class RecordedGame():
             self._diplomacy['type'] = 'ffa'
         if self._diplomacy['TG']:
             self._diplomacy['type'] = 'TG'
+            size = len(self.teams()[0]['player_numbers'])
+            self._diplomacy['team_size'] = '{}v{}'.format(size, size)
         if self._diplomacy['1v1']:
             self._diplomacy['type'] = '1v1'
 
@@ -444,8 +449,9 @@ class RecordedGame():
             },
             'action_histogram': dict(self._actions_without_player)
         }
-        self._summary['won_in'] = self._won_in().title()
-        self._set_winning_team()
+        if data.complete:
+            self._summary['won_in'] = self._won_in().title()
+            self._set_winning_team()
         if self._show_chat:
             self._summary['chat'] = self._chat
         if self._show_timeline:
