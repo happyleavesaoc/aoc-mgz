@@ -14,6 +14,10 @@ import mgz
 import mgz.body
 import mgz.const
 import mgz.util
+from mgz.recorded_game.chat import ChatMessage
+from mgz.recorded_game.map import Map
+from mgz.recorded_game.sync import Sync
+from mgz.recorded_game.action import Action, ACTIONS_WITH_PLAYER_ID
 
 VOOBLY_LADDERS = {
     'RM 1v1': 131,
@@ -22,11 +26,6 @@ VOOBLY_LADDERS = {
     'DM TG': 162
 }
 MATCH_DATE = '(?P<year>[0-9]{4}).*?(?P<month>[0-9]{2}).*?(?P<day>[0-9]{2})'
-ACTIONS_WITH_PLAYER_ID = [
-    'interact', 'move', 'resign', 'formation', 'research', 'build',
-    'game', 'wall', 'delete', 'tribute', 'flare', 'sell', 'buy', 'chapter'
-]
-
 
 def _find_date(filename):
     """Find date in recorded game default(ish) filename."""
@@ -50,178 +49,6 @@ def _calculate_apm(index, player_actions, other_actions, duration):
     player_unattributed = total_unattributed * player_proportion
     apm = (apm_per_player[index] + player_unattributed) / (duration / 60)
     return apm
-
-
-# pylint: disable=too-few-public-methods
-class ChatMessage():
-    """Parse a chat message."""
-
-    # pylint: disable=too-many-arguments
-    def __init__(self, line, timestamp, players, diplomacy_type=None, source='game'):
-        """Initalize."""
-        self.data = {
-            'timestamp': timestamp,
-            'source': source
-        }
-        if line.find('Voobly: Ratings provided') > 0:
-            self._parse_ladder(line)
-        elif line.find('Voobly') == 3:
-            self._parse_voobly(line)
-        elif line.find('<Rating>') > 0:
-            self._parse_rating(line)
-        elif line.find('@#0<') == 0:
-            self._parse_injected(line)
-        else:
-            self._parse_chat(line, players, diplomacy_type)
-
-    def _parse_ladder(self, line):
-        start = line.find("'") + 1
-        end = line.find("'", start)
-        self.data.update({
-            'type': 'ladder',
-            'ladder': line[start:end]
-        })
-
-    def _parse_voobly(self, line):
-        message = line[11:]
-        self.data.update({
-            'type': 'voobly',
-            'message': message
-        })
-
-    def _parse_rating(self, line):
-        player_start = line.find('>') + 2
-        player_end = line.find(':', player_start)
-        player = line[player_start:player_end]
-        rating = int(line[player_end + 2:len(line)])
-        self.data.update({
-            'type': 'rating',
-            'player': player,
-            'rating': rating
-        })
-
-    def _parse_injected(self, line):
-        prefix = ''
-        if line.find('<Team>') > 0:
-            line = line.replace('<Team>', '', 1)
-            prefix = ';'
-        source_start = line.find('<') + 1
-        source_end = line.find('>', source_start)
-        source = line[source_start:source_end]
-        name_end = line.find(':', source_end)
-        name = line[source_end + 2:name_end]
-        message = line[name_end + 2:]
-        self.data.update({
-            'type': 'injected',
-            'source': source.lower(),
-            'name': name,
-            'message': '{}{}'.format(prefix, message)
-        })
-
-    def _parse_chat(self, line, players, diplomacy_type):
-        player_start = line.find('#') + 2
-        player_end = line.find(':', player_start)
-        player = line[player_start:player_end]
-        if self.data['timestamp'] == '00:00:00':
-            group = 'All'
-        elif diplomacy_type == 'TG':
-            group = 'Team'
-        else:
-            group = 'All'
-        if player.find('>') > 0:
-            group = player[1:player.find('>')]
-            player = player[player.find('>') + 1:]
-        message = line[player_end + 2:]
-        color = None
-        for _, player_h in players:
-            if player_h.player_name == player:
-                color = mgz.const.PLAYER_COLORS[player_h.player_color]
-        self.data.update({
-            'type': 'chat',
-            'player': player,
-            'message': message,
-            'color': color,
-            'to': group.lower()
-        })
-
-    def __repr__(self):
-        """Printable representation."""
-        if self.data['type'] == 'chat':
-            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['to'],
-                                           self.data['player'], self.data['message'])
-        elif self.data['type'] == 'rating':
-            return '{}: {}'.format(self.data['player'], self.data['rating'])
-        elif self.data['type'] == 'ladder':
-            return 'Ladder: {}'.format(self.data['ladder'])
-        elif self.data['type'] == 'injected':
-            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['source'],
-                                           self.data['name'], self.data['message'])
-        elif self.data['type'] == 'voobly':
-            return 'Voobly: {}'.format(self.data['message'])
-
-
-# pylint: disable=too-few-public-methods
-class Sync():
-    """Synchronization wrapper."""
-
-    def __init__(self, structure):
-        """Initialize."""
-        self._view = structure.view
-
-    def __repr__(self):
-        """Printable representation."""
-        return ','.join([str(self._view.x), str(self._view.y)])
-
-
-# pylint: disable=too-few-public-methods
-class Action():
-    """Action wrapper."""
-
-    def __init__(self, structure, timestamp):
-        """Initialize."""
-        self.timestamp = timestamp
-        self.action_type = structure.action.type
-        self.data = structure.action
-
-    def __repr__(self):
-        """Printable representation."""
-        return self.action_type
-
-
-class Map():
-    """Map wrapper."""
-
-    def __init__(self, map_id, x, y, instructions):
-        """Initialize."""
-        self.size_x = x
-        self.size_y = y
-        self._size = mgz.const.MAP_SIZES[x]
-        if map_id in mgz.const.MAP_NAMES:
-            self._name = mgz.const.MAP_NAMES[map_id]
-        else:
-            self._name = 'Unknown'
-            line = instructions.split('\n')[2]
-            if line.find(':') > 0:
-                self._name = line.split(":")[1].strip()
-            elif line.find(b'\xa1\x47') > 0:
-                self._name = line.split(b'\xa1\x47')[1].strip()
-            elif line.find(b"\xa3\xba") > 0:
-                self._name = line.split(b'\xa3\xba')[1].strip()
-            self._name = self._name.strip()
-
-    def name(self):
-        """Get map name."""
-        return self._name
-
-    def size(self):
-        """Get map size."""
-        return self._size
-
-    def __repr__(self):
-        """Get printable representation."""
-        return self._name
-
-
 # pylint: disable=too-many-instance-attributes, too-many-arguments
 class RecordedGame():
     """Recorded game wrapper."""
