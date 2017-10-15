@@ -121,7 +121,7 @@ class GotoObjectsEnd(Construct):
 
     def _parse(self, stream, context, path):
         """Parse until the end of objects data."""
-        num_players = context._._.replay.num_players
+        num_players = context._._._.replay.num_players
         start = stream.tell()
         # Have to read everything to be able to use find()
         read_bytes = stream.read()
@@ -129,6 +129,7 @@ class GotoObjectsEnd(Construct):
         marker = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
         # If it exists, we're not on the last player yet
         if marker > 0:
+            print("found marker, not on last player")
             # Backtrack through the player name
             count = 0
             while struct.unpack("<H", read_bytes[marker-2:marker])[0] != count:
@@ -138,6 +139,7 @@ class GotoObjectsEnd(Construct):
             backtrack = 43 + num_players
         # Otherwise, this is the last player
         else:
+            print("found last player")
             # Search for the scenario header
             marker = read_bytes.find(b"\xf6\x28\x9c\x3f")
             # Backtrack through the achievements and initial structure footer

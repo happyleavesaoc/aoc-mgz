@@ -23,7 +23,11 @@ def ObjectEnum(ctx):
         sheep=594,
         deer=65,
         boar=48,
+        iron_boar=810,
+        ostrich=1026,
         javelina=822,
+        crocodile=1031,
+        rhinoceros=1139,
         wolf=126,
         jaguar=812,
         hawk=96,
@@ -34,7 +38,8 @@ def ObjectEnum(ctx):
         fish_4=458,
         fish_3=457,
         marlin_1=450,
-        dolphin_1=451,
+        marlin_2=451,
+        dolphin=452,
         cactus=709,
         berry_bush=59,
         stone_pile=102,
@@ -54,6 +59,10 @@ def ObjectEnum(ctx):
         stone_gate_2=81,
         stone_gate_3=88,
         stone_gate_4=95,
+        palisade_gate_1=662,
+        palisade_gate_2=666,
+        palisade_gate_3=670,
+        palisade_gate_4=674,
         fortified_wall=155,
         cliff_1=264,
         cliff_2=265,
@@ -86,20 +95,21 @@ def GameTypeEnum(ctx):
         ctx,
         RM=0,
         Regicide=1,
-        DM=2
+        DM=2,
+        Scenario=3
     )
 
 def ObjectTypeEnum(ctx):
     """Object Type Enumeration."""
     return Enum(
         ctx,
-        gaia=10,
-        other=20,
+        gaia=10, # eyecandy
+        other=20, # flag
         doppelganger=25,
-        fish=30,
+        fish=30, # dead fish
         bird=40,
         projectile=60,
-        unit=70,
+        unit=70, # creatable
         building=80,
         default=Pass
     )
@@ -123,16 +133,6 @@ def DifficultyEnum(ctx):
         standard=2,
         easy=3,
         easiest=4
-    )
-
-def GameSpeedEnum(ctx):
-    """Game Speed Enumeration."""
-    return Enum(
-        ctx,
-        slow=100,
-        standard=150,
-        what=178,
-        fast=200,
     )
 
 def OperationEnum(ctx):
@@ -219,6 +219,55 @@ def TheirDiplomacyEnum(ctx):
         enemy=3
     )
 
+def DiplomacyStanceEnum(ctx):
+    """Diplomacy stance."""
+    return Enum(
+        ctx,
+        allied=0,
+        neutral=1,
+        enemy=3
+    )
+
+def GameActionModeEnum(ctx):
+    """Game Action Modes."""
+    return Enum(
+        ctx,
+        diplomacy=0,
+        speed=1,
+        instant_build=2,
+        quick_build=4,
+        allied_victory=5,
+        cheat=6,
+        unk0=9,
+        spy=10,
+        unk1=11,
+        farm_queue=13,
+        farm_unqueue=14,
+        default=Pass
+    )
+
+def OrderTypeEnum(ctx):
+    """Types of Orders."""
+    return Enum(
+        ctx,
+        packtreb=1,
+        unpacktreb=2,
+        garrison=5,
+        default=Pass
+    )
+
+def ReleaseTypeEnum(ctx):
+    """Types of Releases."""
+    return Enum(
+        ctx,
+        all=0,
+        selected=3,
+        sametype=4,
+        notselected=5,
+        inversetype=6,
+        default=Pass
+    )
+
 def MyDiplomacyEnum(ctx):
     """Player's Diplomacy Enumeration."""
     return Enum(
@@ -235,37 +284,37 @@ def ActionEnum(ctx):
     """Action Enumeration."""
     return Enum(
         ctx,
-        attack=0,
+        interact=0,
         stop=1,
-        aiattack=2,
+        ai_interact=2,
         move=3,
-        aimove=10,
+        ai_move=10,
         resign=11,
+        spec=15,
         waypoint=16,
         stance=18,
         guard=19,
         follow=20,
         patrol=21,
         formation=23,
-        multiplayersave=24,
-        saveandexit=27,
-        aiwaypoint=31,
-        savedchapter=32,
-        aitrain=100,
+        save=27,
+        ai_waypoint=31,
+        chapter=32,
+        ai_queue=100,
         research=101,
         build=102,
-        gamespeed=103,
+        game=103,
         wall=105,
         delete=106,
         attackground=107,
         tribute=108,
         repair=110,
-        unload=111,
-        #unknown3=112,
+        release=111,
+        multiqueue=112,
         togglegate=114,
         flare=115,
-        garrison=117,
-        train=119,
+        order=117,
+        queue=119,
         gatherpoint=120,
         sell=122,
         buy=123,

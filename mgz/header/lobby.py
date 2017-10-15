@@ -12,7 +12,8 @@ lobby = "lobby"/Struct(
     Array(8, "teams"/Byte), # team number selected by each player
     Padding(1),
     RevealMapEnum("reveal_map"/Int32ul),
-    Padding(8),
+    Padding(4),
+    "map_size"/Int32ul,
     "population_limit"/Int32ul, # multiply by 25 for UserPatch 1.4
     GameTypeEnum("game_type"/Byte),
     "lock_teams"/Flag,
@@ -21,8 +22,7 @@ lobby = "lobby"/Struct(
         lambda ctx: ctx.num_chat, # pre-game chat messages
         "messages"/Struct(
             "message_length"/Int32ul,
-            "message"/String(lambda ctx: ctx.message_length, padchar=b'\x00',
-                             trimdir='right', encoding='latin1')
+            "message"/String(lambda ctx: ctx.message_length, padchar=b'\x00', encoding='latin1')
         )
     )
 )

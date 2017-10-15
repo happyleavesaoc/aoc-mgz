@@ -47,6 +47,7 @@ player = "players"/Struct(
         RepeatUpTo(b'\x00', existing_object),
         Padding(14)
     ))),
+
     # Can't parse existing objects in a restored game, skip the whole structure
     Embedded("is_restored"/If(this._.restore_time > 0, Struct(
         "end_of_objects"/GotoObjectsEnd(),

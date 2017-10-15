@@ -1,18 +1,19 @@
 """Actions."""
 
 from construct import (Array, Byte, Const, CString, Flag, Float32l, If,
-                       Int16ul, Int32sl, Int32ul, Padding, String, Struct)
+                       Int16ul, Int32sl, Int32ul, Padding, String, Struct, Bytes, this, Peek)
 
 from mgz.body.achievements import achievements
 from mgz.enums import (ResourceEnum, ResourceLevelEnum, RevealMapEnum,
-                       StartingAgeEnum, VictoryEnum)
+                       StartingAgeEnum, VictoryEnum, DiplomacyStanceEnum,
+                       GameActionModeEnum, OrderTypeEnum, ReleaseTypeEnum)
 from mgz.util import TimeSecAdapter
 
 # pylint: disable=invalid-name
 
 # Not all actions are defined, not all actions are complete.
 
-attack = "attack"/Struct(
+interact = "interact"/Struct(
     "player_id"/Byte,
     Const(b"\x00\x00"),
     "target_id"/Int32ul,
@@ -24,7 +25,7 @@ attack = "attack"/Struct(
     ))
 )
 
-aiattack = "aiattack"/Struct(
+ai_interact = "ai_interact"/Struct(
     Padding(3),
     "target_id"/Int32ul,
     "selected"/Byte,
@@ -48,7 +49,7 @@ move = "move"/Struct(
     ))
 )
 
-aimove = "aimove"/Struct(
+ai_move = "ai_move"/Struct(
     "selected"/Byte,
     "player_id"/Byte,
     "player_num"/Byte,
@@ -59,6 +60,9 @@ aimove = "aimove"/Struct(
     Padding(3),
     "x"/Float32l,
     "y"/Float32l,
+    Padding(4),
+    Padding(4),
+    Padding(4),
     If(lambda ctx: ctx.selected > 0x01, Array(
         lambda ctx: ctx.selected, "unit_ids"/Int32ul
     ))
@@ -70,14 +74,22 @@ resign = "resign"/Struct(
     "disconnected"/Flag
 )
 
-train = "train"/Struct(
+spec = "spec"/Struct(
+    Padding(lambda ctx: ctx._._.length - 1)
+)
+
+queue = "queue"/Struct(
     Padding(3),
     "building_id"/Int32ul,
     "unit_type"/Int16ul,
     "number"/Int16ul,
 )
 
-aitrain = "aitrain"/Struct(
+multiqueue = "multiqueue"/Struct(
+    Padding(lambda ctx: ctx._._.length - 1)
+)
+
+ai_queue = "ai_queue"/Struct(
     Padding(3),
     "building_id"/Int32ul,
     "player_id"/Int16ul,
@@ -139,16 +151,16 @@ formation = "formation"/Struct(
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
-multiplayersave = "multiplayersave"/Struct(
-    "player_id"/Int16ul,
-    Padding(5),
-    "filename"/CString()
-)
-
-saveandexit = "saveandexit"/Struct(
+save = "save"/Struct(
     "exited"/Flag,
     "player_id"/Byte,
-    Padding(253) # checksum?
+    "filename"/CString(encoding='latin1'),
+    Padding(lambda ctx: ctx._._.length - 23),
+    "checksum"/Bytes(4)
+)
+
+chapter = "chapter"/Struct(
+    "player_id"/Byte
 )
 
 build = "build"/Struct(
@@ -157,10 +169,65 @@ build = "build"/Struct(
     "x"/Float32l,
     "y"/Float32l,
     "building_type"/Int32ul,
-    Padding(8),
+    Padding(4),
+    "sprite_id"/Int32ul,
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
+game = "game"/Struct(
+    "mode"/GameActionModeEnum("mode_id"/Byte),
+    "player_id"/Byte,
+    Padding(1),
+    "diplomacy"/If(this.mode == 'diplomacy', Struct(
+        "target_player_id"/Byte,
+        Padding(3),
+        "stance_float"/Float32l,
+        "stance"/DiplomacyStanceEnum("stance_id"/Byte),
+    )),
+    "speed"/If(this.mode == 'speed', Struct(
+        Padding(4),
+        "speed"/Float32l,
+        Padding(1)
+    )),
+    "instant_build"/If(this.mode == 'instant_build', Struct(
+        "data"/Bytes(9)
+    )),
+    "quick_build"/If(this.mode == 'quick_build', Struct(
+        "status"/Flag,
+        Padding(8),
+    )),
+    "allied_victory"/If(this.mode == 'allied_victory', Struct(
+        "player_id"/Byte,
+        "status"/Flag,
+        Padding(7)
+    )),
+    "cheat"/If(this.mode == 'cheat', Struct(
+        "cheat_id"/Byte,
+        Padding(8)
+    )),
+    "unk0"/If(this.mode == 'unk0', Struct(
+        "data"/Bytes(9)
+    )),
+    "spy"/If(this.mode == 'spy', Struct(
+        "data"/Bytes(9)
+    )),
+    "unk1"/If(this.mode == 'unk1', Struct(
+        "data"/Bytes(9)
+    )),
+    "farm_queue"/If(this.mode == 'farm_queue', Struct(
+        "player_id"/Byte,
+        "amount"/Byte,
+        "data"/Bytes(7)
+    )),
+    "farm_unqueue"/If(this.mode == 'farm_unqueue', Struct(
+        "player_id"/Byte,
+        "amount"/Byte,
+        "data"/Bytes(7)
+    )),
+    Padding(3)
+)
+
+"""
 # Diplomacy, game speed, and cheats
 gamespeed = "gamespeed"/Struct(
     "mode"/Byte,
@@ -172,11 +239,15 @@ gamespeed = "gamespeed"/Struct(
     "diplomatic_stance"/Byte,
     Padding(3)
 )
+"""
 
 wall = "wall"/Struct(
     "selected"/Byte,
     "player_id"/Byte,
-    Padding(4),
+    "start_x"/Byte,
+    "start_y"/Byte,
+    "end_x"/Byte,
+    "end_y"/Byte,
     Padding(1),
     "building_id"/Int32ul,
     Padding(4),
@@ -212,6 +283,19 @@ repair = "repair"/Struct(
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
+
+release = "release"/Struct(
+    "selected"/Int16ul,
+    Padding(1),
+    "x"/Float32l, # -1 if none
+    "y"/Float32l, # -1 if none
+    ReleaseTypeEnum("release_type"/Byte),
+    Padding(3),
+    "release_id"/Int32ul,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
+)
+
+"""
 unload = "unload"/Struct(
     "selected"/Int16ul,
     Padding(1),
@@ -221,6 +305,7 @@ unload = "unload"/Struct(
     Padding(4), # 0xffffffff
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
+"""
 
 togglegate = "togglegate"/Struct(
     Padding(3),
@@ -238,6 +323,19 @@ flare = "flare"/Struct(
     Padding(2)
 )
 
+order = "order"/Struct(
+    "selected"/Byte,
+    Padding(2),
+    "building_id"/Int32sl, # -1 cancels production queue
+    OrderTypeEnum("order_type"/Byte),
+    Padding(3),
+    "x"/Float32l,
+    "y"/Float32l,
+    Padding(4), # const
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
+)
+
+"""
 garrison = "garrison"/Struct(
     "selected"/Byte,
     Padding(2),
@@ -248,6 +346,7 @@ garrison = "garrison"/Struct(
     Padding(4), # const
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
 )
+"""
 
 gatherpoint = "gatherpoint"/Struct(
     "selected"/Byte,
@@ -290,7 +389,7 @@ waypoint = "waypoint"/Struct(
     ))
 )
 
-aiwaypoint = "aiwaypoint"/Struct(
+ai_waypoint = "ai_waypoint"/Struct(
     "selected"/Byte,
     "waypoint_count"/Byte,
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
@@ -309,6 +408,7 @@ postgame = "achievements"/Struct(
     "player_num"/Byte,
     "computer_num"/Byte,
     Padding(2),
+    Peek("duration_int"/Int32ul),
     TimeSecAdapter("duration"/Int32ul),
     "cheats"/Flag,
     "complete"/Flag,
@@ -331,5 +431,5 @@ postgame = "achievements"/Struct(
     Padding(1),
     Array(lambda ctx: ctx.player_num, achievements),
     Padding(4),
-    Array(lambda ctx: (8 - (ctx.player_num + ctx.computer_num)) * 63, Padding(4)),
+    Array(lambda ctx: (8 - ctx.player_num) * 63, Padding(4)),
 )

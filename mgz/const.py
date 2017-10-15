@@ -9,6 +9,12 @@ VERSIONS = {
     'VER 9.E': 'userpatch 1.5'
 }
 
+SPEEDS = {
+    100: 'slow',
+    150: 'standard',
+    178: 'standard', # up15
+    200: 'fast'
+}
 
 MAP_NAMES = {
     9: 'Arabia',

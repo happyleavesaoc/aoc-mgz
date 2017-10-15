@@ -4,9 +4,9 @@ Parses an "mgz" recorded game, extracts notable information,
 and computes a variety of useful metadata.
 """
 
-import datetime
 import os.path
-from collections import defaultdict
+import re
+from collections import defaultdict, Counter
 
 import voobly
 
@@ -17,20 +17,51 @@ import mgz.util
 
 VOOBLY_LADDERS = {
     'RM 1v1': 131,
-    'RM team_game': 132,
+    'RM TG': 132,
     'DM 1v1': 163,
-    'DM team_game': 162
+    'DM TG': 162
 }
+MATCH_DATE = '(?P<year>[0-9]{4}).*?(?P<month>[0-9]{2}).*?(?P<day>[0-9]{2})'
+ACTIONS_WITH_PLAYER_ID = [
+    'interact', 'move', 'resign', 'formation', 'research', 'build',
+    'game', 'wall', 'delete', 'tribute', 'flare', 'sell', 'buy', 'chapter'
+]
+
+
+def _find_date(filename):
+    """Find date in recorded game default(ish) filename."""
+    has_date = re.search(MATCH_DATE, filename)
+    if has_date:
+        year = has_date.group('year')
+        month = has_date.group('month')
+        day = has_date.group('day')
+        if int(year) > 2000 and int(month) in range(1, 13) and int(day) in range(1, 32):
+            return '{}-{}-{}'.format(year, month, day)
+
+
+def _calculate_apm(index, player_actions, other_actions, duration):
+    """Calculate player's rAPM."""
+    apm_per_player = {}
+    for player_index, histogram in player_actions.items():
+        apm_per_player[player_index] = sum(histogram.values())
+    total_unattributed = sum(other_actions.values())
+    total_attributed = sum(apm_per_player.values())
+    player_proportion = apm_per_player[index] / total_attributed
+    player_unattributed = total_unattributed * player_proportion
+    apm = (apm_per_player[index] + player_unattributed) / (duration / 60)
+    return apm
 
 
 # pylint: disable=too-few-public-methods
 class ChatMessage():
     """Parse a chat message."""
 
-    def __init__(self, line, timestamp, players, diplomacy_type=None):
+    # pylint: disable=too-many-arguments
+    def __init__(self, line, timestamp, players, diplomacy_type=None, source='game'):
         """Initalize."""
         self.data = {
-            'timestamp': timestamp
+            'timestamp': timestamp,
+            'source': source
         }
         if line.find('Voobly: Ratings provided') > 0:
             self._parse_ladder(line)
@@ -93,7 +124,7 @@ class ChatMessage():
         player = line[player_start:player_end]
         if self.data['timestamp'] == '00:00:00':
             group = 'All'
-        elif diplomacy_type == 'team_game':
+        elif diplomacy_type == 'TG':
             group = 'Team'
         else:
             group = 'All'
@@ -215,13 +246,15 @@ class RecordedGame():
         self._path = path
         self._num_players()
         self._timeline = []
+        self._actions_by_player = defaultdict(Counter)
+        self._actions_without_player = Counter()
         self._coords = []
         self._compute_diplomacy()
         self._voobly_session = voobly.get_session(voobly_api_key)
         self._summary = {}
         self._map = Map(self._header.scenario.game_settings.map_id, self._header.map_info.size_x,
                         self._header.map_info.size_y, self._header.scenario.messages.instructions)
-        self._parse_lobby_chat(self._header.lobby.messages)
+        self._parse_lobby_chat(self._header.lobby.messages, 'lobby', '00:00:00')
 
     def _num_players(self):
         """Compute number of players, both human and computer."""
@@ -233,12 +266,12 @@ class RecordedGame():
             elif player.type == 'computer':
                 self._computer_num += 1
 
-    def _parse_lobby_chat(self, messages):
+    def _parse_lobby_chat(self, messages, source, timestamp):
         """Parse a lobby chat message."""
         for message in messages:
             if message.message_length == 0:
                 continue
-            chat = ChatMessage(message.message, '00:00:00', self._players())
+            chat = ChatMessage(message.message, timestamp, self._players(), source=source)
             self._parse_chat(chat)
 
     def _parse_action(self, action, current_time):
@@ -263,7 +296,7 @@ class RecordedGame():
                     'timestamp': current_time
                 })
 
-
+    # pylint: disable=too-many-branches
     def operations(self, op_types=None):
         """Process operation stream."""
         if not op_types:
@@ -271,6 +304,14 @@ class RecordedGame():
         while self._handle.tell() < self._eof:
             current_time = mgz.util.convert_to_timestamp(self._time / 1000)
             operation = mgz.body.operation.parse_stream(self._handle)
+            if operation.type == 'action':
+                if operation.action.type in ACTIONS_WITH_PLAYER_ID:
+                    counter = self._actions_by_player[operation.action.player_id]
+                    counter.update([operation.action.type])
+                else:
+                    self._actions_without_player.update([operation.action.type])
+            if operation.type == 'action' and isinstance(operation.action.type, int):
+                print(operation.action)
             if operation.type == 'sync':
                 self._time += operation.time_increment
             if operation.type == 'action' and operation.action.type == 'postgame':
@@ -278,15 +319,16 @@ class RecordedGame():
             if operation.type == 'action':
                 action = Action(operation, current_time)
                 self._parse_action(action, current_time)
-            if operation.type not in op_types:
-                continue
+            if operation.type == 'savedchapter':
+                # TODO: Don't load messages we already saw in header or prev saved chapters
+                self._parse_lobby_chat(operation.lobby.messages, 'save', current_time)
             if operation.type == 'sync':
                 yield Sync(operation)
             elif operation.type == 'action' and operation.action.type != 'postgame':
                 yield Action(operation, current_time)
             elif operation.type == 'message' and operation.subtype == 'chat':
                 chat = ChatMessage(operation.data.text, current_time,
-                                   self._players(), self._diplomacy['type'])
+                                   self._players(), self._diplomacy['type'], 'game')
                 self._parse_chat(chat)
                 yield chat
 
@@ -344,8 +386,9 @@ class RecordedGame():
             if chat.data['rating'] != 1600:
                 self._ratings[chat.data['player']] = chat.data['rating']
 
-    def _parse_player(self, index, attributes, achievements, game_type):
+    def _parse_player(self, index, attributes, postgame, game_type):
         """Parse a player."""
+        achievements = postgame.achievements[index - 1]
         try:
             voobly_user = voobly.user(self._voobly_session, attributes.player_name,
                                       ladder_ids=VOOBLY_LADDERS.values())
@@ -359,6 +402,15 @@ class RecordedGame():
             'index': index,
             'number': attributes.player_color + 1,
             'color': mgz.const.PLAYER_COLORS[attributes.player_color],
+            'coordinates': {
+                'x': attributes.camera_x,
+                'y': attributes.camera_y
+            },
+            'action_histogram': dict(self._actions_by_player[index]),
+            'minutes': postgame.duration_int / 60,
+            'dur': postgame.duration,
+            'apm': _calculate_apm(index, self._actions_by_player,
+                                  self._actions_without_player, postgame.duration_int),
             'name': attributes.player_name,
             'civilization': mgz.const.CIVILIZATION_NAMES[attributes.civilization],
             'position': self._compass_position(attributes.camera_x, attributes.camera_y),
@@ -417,10 +469,10 @@ class RecordedGame():
         for i in range(1, self._header.replay.num_players):
             yield i, self._header.initial.players[i].attributes
 
-    def players(self, achievements, game_type):
+    def players(self, postgame, game_type):
         """Return parsed players."""
         for i, attributes in self._players():
-            yield self._parse_player(i, attributes, achievements[i - 1], game_type)
+            yield self._parse_player(i, attributes, postgame, game_type)
 
     def teams(self):
         """Get list of teams."""
@@ -433,8 +485,8 @@ class RecordedGame():
                 team = default_team
                 default_team += 1
             if team not in teams:
-                teams[team] = []
-            teams[team].append(attributes.player_color + 1)
+                teams[team] = {'player_numbers': []}
+            teams[team]['player_numbers'].append(attributes.player_color + 1)
         return list(teams.values())
 
     def _compute_diplomacy(self):
@@ -443,13 +495,14 @@ class RecordedGame():
             'teams': self.teams(),
             'ffa': len(self.teams()) == (self._player_num + self._computer_num and
                                          self._player_num + self._computer_num > 2),
-            'team_game':  len(self.teams()) == 2 and self._player_num + self._computer_num > 2,
+            'TG':  len(self.teams()) == 2 and self._player_num + self._computer_num > 2,
             '1v1': self._player_num + self._computer_num == 2,
         }
+        self._diplomacy['type'] = 'unknown'
         if self._diplomacy['ffa']:
             self._diplomacy['type'] = 'ffa'
-        if self._diplomacy['team_game']:
-            self._diplomacy['type'] = 'team_game'
+        if self._diplomacy['TG']:
+            self._diplomacy['type'] = 'TG'
         if self._diplomacy['1v1']:
             self._diplomacy['type'] = '1v1'
 
@@ -484,8 +537,12 @@ class RecordedGame():
 
     def _get_timestamp(self):
         """Get modification timestamp from rec file."""
-        mtime = os.path.getmtime(self._path)
-        datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
+        filename_date = _find_date(os.path.basename(self._path))
+        if filename_date:
+            return filename_date
+        #else:
+        #    mtime = os.path.getmtime(self._path)
+        #    return datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d')
 
     def _is_wololokingdoms(self):
         sample = self._header.initial.players[0].attributes.player_stats
@@ -493,13 +550,25 @@ class RecordedGame():
             return True
         return False
 
+    def _set_winning_team(self):
+        """Mark the winning team."""
+        if not self._summary['finished']:
+            return
+        for team in self._summary['diplomacy']['teams']:
+            team['winner'] = False
+            for player_number in team['player_numbers']:
+                for player in self._summary['players']:
+                    if player_number == player['number']:
+                        if player['winner']:
+                            team['winner'] = True
+
     def _summarize(self, postgame):
         """Game summary implementation."""
         self._achievements_summarized = True
         data = postgame.action
         game_type = 'DM' if data.is_deathmatch else 'RM'
         self._summary = {
-            'players': list(self.players(data.achievements, game_type)),
+            'players': list(self.players(data, game_type)),
             'diplomacy': self._diplomacy,
             'rec_owner_number': self._rec_owner_number(),
             'settings': {
@@ -507,11 +576,11 @@ class RecordedGame():
                 'difficulty': self._header.scenario.game_settings.difficulty,
                 'resource_level': data.resource_level,
                 'population_limit': self._header.lobby.population_limit * 25,
-                'speed': self._header.replay.game_speed,
+                'speed': mgz.const.SPEEDS.get(self._header.replay.game_speed),
                 'reveal_map': data.reveal_map,
                 'starting_age': self._get_starting_age(data),
                 'victory_condition': data.victory_type,
-                'team_together': data.team_together,
+                'team_together': not data.team_together,
                 'all_technologies': data.all_techs,
                 'cheats': data.cheats,
                 'lock_teams': data.lock_teams,
@@ -545,9 +614,11 @@ class RecordedGame():
                 'version': mgz.const.VERSIONS[self._header.version],
                 'filename': os.path.basename(self._path),
                 'timestamp': self._get_timestamp()
-            }
+            },
+            'action_histogram': dict(self._actions_without_player)
         }
         self._summary['won_in'] = self._won_in().title()
+        self._set_winning_team()
         if self._show_chat:
             self._summary['chat'] = self._chat
         if self._show_timeline:

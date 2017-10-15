@@ -1,8 +1,6 @@
 """Replay."""
 
-from construct import Byte, Const, Float32l, Int16ul, Int32ul, Padding, Struct
-
-from mgz.enums import GameSpeedEnum
+from construct import Byte, Flag, Float32l, Int16ul, Int32ul, Padding, Struct
 
 # pylint: disable=invalid-name
 
@@ -10,12 +8,14 @@ from mgz.enums import GameSpeedEnum
 # Basic information about the recorded game
 replay = "replay"/Struct(
     Padding(12),
-    GameSpeedEnum("game_speed"/Int32ul),
+    "game_speed"/Int32ul,
     Padding(8),
-    "game_speed_float"/Float32l, # 1.0, 1.5, or 2.0
+    "game_speed_float"/Float32l,
     Padding(17),
     "rec_player"/Int16ul, # id of the rec owner
     "num_players"/Byte, # including gaia
-    Const(b"\x00\x00\x00\x00"),
-    Padding(58),
+    "instant_build"/Flag,
+    "cheats_enabled"/Flag,
+    "game_mode"/Int16ul, # MP or SP?
+    Padding(58)
 )

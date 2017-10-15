@@ -10,9 +10,11 @@ An Operation can be:
 """
 
 from construct import (Struct, Byte, Switch, Embedded, Padding,
-                       Int32ul, Peek, Tell, Float32l, String, If)
+                       Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
+                       GreedyBytes, Computed, IfThenElse, Int16ul, Probe)
 from mgz.enums import ActionEnum, OperationEnum, MessageEnum
 from mgz.body import actions
+from mgz import subheader
 
 
 # pylint: disable=invalid-name
@@ -22,7 +24,7 @@ from mgz.body import actions
 action_data = "action"/Struct(
     ActionEnum("type"/Byte),
     Embedded("action"/Switch(lambda ctx: ctx.type, {
-        "attack": actions.attack,
+        "interact": actions.interact,
         "move": actions.move,
         "stop": actions.stop,
         "stance": actions.stance,
@@ -30,34 +32,39 @@ action_data = "action"/Struct(
         "follow": actions.follow,
         "formation": actions.formation,
         "waypoint": actions.waypoint,
-        "aiwaypoint": actions.aiwaypoint,
-        "aiattack": actions.aiattack,
-        "aimove": actions.aimove,
-        "aitrain": actions.aitrain,
-        "multiplayersave": actions.multiplayersave,
-        "saveandexit": actions.saveandexit,
+        "ai_waypoint": actions.ai_waypoint,
+        "ai_interact": actions.ai_interact,
+        "ai_move": actions.ai_move,
+        "ai_queue": actions.ai_queue,
+        "save": actions.save,
+        "chapter": actions.chapter,
+        "spec": actions.spec,
         "build": actions.build,
-        "gamespeed": actions.gamespeed,
+        "game": actions.game,
         "patrol": actions.patrol,
         "wall": actions.wall,
         "delete": actions.delete,
         "attackground": actions.attackground,
         "repair": actions.repair,
-        "unload": actions.unload,
+        "release": actions.release,
         "togglegate": actions.togglegate,
         "flare": actions.flare,
-        "garrison": actions.garrison,
+        "order": actions.order,
         "gatherpoint": actions.gatherpoint,
         "townbell": actions.townbell,
         "resign": actions.resign,
         "tribute": actions.tribute,
-        "train": actions.train,
+        "queue": actions.queue,
+        "multiqueue": actions.multiqueue,
         "research": actions.research,
         "sell": actions.sell,
         "buy": actions.buy,
         "backtowork": actions.backtowork,
         "postgame": actions.postgame
-    }, default=Padding(lambda ctx: ctx._.length - 1))),
+    }, default=Struct(
+        "bytes"/Bytes(lambda ctx: ctx._._.length - 1),
+        Probe()
+    ))),
     Padding(4)
 )
 
@@ -121,7 +128,9 @@ the header Struct, accounting for having already read the first 4 bytes.
 """
 savedchapter = "saved_chapter"/Struct(
     "start"/Tell,
-    Padding(lambda ctx: ctx.op - ctx.start),
+    "header_length"/Computed(lambda ctx: ctx._.op - ctx.start + 4),
+    Embedded(subheader)
+    #"header"/Bytes(lambda ctx: ctx.header_length - 4)
 )
 
 
@@ -133,6 +142,6 @@ operation = "operation"/Struct(
         "action": action,
         "sync": sync,
         "message": message,
-        "savedchapter": savedchapter
+        "savedchapter": savedchapter,
     }))
 )
