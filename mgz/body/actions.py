@@ -86,7 +86,11 @@ queue = "queue"/Struct(
 )
 
 multiqueue = "multiqueue"/Struct(
-    Padding(lambda ctx: ctx._._.length - 1)
+    Padding(3),
+    "unit_type"/Int16ul,
+    "num_buildings"/Byte,
+    "queue_amount"/Byte,
+    Array(lambda ctx: ctx.num_buildings, "building_ids"/Int32ul)
 )
 
 ai_queue = "ai_queue"/Struct(
