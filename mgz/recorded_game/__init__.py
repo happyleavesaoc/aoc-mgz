@@ -5,6 +5,7 @@ Parses an "mgz" recorded game, extracts notable information,
 and computes a variety of useful metadata.
 """
 
+import datetime
 import os.path
 import re
 from collections import defaultdict, Counter
@@ -28,6 +29,13 @@ VOOBLY_LADDERS = {
     'DM TG': 162
 }
 MATCH_DATE = '(?P<year>[0-9]{4}).*?(?P<month>[0-9]{2}).*?(?P<day>[0-9]{2})'
+
+
+def _timestamp_to_time(timestamp):
+    """Convert string timestamp to datetime.time."""
+    if not timestamp:
+        return
+    return datetime.datetime.strptime(timestamp, '%H:%M:%S').time()
 
 
 def _find_date(filename):
@@ -73,7 +81,11 @@ class RecordedGame():
         self._achievements_summarized = False
         self._ladder = None
         self._ratings = {}
-        self._research = defaultdict(dict)
+
+        self._research = defaultdict(list)
+        self._build = defaultdict(list)
+        self._queue = []
+
         self._chat = []
         self._path = path
         self._num_players()
@@ -113,19 +125,21 @@ class RecordedGame():
         """
         if action.action_type == 'research':
             name = mgz.const.TECHNOLOGIES[action.data.technology_type]
-            self._research[action.data.player_id][name] = action.timestamp
-        elif action.action_type == 'build':
-            self._timeline.append({
-                'action': 'build',
-                'building': mgz.const.UNITS[action.data.building_type],
-                'timestamp': current_time
+            self._research[action.data.player_id].append({
+                'technology': name,
+                'timestamp': _timestamp_to_time(action.timestamp)
             })
-        elif action.action_type == 'train':
+        elif action.action_type == 'build':
+            self._build[action.data.player_id].append({
+                'building': mgz.const.UNITS[action.data.building_type],
+                'timestamp': _timestamp_to_time(current_time),
+                'coordinates': {'x': action.data.x, 'y': action.data.y}
+            })
+        elif action.action_type == 'queue':
             for _ in range(0, int(action.data.number)):
-                self._timeline.append({
-                    'action': 'train',
+                self._queue.append({
                     'unit': mgz.const.UNITS[action.data.unit_type],
-                    'timestamp': current_time
+                    'timestamp': _timestamp_to_time(current_time)
                 })
 
     # pylint: disable=too-many-branches
@@ -248,6 +262,7 @@ class RecordedGame():
             'mvp': achievements.mvp,
             'winner': achievements.victory,
             'research': self._research.get(index),
+            'build': self._build.get(index),
             'achievements': {
                 'units_killed': achievements.military.units_killed,
                 'units_lost': achievements.military.units_lost,
@@ -268,9 +283,9 @@ class RecordedGame():
                 'villager_high': achievements.society.villager_high
             },
             'ages': {
-                'feudal': achievements.technology.feudal_time,
-                'castle': achievements.technology.castle_time,
-                'imperial': achievements.technology.imperial_time
+                'feudal': _timestamp_to_time(achievements.technology.feudal_time),
+                'castle': _timestamp_to_time(achievements.technology.castle_time),
+                'imperial': _timestamp_to_time(achievements.technology.imperial_time)
             },
             'voobly': {
                 'rating_game': self._ratings.get(attributes.player_name),
@@ -422,6 +437,8 @@ class RecordedGame():
             'map': {
                 'name': self._map.name(),
                 'size': self._map.size(),
+                'x': self._header.map_info.size_x,
+                'y': self._header.map_info.size_y,
                 'nomad': self.is_nomad(),
                 'regicide': self.is_regicide(),
                 'arena': self.is_arena()
@@ -447,7 +464,8 @@ class RecordedGame():
                 'filename': os.path.basename(self._path),
                 'timestamp': self._get_timestamp()
             },
-            'action_histogram': dict(self._actions_without_player)
+            'action_histogram': dict(self._actions_without_player),
+            'queue': self._queue
         }
         if data.complete:
             self._summary['won_in'] = self._won_in().title()
