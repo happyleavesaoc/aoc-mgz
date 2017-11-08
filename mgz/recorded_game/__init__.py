@@ -120,7 +120,7 @@ class RecordedGame():
                 'building': mgz.const.UNITS[action.data.building_type],
                 'timestamp': current_time
             })
-        elif action.action_type == 'train':
+        elif action.action_type == 'queue':
             for _ in range(0, int(action.data.number)):
                 self._timeline.append({
                     'action': 'train',
