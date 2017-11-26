@@ -126,10 +126,15 @@ class GotoObjectsEnd(Construct):
         # Have to read everything to be able to use find()
         read_bytes = stream.read()
         # Try to find the first marker, a portion of the next player structure
-        marker = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
+        marker_up14 = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
+        marker_up15 = read_bytes.find(b"\x16\xf0\x00\x00\x00\x21")
+        marker = -1
+        if marker_up14 > 0 and marker_up15 < 0:
+            marker = marker_up14
+        elif marker_up15 > 0 and marker_up14 < 0:
+            marker = marker_up15
         # If it exists, we're not on the last player yet
         if marker > 0:
-            print("found marker, not on last player")
             # Backtrack through the player name
             count = 0
             while struct.unpack("<H", read_bytes[marker-2:marker])[0] != count:
@@ -139,7 +144,6 @@ class GotoObjectsEnd(Construct):
             backtrack = 43 + num_players
         # Otherwise, this is the last player
         else:
-            print("found last player")
             # Search for the scenario header
             marker = read_bytes.find(b"\xf6\x28\x9c\x3f")
             # Backtrack through the achievements and initial structure footer

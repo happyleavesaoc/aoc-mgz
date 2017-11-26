@@ -1,7 +1,7 @@
 """Map info."""
 
-from construct import (Array, Byte, Computed, Embedded, IfThenElse, Int32ul, Padding,
-                       Struct, Flag)
+from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
+                       Int32ul, Padding, Struct)
 
 # pylint: disable=invalid-name
 

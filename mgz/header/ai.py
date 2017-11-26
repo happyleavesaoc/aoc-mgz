@@ -1,7 +1,7 @@
 """AI."""
 
-from construct import (If, Int16ul, Int32ul, Struct, this, Array,
-                       PascalString, Padding, Byte, Int32sl)
+from construct import (Array, Byte, If, Int16ul, Int32sl, Int32ul, Padding,
+                       PascalString, Struct, this)
 
 # pylint: disable=invalid-name
 

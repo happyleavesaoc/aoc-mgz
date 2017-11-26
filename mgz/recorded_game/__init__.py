@@ -1,14 +1,15 @@
 """Parse a recorded game.
 
-
 Parses an "mgz" recorded game, extracts notable information,
 and computes a variety of useful metadata.
 """
 
 import datetime
+import hashlib
 import os.path
 import re
 from collections import defaultdict, Counter
+from construct.core import ConstructError
 
 import voobly
 
@@ -29,6 +30,12 @@ VOOBLY_LADDERS = {
     'DM TG': 162
 }
 MATCH_DATE = '(?P<year>[0-9]{4}).*?(?P<month>[0-9]{2}).*?(?P<day>[0-9]{2})'
+
+
+class MgzError(Exception):
+    """MGZ error."""
+
+    pass
 
 
 def _timestamp_to_time(timestamp):
@@ -72,10 +79,13 @@ class RecordedGame():
         self._show_timeline = timeline
         self._show_coords = coords
         self._handle = open(path, 'rb')
-        self._handle.seek(0, 2)
+        self._hash = hashlib.sha1(self._handle.read()).hexdigest()
         self._eof = self._handle.tell()
         self._handle.seek(0)
-        self._header = mgz.header.parse_stream(self._handle)
+        try:
+            self._header = mgz.header.parse_stream(self._handle)
+        except (ConstructError, ValueError):
+            raise MgzError('failed to parse header')
         self._body_position = self._handle.tell()
         self._time = 0
         self._achievements_summarized = False
@@ -149,7 +159,10 @@ class RecordedGame():
             op_types = ['message', 'action', 'sync', 'savedchapter']
         while self._handle.tell() < self._eof:
             current_time = mgz.util.convert_to_timestamp(self._time / 1000)
-            operation = mgz.body.operation.parse_stream(self._handle)
+            try:
+                operation = mgz.body.operation.parse_stream(self._handle)
+            except (ConstructError, ValueError):
+                raise MgzError('failed to parse body operation')
             if operation.type == 'action':
                 if operation.action.type in ACTIONS_WITH_PLAYER_ID:
                     counter = self._actions_by_player[operation.action.player_id]
@@ -166,7 +179,7 @@ class RecordedGame():
                 action = Action(operation, current_time)
                 self._parse_action(action, current_time)
             if operation.type == 'savedchapter':
-                # TODO: Don't load messages we already saw in header or prev saved chapters
+                # fix: Don't load messages we already saw in header or prev saved chapters
                 self._parse_lobby_chat(operation.lobby.messages, 'save', current_time)
             if operation.type == 'sync':
                 yield Sync(operation)
@@ -188,6 +201,8 @@ class RecordedGame():
         if not self._achievements_summarized:
             for _ in self.operations():
                 pass
+        if not self._summary:
+            raise MgzError('no postgame found')
         return self._summary
 
     def is_nomad(self):
@@ -240,7 +255,10 @@ class RecordedGame():
                                       ladder_ids=VOOBLY_LADDERS.values())
             voobly_ladder = '{} {}'.format(game_type, self._diplomacy['type'])
             voobly_ladder_id = VOOBLY_LADDERS.get(voobly_ladder)
-            voobly_rating = voobly_user['ladders'].get(voobly_ladder_id).get('rating')
+            if voobly_ladder_id in voobly_user['ladders']:
+                voobly_rating = voobly_user['ladders'].get(voobly_ladder_id).get('rating')
+            else:
+                voobly_rating = None
         except voobly.VooblyError:
             voobly_user = None
             voobly_rating = None
@@ -261,7 +279,7 @@ class RecordedGame():
             'score': achievements.total_score,
             'mvp': achievements.mvp,
             'winner': achievements.victory,
-            'research': self._research.get(index),
+            'research': self._research.get(index, []),
             'build': self._build.get(index),
             'achievements': {
                 'units_killed': achievements.military.units_killed,
@@ -387,9 +405,6 @@ class RecordedGame():
         filename_date = _find_date(os.path.basename(self._path))
         if filename_date:
             return filename_date
-        #else:
-        #    mtime = os.path.getmtime(self._path)
-        #    return datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d')
 
     def _is_wololokingdoms(self):
         sample = self._header.initial.players[0].attributes.player_stats
@@ -409,6 +424,22 @@ class RecordedGame():
                         if player['winner']:
                             team['winner'] = True
 
+    def _map_hash(self):
+        """Compute a map hash based on a combination of map attributes.
+
+        - Elevation
+        - Map name
+        - Player names, colors, and civilizations
+        """
+        elevation_bytes = bytes([tile.elevation for tile in self._header.map_info.tile])
+        map_name_bytes = self._map.name().encode()
+        player_bytes = b''
+        for _, attributes in self._players():
+            player_bytes += (mgz.const.PLAYER_COLORS[attributes.player_color].encode() +
+                             attributes.player_name.encode() +
+                             mgz.const.CIVILIZATION_NAMES[attributes.civilization].encode())
+        return hashlib.sha1(elevation_bytes + map_name_bytes + player_bytes).hexdigest()
+
     def _summarize(self, postgame):
         """Game summary implementation."""
         self._achievements_summarized = True
@@ -417,6 +448,7 @@ class RecordedGame():
         self._summary = {
             'players': list(self.players(data, game_type)),
             'diplomacy': self._diplomacy,
+            'rec_owner_index': self._header.replay.rec_player,
             'rec_owner_number': self._rec_owner_number(),
             'settings': {
                 'type': game_type,
@@ -441,13 +473,15 @@ class RecordedGame():
                 'y': self._header.map_info.size_y,
                 'nomad': self.is_nomad(),
                 'regicide': self.is_regicide(),
-                'arena': self.is_arena()
+                'arena': self.is_arena(),
+                'hash': self._map_hash()
             },
             'mods': {
                 'wololokingdoms': self._is_wololokingdoms(),
             },
             'restore': {
                 'restored': self._header.initial.restore_time > 0,
+                'start_int': self._header.initial.restore_time,
                 'start_time': mgz.util.convert_to_timestamp(self._header.initial.restore_time /
                                                             1000)
             },
@@ -458,9 +492,12 @@ class RecordedGame():
             'number_of_humans': data.player_num,
             'number_of_ai': data.computer_num,
             'duration': data.duration,
+            'time_int': self._time,
             'finished': data.complete,
-            'file': {
+            'metadata': {
+                'hash': self._hash,
                 'version': mgz.const.VERSIONS[self._header.version],
+                'sub_version': round(self._header.sub_version, 2),
                 'filename': os.path.basename(self._path),
                 'timestamp': self._get_timestamp()
             },

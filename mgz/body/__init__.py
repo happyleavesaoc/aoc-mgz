@@ -139,11 +139,13 @@ savedchapter = "saved_chapter"/Struct(
 # Operation.
 operation = "operation"/Struct(
     Peek(OperationEnum("type"/Int32ul)),
+    "start"/Tell,
     "op"/Int32ul,
     Embedded("data"/Switch(lambda ctx: ctx.type, {
         "action": action,
         "sync": sync,
         "message": message,
         "savedchapter": savedchapter,
-    }))
+    })),
+    "end"/Tell
 )

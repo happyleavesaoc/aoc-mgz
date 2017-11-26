@@ -1,12 +1,13 @@
 """Actions."""
 
-from construct import (Array, Byte, Const, CString, Flag, Float32l, If,
-                       Int16ul, Int32sl, Int32ul, Padding, String, Struct, Bytes, this, Peek)
+from construct import (Array, Byte, Bytes, Const, CString, Flag, Float32l, If,
+                       Int16ul, Int32sl, Int32ul, Padding, Peek, String,
+                       Struct, this)
 
 from mgz.body.achievements import achievements
-from mgz.enums import (ResourceEnum, ResourceLevelEnum, RevealMapEnum,
-                       StartingAgeEnum, VictoryEnum, DiplomacyStanceEnum,
-                       GameActionModeEnum, OrderTypeEnum, ReleaseTypeEnum)
+from mgz.enums import (DiplomacyStanceEnum, GameActionModeEnum, OrderTypeEnum,
+                       ReleaseTypeEnum, ResourceEnum, ResourceLevelEnum,
+                       RevealMapEnum, StartingAgeEnum, VictoryEnum)
 from mgz.util import TimeSecAdapter
 
 # pylint: disable=invalid-name
