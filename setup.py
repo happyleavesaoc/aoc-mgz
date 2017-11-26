@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mgz',
-    version='1.1.0',
+    version='1.1.1',
     description='Parse Age of Empires 2 recorded games.',
     url='https://github.com/happyleavesaoc/aoc-mgz/',
     license='MIT',
