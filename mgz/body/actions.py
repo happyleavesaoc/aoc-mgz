@@ -7,7 +7,7 @@ from construct import (Array, Byte, Bytes, Const, CString, Flag, Float32l, If,
 from mgz.body.achievements import achievements
 from mgz.enums import (DiplomacyStanceEnum, GameActionModeEnum, OrderTypeEnum,
                        ReleaseTypeEnum, ResourceEnum, ResourceLevelEnum,
-                       RevealMapEnum, StartingAgeEnum, VictoryEnum)
+                       RevealMapEnum, StartingAgeEnum, VictoryEnum, StanceEnum, FormationEnum)
 from mgz.util import TimeSecAdapter
 
 # pylint: disable=invalid-name
@@ -131,7 +131,7 @@ stop = "stop"/Struct(
 
 stance = "stance"/Struct(
     "selected"/Byte,
-    "stance_type"/Byte,
+    StanceEnum("stance_type"/Byte),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
@@ -152,7 +152,7 @@ follow = "follow"/Struct(
 formation = "formation"/Struct(
     "selected"/Byte,
     "player_id"/Int16ul,
-    "formation_type"/Int32ul,
+    FormationEnum("formation_type"/Int32ul),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
@@ -382,6 +382,10 @@ ai_waypoint = "ai_waypoint"/Struct(
 backtowork = "backtowork"/Struct(
     Padding(3),
     "towncenter_id"/Int32ul
+)
+
+unknown = "unknown53"/Struct(
+    "bytes"/Bytes(lambda ctx: ctx._._.length - 1)
 )
 
 postgame = "achievements"/Struct(

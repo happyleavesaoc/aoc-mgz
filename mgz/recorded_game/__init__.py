@@ -69,6 +69,16 @@ def _calculate_apm(index, player_actions, other_actions, duration):
     return int(apm)
 
 
+def guess_finished(summary, postgame):
+    """Sometimes a game is finished, but not recorded as such."""
+    if postgame and postgame.complete:
+        return True
+    for player in summary['players']:
+        if 'resign' in player['action_histogram']:
+            return True
+    return False
+
+
 # pylint: disable=too-many-instance-attributes, too-many-arguments
 class RecordedGame():
     """Recorded game wrapper."""
@@ -105,10 +115,11 @@ class RecordedGame():
         self._coords = []
         self._compute_diplomacy()
         self._voobly_session = voobly.get_session(voobly_api_key)
-        self._summary = {}
         self._map = Map(self._header.scenario.game_settings.map_id, self._header.map_info.size_x,
                         self._header.map_info.size_y, self._header.scenario.messages.instructions)
         self._parse_lobby_chat(self._header.lobby.messages, 'lobby', '00:00:00')
+        self._summary = {}
+        self._postgame = None
 
     def _num_players(self):
         """Compute number of players, both human and computer."""
@@ -174,7 +185,7 @@ class RecordedGame():
             if operation.type == 'sync':
                 self._time += operation.time_increment
             if operation.type == 'action' and operation.action.type == 'postgame':
-                self._summarize(operation)
+                self._postgame = operation
             if operation.type == 'action':
                 action = Action(operation, current_time)
                 self._parse_action(action, current_time)
@@ -185,7 +196,7 @@ class RecordedGame():
                 yield Sync(operation)
             elif operation.type == 'action' and operation.action.type != 'postgame':
                 yield Action(operation, current_time)
-            elif operation.type == 'message' and operation.subtype == 'chat':
+            elif (operation.type == 'message' or operation.type == 'embedded') and operation.subtype == 'chat':
                 chat = ChatMessage(operation.data.text, current_time,
                                    self._players(), self._diplomacy['type'], 'game')
                 self._parse_chat(chat)
@@ -201,8 +212,7 @@ class RecordedGame():
         if not self._achievements_summarized:
             for _ in self.operations():
                 pass
-        if not self._summary:
-            raise MgzError('no postgame found')
+        self._summarize()
         return self._summary
 
     def is_nomad(self):
@@ -249,7 +259,6 @@ class RecordedGame():
 
     def _parse_player(self, index, attributes, postgame, game_type):
         """Parse a player."""
-        achievements = postgame.achievements[index - 1]
         try:
             voobly_user = voobly.user(self._voobly_session, attributes.player_name,
                                       ladder_ids=VOOBLY_LADDERS.values())
@@ -262,7 +271,7 @@ class RecordedGame():
         except voobly.VooblyError:
             voobly_user = None
             voobly_rating = None
-        return {
+        player = {
             'index': index,
             'number': attributes.player_color + 1,
             'color': mgz.const.PLAYER_COLORS[attributes.player_color],
@@ -272,16 +281,33 @@ class RecordedGame():
             },
             'action_histogram': dict(self._actions_by_player[index]),
             'apm': _calculate_apm(index, self._actions_by_player,
-                                  self._actions_without_player, postgame.duration_int),
+                                  self._actions_without_player, self._time / 1000),
             'name': attributes.player_name,
             'civilization': mgz.const.CIVILIZATION_NAMES[attributes.civilization],
             'position': self._compass_position(attributes.camera_x, attributes.camera_y),
-            'score': achievements.total_score,
-            'mvp': achievements.mvp,
-            'winner': achievements.victory,
             'research': self._research.get(index, []),
-            'build': self._build.get(index),
-            'achievements': {
+            'build': self._build.get(index, []),
+            'voobly': {
+                'rating_game': self._ratings.get(attributes.player_name),
+                'rating_current': voobly_rating,
+                'nation': voobly_user['nationid'] if voobly_user else None,
+                'uid': voobly_user['uid'] if voobly_user else None
+            },
+            'ages': {},
+            'achievements': {}
+        }
+        if postgame:
+            achievements = None
+            # player index doesn't always match order of postgame achievements! (restores?)
+            for ach in postgame.achievements:
+                if attributes.player_name == ach.player_name:
+                    achievements = ach
+            if not achievements:
+                return player
+            player['score'] = achievements.total_score
+            player['mvp'] = achievements.mvp
+            player['winner'] = achievements.victory
+            player['achievements'] = {
                 'units_killed': achievements.military.units_killed,
                 'units_lost': achievements.military.units_lost,
                 'buildings_razed': achievements.military.buildings_razed,
@@ -299,19 +325,13 @@ class RecordedGame():
                 'total_castles': achievements.society.total_castles,
                 'relics_collected': achievements.society.relics_captured,
                 'villager_high': achievements.society.villager_high
-            },
-            'ages': {
+            }
+            player['ages'] = {
                 'feudal': _timestamp_to_time(achievements.technology.feudal_time),
                 'castle': _timestamp_to_time(achievements.technology.castle_time),
                 'imperial': _timestamp_to_time(achievements.technology.imperial_time)
-            },
-            'voobly': {
-                'rating_game': self._ratings.get(attributes.player_name),
-                'rating_current': voobly_rating,
-                'nation': voobly_user['nationid'] if voobly_user else None,
-                'uid': voobly_user['uid'] if voobly_user else None
             }
-        }
+        return player
 
     def _compass_position(self, player_x, player_y):
         """Get compass position of player."""
@@ -394,10 +414,10 @@ class RecordedGame():
         return player.attributes.player_color + 1
 
     # pylint: disable=no-self-use
-    def _get_starting_age(self, data):
+    def _get_starting_age(self, starting_age):
         """Get starting age."""
-        if data.starting_age not in ['postimperial', 'dmpostimperial']:
-            return data.starting_age.title()
+        if starting_age not in ['postimperial', 'dmpostimperial']:
+            return starting_age.title()
         return 'Post Imperial'
 
     def _get_timestamp(self):
@@ -440,11 +460,20 @@ class RecordedGame():
                              mgz.const.CIVILIZATION_NAMES[attributes.civilization].encode())
         return hashlib.sha1(elevation_bytes + map_name_bytes + player_bytes).hexdigest()
 
-    def _summarize(self, postgame):
+    def _add_postgame_data(self):
+        self._summary['settings']['resource_level'] = data.resource_level
+        self._summary['settings']['reveal_map'] = data.reveal_map
+        self._summary['settings']['victory_condition'] = data.victory_type
+        self._summary['settings']['team_together'] = data.team_together
+
+
+    def _summarize(self):
         """Game summary implementation."""
         self._achievements_summarized = True
-        data = postgame.action
-        game_type = 'DM' if data.is_deathmatch else 'RM'
+        data = None
+        if self._postgame:
+            data = self._postgame.action
+        game_type = 'DM' if self._header.lobby.game_type == 'DM' else 'RM'
         self._summary = {
             'players': list(self.players(data, game_type)),
             'diplomacy': self._diplomacy,
@@ -453,17 +482,17 @@ class RecordedGame():
             'settings': {
                 'type': game_type,
                 'difficulty': self._header.scenario.game_settings.difficulty,
-                'resource_level': data.resource_level,
+                'resource_level': 'standard', #data.resource_level,
                 'population_limit': self._header.lobby.population_limit * 25,
                 'speed': mgz.const.SPEEDS.get(self._header.replay.game_speed),
-                'reveal_map': data.reveal_map,
-                'starting_age': self._get_starting_age(data),
-                'victory_condition': data.victory_type,
-                'team_together': not data.team_together,
-                'all_technologies': data.all_techs,
-                'cheats': data.cheats,
-                'lock_teams': data.lock_teams,
-                'lock_speed': data.lock_speed,
+                'reveal_map': self._header.lobby.reveal_map,
+                'starting_age': 'Dark' if game_type == 'RM' else 'Post Imperial', #self._get_starting_age(data.starting_age),
+                'victory_condition': 'conquest' if self._header.scenario.victory.is_conquest else 'other',
+                'team_together': True, #not data.team_together,
+                'all_technologies': False, #data.all_techs,
+                'cheats': self._header.replay.cheats_enabled,
+                'lock_teams': self._header.lobby.lock_teams,
+                'lock_speed': True, #data.lock_speed,
                 'record_game': True
             },
             'map': {
@@ -489,11 +518,10 @@ class RecordedGame():
                 'ladder': self._ladder,
                 'rated': self._ladder != None
             },
-            'number_of_humans': data.player_num,
-            'number_of_ai': data.computer_num,
-            'duration': data.duration,
+            'number_of_humans': len([p for p in self._header.scenario.game_settings.player_info if p['type'] == 'human']),
+            'number_of_ai': len([p for p in self._header.scenario.game_settings.player_info if p['type'] == 'computer']),
+            'duration': mgz.util.convert_to_timestamp(self._time / 1000),
             'time_int': self._time,
-            'finished': data.complete,
             'metadata': {
                 'hash': self._hash,
                 'version': mgz.const.VERSIONS[self._header.version],
@@ -504,7 +532,8 @@ class RecordedGame():
             'action_histogram': dict(self._actions_without_player),
             'queue': self._queue
         }
-        if data.complete:
+        self._summary['finished'] = guess_finished(self._summary, data)
+        if self._summary['finished']:
             self._summary['won_in'] = self._won_in().title()
             self._set_winning_team()
         if self._show_chat:

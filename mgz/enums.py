@@ -142,7 +142,7 @@ def OperationEnum(ctx):
         action=1,
         sync=2,
         message=4,
-        default="savedchapter"
+        default="embedded"
     )
 
 def MessageEnum(ctx):
@@ -268,6 +268,26 @@ def ReleaseTypeEnum(ctx):
         default=Pass
     )
 
+def StanceEnum(ctx):
+    """Types of stances."""
+    return Enum(
+        ctx,
+        aggressive=0,
+        defensive=1,
+        stand_ground=2,
+        passive=3
+    )
+
+def FormationEnum(ctx):
+    """Types of formations."""
+    return Enum(
+        ctx,
+        line=2,
+        staggered=4,
+        box=7,
+        split=8
+    )
+
 def MyDiplomacyEnum(ctx):
     """Player's Diplomacy Enumeration."""
     return Enum(
@@ -300,6 +320,7 @@ def ActionEnum(ctx):
         save=27,
         ai_waypoint=31,
         chapter=32,
+        unknown=53,
         ai_queue=100,
         research=101,
         build=102,

@@ -6,15 +6,14 @@ An Operation can be:
  - Action: Player input that materially affects the game
  - Message: Either a start-of-game indicator, or chat
  - Synchronization: Time increment and view coordinates of recording player
- - Saved Chapter: Embedded header structure
+ - Embedded: A variety of embedded structures
 """
 
 from construct import (Struct, Byte, Switch, Embedded, Padding,
                        Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
                        GreedyBytes, Computed, IfThenElse, Int16ul, Probe)
 from mgz.enums import ActionEnum, OperationEnum, MessageEnum
-from mgz.body import actions
-from mgz import subheader
+from mgz.body import actions, embedded
 
 
 # pylint: disable=invalid-name
@@ -38,6 +37,7 @@ action_data = "action"/Struct(
         "ai_queue": actions.ai_queue,
         "save": actions.save,
         "chapter": actions.chapter,
+        "unknown": actions.unknown,
         "spec": actions.spec,
         "build": actions.build,
         "game": actions.game,
@@ -118,23 +118,6 @@ message = "message"/Struct(
     })
 )
 
-"""Saved Chapter
-
-A saved chapter is a header structure embedded in the body.
-There is no command identifier, so the command type is actually
-the first field of the header - length/offset. Therefore, just skip the
-number of bytes indicated in `type` minus the current position.
-
-If you wanted to check the game state at this point, you could apply
-the header Struct, accounting for having already read the first 4 bytes.
-"""
-savedchapter = "saved_chapter"/Struct(
-    "start"/Tell,
-    "header_length"/Computed(lambda ctx: ctx._.op - ctx.start + 4),
-    Embedded(subheader)
-    #"header"/Bytes(lambda ctx: ctx.header_length - 4)
-)
-
 
 # Operation.
 operation = "operation"/Struct(
@@ -145,7 +128,7 @@ operation = "operation"/Struct(
         "action": action,
         "sync": sync,
         "message": message,
-        "savedchapter": savedchapter,
+        "embedded": embedded.embedded
     })),
     "end"/Tell
 )

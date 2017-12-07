@@ -23,10 +23,9 @@ class Map():
             elif line.find("\xa3\xba") > 0:
                 self._name = line.split('\xa3\xba')[1].strip()
             self._name = self._name.strip()
-            # Special case for nomad maps (prefixed with
-            #   language-specific name, real map name in
-            #   parentheses.
-            if self._name.find(' (') > 0 and self._name.find('Nomad') > -1:
+            # Special case for maps (prefixed with language-specific name,
+            # real map name in parentheses.
+            if self._name.find(' (') > 0:
                 self._name = self._name.split(' (')[1][:-1]
 
     def name(self):

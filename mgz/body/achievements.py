@@ -53,7 +53,7 @@ society = "society"/Struct(
 )
 
 achievements = "achievements"/Struct(
-    "player_name"/String(16, padchar=b'\x00', trimdir='right'),
+    "player_name"/String(16, padchar=b'\x00', trimdir='right', encoding='latin1'),
     "total_score"/Int16ul,
     Array(8, "total_scores"/Int16ul),
     "victory"/Flag,
