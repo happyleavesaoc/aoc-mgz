@@ -196,7 +196,8 @@ class RecordedGame():
                 yield Sync(operation)
             elif operation.type == 'action' and operation.action.type != 'postgame':
                 yield Action(operation, current_time)
-            elif (operation.type == 'message' or operation.type == 'embedded') and operation.subtype == 'chat':
+            elif ((operation.type == 'message' or operation.type == 'embedded')
+                  and operation.subtype == 'chat'):
                 chat = ChatMessage(operation.data.text, current_time,
                                    self._players(), self._diplomacy['type'], 'game')
                 self._parse_chat(chat)
@@ -460,13 +461,6 @@ class RecordedGame():
                              mgz.const.CIVILIZATION_NAMES[attributes.civilization].encode())
         return hashlib.sha1(elevation_bytes + map_name_bytes + player_bytes).hexdigest()
 
-    def _add_postgame_data(self):
-        self._summary['settings']['resource_level'] = data.resource_level
-        self._summary['settings']['reveal_map'] = data.reveal_map
-        self._summary['settings']['victory_condition'] = data.victory_type
-        self._summary['settings']['team_together'] = data.team_together
-
-
     def _summarize(self):
         """Game summary implementation."""
         self._achievements_summarized = True
@@ -482,17 +476,23 @@ class RecordedGame():
             'settings': {
                 'type': game_type,
                 'difficulty': self._header.scenario.game_settings.difficulty,
-                'resource_level': 'standard', #data.resource_level,
+                # data.resource_level
+                'resource_level': 'standard',
                 'population_limit': self._header.lobby.population_limit * 25,
                 'speed': mgz.const.SPEEDS.get(self._header.replay.game_speed),
                 'reveal_map': self._header.lobby.reveal_map,
-                'starting_age': 'Dark' if game_type == 'RM' else 'Post Imperial', #self._get_starting_age(data.starting_age),
-                'victory_condition': 'conquest' if self._header.scenario.victory.is_conquest else 'other',
-                'team_together': True, #not data.team_together,
-                'all_technologies': False, #data.all_techs,
+                # self._get_starting_age(data.starting_age)
+                'starting_age': 'Dark' if game_type == 'RM' else 'Post Imperial',
+                'victory_condition': ('conquest' if self._header.scenario.victory.is_conquest
+                                      else 'other'),
+                # not data.team_together
+                'team_together': True,
+                # data.all_techs
+                'all_technologies': False,
                 'cheats': self._header.replay.cheats_enabled,
                 'lock_teams': self._header.lobby.lock_teams,
-                'lock_speed': True, #data.lock_speed,
+                # data.lock_speed
+                'lock_speed': True,
                 'record_game': True
             },
             'map': {
@@ -518,8 +518,10 @@ class RecordedGame():
                 'ladder': self._ladder,
                 'rated': self._ladder != None
             },
-            'number_of_humans': len([p for p in self._header.scenario.game_settings.player_info if p['type'] == 'human']),
-            'number_of_ai': len([p for p in self._header.scenario.game_settings.player_info if p['type'] == 'computer']),
+            'number_of_humans': len([p for p in self._header.scenario.game_settings.player_info
+                                     if p['type'] == 'human']),
+            'number_of_ai': len([p for p in self._header.scenario.game_settings.player_info
+                                 if p['type'] == 'computer']),
             'duration': mgz.util.convert_to_timestamp(self._time / 1000),
             'time_int': self._time,
             'metadata': {

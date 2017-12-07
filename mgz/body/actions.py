@@ -5,9 +5,10 @@ from construct import (Array, Byte, Bytes, Const, CString, Flag, Float32l, If,
                        Struct, this)
 
 from mgz.body.achievements import achievements
-from mgz.enums import (DiplomacyStanceEnum, GameActionModeEnum, OrderTypeEnum,
-                       ReleaseTypeEnum, ResourceEnum, ResourceLevelEnum,
-                       RevealMapEnum, StartingAgeEnum, VictoryEnum, StanceEnum, FormationEnum)
+from mgz.enums import (DiplomacyStanceEnum, FormationEnum, GameActionModeEnum,
+                       OrderTypeEnum, ReleaseTypeEnum, ResourceEnum,
+                       ResourceLevelEnum, RevealMapEnum, StanceEnum,
+                       StartingAgeEnum, VictoryEnum)
 from mgz.util import TimeSecAdapter
 
 # pylint: disable=invalid-name

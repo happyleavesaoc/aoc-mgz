@@ -1,4 +1,4 @@
-"""Embedded Structures
+"""Embedded Structures.
 
 Various structure can be embedded in the body, without an operation header.
 
@@ -13,29 +13,28 @@ struct at this point will parse the embedded header.
 This section is a work in progress.
 """
 
-from construct import (Struct, Byte, Switch, Embedded, Padding,
-                       Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
-                       GreedyBytes, Computed, IfThenElse, Int16ul, Probe)
+from construct import (Array, Computed, Embedded, GreedyBytes, If, Int16ul,
+                       Int32ul, Padding, Peek, String, Struct, Switch)
+
 from mgz import subheader
 
+# pylint: disable=invalid-name
 
 # Embedded chat message
 chat = Struct(
     "subtype"/Computed("chat"),
     "data"/Struct(
         "length"/Computed(lambda ctx: ctx._._._.op),
-        "text"/String(lambda ctx: ctx._._._.op, padchar=b'\x00', trimdir='right', encoding='latin1'),
+        "text"/String(lambda ctx: ctx._._._.op, padchar=b'\x00',
+                      trimdir='right', encoding='latin1'),
     )
 )
 
 # Embedded header (aka saved chapter)
 header = Struct(
     "subtype"/Computed("savedchapter"),
-    #"op_is"/Computed(lambda ctx: ctx._._.op),
-    #"start_is"/Computed(lambda ctx: ctx._._.start),
     "data"/Struct(
         "header_length"/Computed(lambda ctx: ctx._._._.op - ctx._._._.start),
-        #Bytes(lambda ctx: ctx.header_length - 4)
         Embedded(subheader)
     )
 )
@@ -60,7 +59,7 @@ default = Struct(
 )
 
 
-# Embedded structures identified by first byte (for now) 
+# Embedded structures identified by first byte (for now)
 embedded = "embedded"/Struct(
     "marker"/Peek(Int16ul),
     Embedded("data"/Switch(lambda ctx: ctx.marker, {
