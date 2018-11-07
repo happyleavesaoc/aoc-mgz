@@ -3,8 +3,10 @@
 # pylint: disable=too-many-lines
 
 VERSIONS = {
-    'VER 9.B': 'userpatch 1.4',
-    'VER 9.C': 'userpatch 1.4',
+    'VER 9.9': 'userpatch 1.3',
+    'VER 9.A': 'userpatch 1.4 rc 1',
+    'VER 9.B': 'userpatch 1.4 rc 2',
+    'VER 9.C': 'userpatch 1.4 rc 2',
     'VER 9.D': 'userpatch 1.4',
     'VER 9.E': 'userpatch 1.5'
 }
