@@ -2,6 +2,8 @@
 
 from construct import Embedded, Float32l, If, Struct
 
+from mgz.util import ModVersionAdapter
+
 # pylint: disable=invalid-name
 
 
@@ -208,7 +210,7 @@ player_stats = "player_stats"/Struct(
     "hun_wonder_bonus"/Float32l,
     "spies_discount"/Float32l,
     Embedded(If(lambda ctx: ctx._.num_header_data > 198, Struct(
-        "unk1"/Float32l,
+        ModVersionAdapter("mod"/Float32l),
         "unk2"/Float32l,
         "unk3"/Float32l,
         "unk4"/Float32l,
@@ -219,9 +221,9 @@ player_stats = "player_stats"/Struct(
         "trickle_wood"/Float32l,
         "trickle_stone"/Float32l,
         "trickle_gold"/Float32l,
-        "reveal_enemy"/Float32l,
-        "reveal_class_1"/Float32l,
-        "reveal_class_2"/Float32l,
+        "reveal_enemy_tcs"/Float32l,
+        "reveal_gaia_class_1"/Float32l,
+        "reveal_gaia_class_2"/Float32l,
         "unk15"/Float32l,
         "unk16"/Float32l,
         "unk17"/Float32l,

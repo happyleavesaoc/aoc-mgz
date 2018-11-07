@@ -427,11 +427,16 @@ class RecordedGame():
         if filename_date:
             return filename_date
 
-    def _is_wololokingdoms(self):
+    def _get_mod(self):
         sample = self._header.initial.players[0].attributes.player_stats
-        if 'trickle_food' in sample and sample.trickle_food:
-            return True
-        return False
+        if 'mod' in sample and sample.mod:
+            return sample.mod
+        elif 'trickle_food' in sample and sample.trickle_food:
+            return {
+                'id': 1,
+                'name': mgz.const.MODS.get(1),
+                'version': '< 5.7.2'
+            }
 
     def _set_winning_team(self):
         """Mark the winning team."""
@@ -505,9 +510,7 @@ class RecordedGame():
                 'arena': self.is_arena(),
                 'hash': self._map_hash()
             },
-            'mods': {
-                'wololokingdoms': self._is_wololokingdoms(),
-            },
+            'mod': self._get_mod(),
             'restore': {
                 'restored': self._header.initial.restore_time > 0,
                 'start_int': self._header.initial.restore_time,

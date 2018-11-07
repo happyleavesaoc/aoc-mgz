@@ -46,7 +46,8 @@ player = "players"/Struct(
     # If this isn't a restored game, we can read all the existing objects
     Embedded("not_restored"/If(this._.restore_time == 0, Struct(
         RepeatUpTo(b'\x00', existing_object),
-        Padding(14)
+        Padding(14),
+        "end_of_objects"/GotoObjectsEnd() # Find the objects end just in case
     ))),
 
     # Can't parse existing objects in a restored game, skip the whole structure

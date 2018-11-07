@@ -7,6 +7,9 @@ from io import BytesIO
 import construct.core
 from construct import Adapter, Construct, Subconstruct, Tunnel
 
+from mgz import const
+
+
 # pylint: disable=abstract-method,protected-access
 
 
@@ -62,6 +65,19 @@ class BoolAdapter(Adapter):
     def _decode(self, obj, context):
         """Decode bool."""
         return obj == 1
+
+
+class ModVersionAdapter(Adapter):
+
+    def _decode(self, obj, context):
+        number = int(obj)
+        mod_id = int(number / 1000)
+        mod_version = '.'.join(list(str(number % 1000)))
+        return {
+            'id': mod_id,
+            'name': const.MODS.get(mod_id, 'Unknown Mod'),
+            'version': mod_version
+        }
 
 
 class Find(Construct):
