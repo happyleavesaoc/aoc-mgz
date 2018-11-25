@@ -162,7 +162,7 @@ save = "save"/Struct(
     "player_id"/Byte,
     "filename"/CString(encoding='latin1'),
     Padding(lambda ctx: ctx._._.length - 23),
-    "checksum"/Int32ul(4)
+    "checksum"/Int32ul
 )
 
 chapter = "chapter"/Struct(
