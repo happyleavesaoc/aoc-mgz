@@ -14,6 +14,7 @@ from construct import (Struct, Byte, Switch, Embedded, Padding,
                        GreedyBytes, Computed, IfThenElse, Int16ul, Probe)
 from mgz.enums import ActionEnum, OperationEnum, MessageEnum
 from mgz.body import actions, embedded
+from mgz.util import BoolAdapter
 
 
 # pylint: disable=invalid-name
@@ -21,6 +22,7 @@ from mgz.body import actions, embedded
 
 # Action.
 action_data = "action"/Struct(
+    Peek("type_int"/Byte),
     ActionEnum("type"/Byte),
     Embedded("action"/Switch(lambda ctx: ctx.type, {
         "interact": actions.interact,
@@ -31,13 +33,15 @@ action_data = "action"/Struct(
         "follow": actions.follow,
         "formation": actions.formation,
         "waypoint": actions.waypoint,
+        "give_attribute": actions.give_attribute,
+        "add_attribute": actions.add_attribute,
         "ai_waypoint": actions.ai_waypoint,
         "ai_interact": actions.ai_interact,
         "ai_move": actions.ai_move,
         "ai_queue": actions.ai_queue,
         "save": actions.save,
         "chapter": actions.chapter,
-        "unknown": actions.unknown,
+        "ai_command": actions.ai_command,
         "spec": actions.spec,
         "build": actions.build,
         "game": actions.game,
@@ -81,10 +85,17 @@ action = "action"/Struct(
 # Synchronization.
 sync = "sync"/Struct(
     "time_increment"/Int32ul,
-    "flag"/Int32ul,
-    If(lambda ctx: not ctx.flag, Padding(
-        28
-    )),
+    Peek("next"/Int32ul),
+    "checksum"/If(lambda ctx: not ctx.next, Struct(
+        Padding(8),
+        "sync"/Int32ul,
+        Padding(16)
+    ))
+)
+
+
+# View lock.
+viewlock = "viewlock"/Struct(
     "view"/Struct(
         "x"/Float32l,
         "y"/Float32l
@@ -95,23 +106,25 @@ sync = "sync"/Struct(
 
 # Chat variation of Message.
 chat = "chat"/Struct(
+    Padding(4),
     "length"/Int32ul,
     "text"/String(lambda ctx: ctx.length, padchar=b'\x00', trimdir='right', encoding='latin1')
 )
 
 # Game start
 start = "start"/Struct(
-    "unk1"/Int32ul,
+    "checksum_interval"/Int32ul,
+    BoolAdapter("multiplayer"/Int32ul),
     "rec_owner"/Int32ul,
-    "unk2"/Int32ul,
-    "unk3"/Int32ul,
-    "unk4"/Int32ul
+    BoolAdapter("reveal_map"/Int32ul),
+    "record_sequence_numbers"/Int32ul,
+    "number_of_chapters"/Int32ul
 )
 
 
 # Message.
 message = "message"/Struct(
-    MessageEnum("subtype"/Int32ul),
+    MessageEnum("subtype"/Peek(Int32ul)),
     "data"/Switch(lambda ctx: ctx.subtype, {
         "start": start,
         "chat": chat
@@ -127,6 +140,7 @@ operation = "operation"/Struct(
     Embedded("data"/Switch(lambda ctx: ctx.type, {
         "action": action,
         "sync": sync,
+        "viewlock": viewlock,
         "message": message,
         "embedded": embedded.embedded
     })),

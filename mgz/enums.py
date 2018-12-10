@@ -141,6 +141,7 @@ def OperationEnum(ctx):
         ctx,
         action=1,
         sync=2,
+        viewlock=3,
         message=4,
         default="embedded"
     )
@@ -308,6 +309,8 @@ def ActionEnum(ctx):
         stop=1,
         ai_interact=2,
         move=3,
+        add_attribute=5,
+        give_attribute=6,
         ai_move=10,
         resign=11,
         spec=15,
@@ -320,7 +323,7 @@ def ActionEnum(ctx):
         save=27,
         ai_waypoint=31,
         chapter=32,
-        unknown=53,
+        ai_command=53,
         ai_queue=100,
         research=101,
         build=102,

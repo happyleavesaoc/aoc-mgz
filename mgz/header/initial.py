@@ -2,7 +2,7 @@
 
 # pylint: disable=invalid-name,no-name-in-module
 
-from construct import (Array, Byte, Embedded, Float32l, If, Int16ul, Int32sl,
+from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32sl,
                        Int32ul, Padding, String, Struct, Tell, this)
 
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
@@ -14,7 +14,8 @@ from mgz.util import Find, GotoObjectsEnd, RepeatUpTo
 attributes = "attributes"/Struct(
     Array(lambda ctx: ctx._._._.replay.num_players, TheirDiplomacyEnum("their_diplomacy"/Byte)),
     Array(9, MyDiplomacyEnum("my_diplomacy"/Int32sl)),
-    Padding(5),
+    "allied_los"/Int32ul,
+    "allied_victory"/Flag,
     "player_name_length"/Int16ul,
     "player_name"/String(this.player_name_length, padchar=b'\x00',
                          trimdir='right', encoding='latin1'),
@@ -26,16 +27,25 @@ attributes = "attributes"/Struct(
     "camera_x"/Float32l,
     "camera_y"/Float32l,
     "end_of_camera"/Tell,
-    "num_unk"/Int32sl,
+    "num_saved_views"/Int32sl,
     # present in resumed games
-    If(lambda ctx: ctx.num_unk > 0, Array(
-        lambda ctx: ctx.num_unk, "unk_structure"/Struct(Padding(8))
+    If(lambda ctx: ctx.num_saved_views > 0, Array(
+        lambda ctx: ctx.num_saved_views, "saved_view"/Struct(
+            "camera_x"/Float32l,
+            "camera_y"/Float32l
+        )
     )),
-    Padding(5),
+    "map_size"/Struct(
+        "x"/Int16ul,
+        "y"/Int16ul
+    ),
+    "culture"/Byte,
     "civilization"/Byte,
-    Padding(3),
-    "player_color"/Byte,
+    "game_status"/Byte,
+    "resigned"/Flag,
     Padding(1),
+    "player_color"/Byte,
+    Padding(1)
 )
 
 

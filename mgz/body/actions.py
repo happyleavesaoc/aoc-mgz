@@ -27,6 +27,20 @@ interact = "interact"/Struct(
     ))
 )
 
+give_attribute = "give_attribute"/Struct(
+    "player_id"/Byte,
+    "target_id"/Byte,
+    "attribute"/Byte,
+    "amount"/Float32l
+)
+
+add_attribute = "add_attribute"/Struct(
+     "player_id"/Byte,
+     "attribute"/Byte,
+     Padding(1),
+     "amount"/Float32l
+)
+
 ai_interact = "ai_interact"/Struct(
     Padding(3),
     "target_id"/Int32ul,
@@ -385,7 +399,7 @@ backtowork = "backtowork"/Struct(
     "towncenter_id"/Int32ul
 )
 
-unknown = "unknown53"/Struct(
+ai_command = "ai_command"/Struct(
     Padding(lambda ctx: ctx._._.length - 1)
 )
 
