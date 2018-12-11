@@ -58,12 +58,12 @@ class Summary:
     Access metadata that in most cases can be found quickly.
     """
 
-    def __init__(self, handle):
+    def __init__(self, handle, size):
         """Initialize."""
         self._handle = handle
         self._header = mgz.header.parse_stream(handle)
         self._body_position = self._handle.tell()
-        self.size = os.fstat(handle.fileno()).st_size
+        self.size = size
 
     def get_postgame(self):
         """Get postgame structure."""
@@ -99,14 +99,13 @@ class Summary:
     def get_mod(self):
         """Get mod, if there is one."""
         sample = self._header.initial.players[0].attributes.player_stats
-        if 'mod' in sample:
+        if 'mod' in sample and sample.mod['id'] > 0:
             return sample.mod['name'], sample.mod['version']
         return None, None
 
     def get_owner(self):
         """Get rec owner (POV)."""
-        owner_id = self._header.replay.rec_player
-        return self._header.initial.players[owner_id].attributes.player_name
+        return self._header.replay.rec_player
 
     def get_players(self):
         """Get basic player info."""
@@ -114,7 +113,8 @@ class Summary:
             yield {
                 'name': player.attributes.player_name,
                 'civilization': player.attributes.civilization,
-                'human': self._header.scenario.game_settings.player_info[i + 1].type == 'human'
+                'human': self._header.scenario.game_settings.player_info[i + 1].type == 'human',
+                'number': i + 1
             }
 
     def get_ladder(self):
@@ -131,6 +131,7 @@ class Summary:
                     start = op.data.text.find("'") + 1
                     end = op.data.text.find("'", start)
                     ladder = op.data.text[start:end]
+                    break
                 elif op.data.text.find('No ratings are available') > 0:
                     break
         self._handle.seek(self._body_position)
