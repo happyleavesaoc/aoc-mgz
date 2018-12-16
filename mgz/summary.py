@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 SEARCH_MAX_BYTES = 3000
 POSTGAME_LENGTH = 2096
 LOOKAHEAD = 9
-CHECKSUMS = 3
+CHECKSUMS = 2
 
 
 def find_postgame(data, size):
@@ -61,7 +61,10 @@ class Summary:
     def __init__(self, handle, size):
         """Initialize."""
         self._handle = handle
-        self._header = mgz.header.parse_stream(handle)
+        try:
+            self._header = mgz.header.parse_stream(handle)
+        except construct.core.ConstructError:
+            raise RuntimeError("invalid mgz file")
         self._body_position = self._handle.tell()
         self.size = size
 
@@ -114,7 +117,8 @@ class Summary:
                 'name': player.attributes.player_name,
                 'civilization': player.attributes.civilization,
                 'human': self._header.scenario.game_settings.player_info[i + 1].type == 'human',
-                'number': i + 1
+                'number': i + 1,
+                'color_id': player.attributes.player_color
             }
 
     def get_ladder(self):
