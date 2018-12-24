@@ -19,7 +19,7 @@ import mgz.const
 import mgz.util
 from mgz.recorded_game.chat import ChatMessage
 from mgz.recorded_game.map import Map
-from mgz.recorded_game.sync import Sync
+from mgz.recorded_game.viewlock import Viewlock
 from mgz.recorded_game.action import Action, ACTIONS_WITH_PLAYER_ID
 
 
@@ -167,7 +167,7 @@ class RecordedGame():
     def operations(self, op_types=None):
         """Process operation stream."""
         if not op_types:
-            op_types = ['message', 'action', 'sync', 'savedchapter']
+            op_types = ['message', 'action', 'sync', 'viewlock', 'savedchapter']
         while self._handle.tell() < self._eof:
             current_time = mgz.util.convert_to_timestamp(self._time / 1000)
             try:
@@ -192,16 +192,19 @@ class RecordedGame():
             if operation.type == 'savedchapter':
                 # fix: Don't load messages we already saw in header or prev saved chapters
                 self._parse_lobby_chat(operation.lobby.messages, 'save', current_time)
-            if operation.type == 'sync':
-                yield Sync(operation)
+            if operation.type == 'viewlock':
+                if operation.type in op_types:
+                    yield Viewlock(operation)
             elif operation.type == 'action' and operation.action.type != 'postgame':
-                yield Action(operation, current_time)
+                if operation.type in op_types:
+                    yield Action(operation, current_time)
             elif ((operation.type == 'message' or operation.type == 'embedded')
                   and operation.subtype == 'chat'):
                 chat = ChatMessage(operation.data.text, current_time,
                                    self._players(), self._diplomacy['type'], 'game')
                 self._parse_chat(chat)
-                yield chat
+                if operation.type in op_types:
+                    yield chat
 
     def reset(self):
         """Reset operation stream."""

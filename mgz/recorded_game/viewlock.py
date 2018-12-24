@@ -1,7 +1,7 @@
 """Sync."""
 
 # pylint: disable=too-few-public-methods
-class Sync():
+class Viewlock():
     """Synchronization wrapper."""
 
     def __init__(self, structure):
