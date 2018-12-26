@@ -68,6 +68,7 @@ class Summary:
         self._body_position = self._handle.tell()
         self.size = size
         self.postgame = None
+        self._teams = None
 
     def get_postgame(self):
         """Get postgame structure."""
@@ -116,6 +117,8 @@ class Summary:
 
     def get_teams(self):
         """Get teams."""
+        if self._teams:
+            return self._teams
         teams = []
         for j, player in enumerate(self._header.initial.players):
             added = False
@@ -142,7 +145,40 @@ class Summary:
                     added = True
             if not added and j != 0:
                 teams.append([j])
+        self._teams = teams
         return teams
+
+    def get_diplomacy(self):
+        """Compute diplomacy."""
+        if not self._teams:
+            self.get_teams()
+
+        player_num = 0
+        computer_num = 0
+        for player in self._header.scenario.game_settings.player_info:
+            if player.type == 'human':
+                player_num += 1
+            elif player.type == 'computer':
+                computer_num += 1
+        total_num = player_num + computer_num
+
+        diplomacy = {
+            'ffa': len(self._teams) == (total_num and
+                                        total_num > 2),
+            'TG':  len(self._teams) == 2 and total_num > 2,
+            '1v1': total_num == 2,
+        }
+
+        diplomacy['type'] = 'unknown'
+        if diplomacy['ffa']:
+            diplomacy['type'] = 'ffa'
+        if diplomacy['TG']:
+            diplomacy['type'] = 'TG'
+            size = len(self._teams[0])
+            diplomacy['team_size'] = '{}v{}'.format(size, size)
+        if diplomacy['1v1']:
+            diplomacy['type'] = '1v1'
+        return diplomacy
 
     def get_achievements(self, name):
         """Get achievements for a player.
@@ -176,21 +212,30 @@ class Summary:
         """Get Voobly ladder.
 
         This is expensive if the rec is not from Voobly,
-        since it will search the whole file.
+        since it will search the whole file. Returns tuple,
+        (from_voobly, ladder_name).
         """
         ladder = None
+        voobly = False
         while self._handle.tell() < self.size:
-            op = mgz.body.operation.parse_stream(self._handle)
-            if op.type == 'message' and op.subtype == 'chat':
-                if op.data.text.find('Voobly: Ratings provided') > 0:
-                    start = op.data.text.find("'") + 1
-                    end = op.data.text.find("'", start)
-                    ladder = op.data.text[start:end]
-                    break
-                elif op.data.text.find('No ratings are available') > 0:
-                    break
+            try:
+                op = mgz.body.operation.parse_stream(self._handle)
+                if op.type == 'message' and op.subtype == 'chat':
+                    if op.data.text.find('Voobly: Ratings provided') > 0:
+                        start = op.data.text.find("'") + 1
+                        end = op.data.text.find("'", start)
+                        ladder = op.data.text[start:end]
+                        voobly = True
+                        break
+                    elif op.data.text.find('Voobly') > 0:
+                        voobly = True
+                    elif op.data.text.find('No ratings are available') > 0:
+                        voobly = True
+                        break
+            except (construct.core.ConstructError, ValueError):
+                break
         self._handle.seek(self._body_position)
-        return ladder
+        return voobly, ladder
 
     def get_settings(self):
         """Get settings."""
