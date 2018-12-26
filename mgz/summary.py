@@ -63,16 +63,20 @@ class Summary:
         self._handle = handle
         try:
             self._header = mgz.header.parse_stream(handle)
-        except construct.core.ConstructError:
+        except (construct.core.ConstructError, ValueError):
             raise RuntimeError("invalid mgz file")
         self._body_position = self._handle.tell()
         self.size = size
+        self.postgame = None
 
     def get_postgame(self):
         """Get postgame structure."""
+        if self.postgame:
+            return self.postgame
         self._handle.seek(0)
         try:
-            return parse_postgame(self._handle, self.size)
+            self.postgame = parse_postgame(self._handle, self.size)
+            return self.postgame
         except IOError:
             return None
         finally:
@@ -110,15 +114,62 @@ class Summary:
         """Get rec owner (POV)."""
         return self._header.replay.rec_player
 
+    def get_teams(self):
+        """Get teams."""
+        teams = []
+        for j, player in enumerate(self._header.initial.players):
+            added = False
+            for i in range(0, len(self._header.initial.players)):
+                if player.attributes.my_diplomacy[i] == 'ally':
+                    inner_team = False
+                    outer_team = False
+                    new_team = True
+                    for t, tl in enumerate(teams):
+                        if j in tl or i in tl:
+                            new_team = False
+                        if j in tl and i not in tl:
+                            inner_team = t
+                            break
+                        if j not in tl and i in tl:
+                            outer_team = t
+                            break
+                    if new_team:
+                        teams.append([i, j])
+                    if inner_team is not False:
+                        teams[inner_team].append(i)
+                    if outer_team is not False:
+                        teams[outer_team].append(j)
+                    added = True
+            if not added and j != 0:
+                teams.append([j])
+        return teams
+
+    def get_achievements(self, name):
+        """Get achievements for a player.
+
+        Must match on name, not index, since order is not always the same.
+        """
+        postgame = self.get_postgame()
+        if not postgame:
+            return None
+        for achievements in postgame.achievements:
+            if name == achievements.player_name:
+                return achievements
+        return None
+
     def get_players(self):
         """Get basic player info."""
         for i, player in enumerate(self._header.initial.players[1:]):
+            achievements = self.get_achievements(player.attributes.player_name)
             yield {
                 'name': player.attributes.player_name,
                 'civilization': player.attributes.civilization,
                 'human': self._header.scenario.game_settings.player_info[i + 1].type == 'human',
                 'number': i + 1,
-                'color_id': player.attributes.player_color
+                'color_id': player.attributes.player_color,
+                'winner': achievements.victory if achievements else None,
+                'mvp': achievements.mvp if achievements else None,
+                'score': achievements.total_score if achievements else None
             }
 
     def get_ladder(self):
@@ -140,6 +191,18 @@ class Summary:
                     break
         self._handle.seek(self._body_position)
         return ladder
+
+    def get_settings(self):
+        """Get settings."""
+        return {
+            'type': self._header.lobby.game_type,
+            'difficulty': self._header.scenario.game_settings.difficulty,
+            'population_limit': self._header.lobby.population_limit * 25,
+            'reveal_map': self._header.lobby.reveal_map,
+            'speed': mgz.const.SPEEDS.get(self._header.replay.game_speed),
+            'cheats': self._header.replay.cheats_enabled,
+            'lock_teams': self._header.lobby.lock_teams
+        }
 
     def get_hash(self):
         """Compute match hash.
