@@ -37,7 +37,7 @@ class ZlibCompressed(Tunnel):
 
     def _decode(self, data, context):
         """Decode zlib without header bytes."""
-        return zlib.decompressobj().decompress(b'x\x9c' + data)
+        return zlib.decompress(data, wbits=-15)
 
 
 def convert_to_timestamp(time):

@@ -261,7 +261,7 @@ class Summary:
             op = mgz.body.operation.parse_stream(self._handle)
             if op.type == 'sync' and op.checksum is not None:
                 checksums.append(bytes(op.checksum.sync))
-        return hashlib.sha1(b''.join(checksums)).hexdigest()
+        return hashlib.sha1(b''.join(checksums))
 
     def get_map(self):
         """Get the map name.
