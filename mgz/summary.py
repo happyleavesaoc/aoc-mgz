@@ -69,16 +69,18 @@ class Summary:
         self.size = size
         self.postgame = None
         self._teams = None
+        self._resigned = set()
 
     def get_postgame(self):
         """Get postgame structure."""
-        if self.postgame:
+        if self.postgame is not None:
             return self.postgame
         self._handle.seek(0)
         try:
             self.postgame = parse_postgame(self._handle, self.size)
             return self.postgame
         except IOError:
+            self.postgame = False
             return None
         finally:
             self._handle.seek(self._body_position)
@@ -93,6 +95,9 @@ class Summary:
             operation = mgz.body.operation.parse_stream(self._handle)
             if operation.type == 'sync':
                 duration += operation.time_increment
+            elif operation.type == 'action':
+                if operation.action.type == 'resign':
+                    self._resigned.add(operation.action.player_id)
         self._handle.seek(self._body_position)
         return duration
 
@@ -197,13 +202,17 @@ class Summary:
         """Get basic player info."""
         for i, player in enumerate(self._header.initial.players[1:]):
             achievements = self.get_achievements(player.attributes.player_name)
+            if achievements:
+                winner = achievements.victory
+            else:
+                winner = self.guess_winner(i + 1)
             yield {
                 'name': player.attributes.player_name,
                 'civilization': player.attributes.civilization,
                 'human': self._header.scenario.game_settings.player_info[i + 1].type == 'human',
                 'number': i + 1,
                 'color_id': player.attributes.player_color,
-                'winner': achievements.victory if achievements else None,
+                'winner': winner,
                 'mvp': achievements.mvp if achievements else None,
                 'score': achievements.total_score if achievements else None
             }
@@ -288,3 +297,29 @@ class Summary:
             if name.find(' (') > 0:
                 name = name.split(' (')[1][:-1]
             return name, size
+
+    def get_completed(self):
+        """Determine if the game was completed.
+
+        If there's a postgame, it will indicate completion.
+        If there is no postgame, guess based on resignation.
+        """
+        postgame = self.get_postgame()
+        if postgame:
+            return postgame.complete
+        else:
+            return True if self._resigned else False
+
+    def guess_winner(self, i):
+        """Guess if a player won.
+
+        Find what team the player was on. If anyone
+        on their team resigned, assume the player lost.
+        """
+        for team in self.get_teams():
+            if i not in team:
+                continue
+            for p in team:
+                if p in self._resigned:
+                    return False
+        return True
