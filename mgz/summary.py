@@ -214,7 +214,8 @@ class Summary:
                 'color_id': player.attributes.player_color,
                 'winner': winner,
                 'mvp': achievements.mvp if achievements else None,
-                'score': achievements.total_score if achievements else None
+                'score': achievements.total_score if achievements else None,
+                'position': (player.attributes.camera_x, player.attributes.camera_y)
             }
 
     def get_ladder(self):
