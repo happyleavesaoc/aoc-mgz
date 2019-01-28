@@ -35,7 +35,7 @@ def find_postgame(data, size):
     for i in range(size - SEARCH_MAX_BYTES, size - LOOKAHEAD):
         op_type, length, action_type = struct.unpack('<IIB', data[i:i + LOOKAHEAD])
         if op_type == 0x01 and length == POSTGAME_LENGTH and action_type == 0xFF:
-            LOGGER.debug("found postgame candidate @ %d with length %d", pos, length)
+            LOGGER.debug("found postgame candidate @ %d with length %d", i + LOOKAHEAD, length)
             return i + LOOKAHEAD, length
 
 
@@ -270,7 +270,7 @@ class Summary:
         while self._handle.tell() < self.size and len(checksums) < CHECKSUMS:
             op = mgz.body.operation.parse_stream(self._handle)
             if op.type == 'sync' and op.checksum is not None:
-                checksums.append(bytes(op.checksum.sync))
+                checksums.append(op.checksum.sync.to_bytes(8, 'big', signed=True))
         return hashlib.sha1(b''.join(checksums))
 
     def get_map(self):
