@@ -15,14 +15,16 @@ VERSIONS = {
 MODS = {
     1: 'Wololo Kingdoms',
     2: 'Portuguese Civilization Mod III',
-    3: 'Age of Chivalry'
+    3: 'Age of Chivalry',
+    7: 'Realms'
 }
 
 SPEEDS = {
     100: 'slow',
     150: 'standard',
     178: 'standard', # up15
-    200: 'fast'
+    200: 'fast',
+    237: 'fast' # up15
 }
 
 MAP_NAMES = {

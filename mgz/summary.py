@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 SEARCH_MAX_BYTES = 3000
 POSTGAME_LENGTH = 2096
 LOOKAHEAD = 9
-CHECKSUMS = 2
+CHECKSUMS = 4
 
 
 def find_postgame(data, size):
@@ -65,7 +65,7 @@ class Summary:
             self._header = mgz.header.parse_stream(handle)
         except (construct.core.ConstructError, ValueError):
             raise RuntimeError("invalid mgz file")
-        self._body_position = self._handle.tell()
+        self.body_position = self._handle.tell()
         self.size = size
         self.postgame = None
         self._teams = None
@@ -83,7 +83,7 @@ class Summary:
             self.postgame = False
             return None
         finally:
-            self._handle.seek(self._body_position)
+            self._handle.seek(self.body_position)
 
     def get_duration(self):
         """Get game duration."""
@@ -98,7 +98,7 @@ class Summary:
             elif operation.type == 'action':
                 if operation.action.type == 'resign':
                     self._resigned.add(operation.action.player_id)
-        self._handle.seek(self._body_position)
+        self._handle.seek(self.body_position)
         return duration
 
     def get_restored(self):
@@ -109,12 +109,22 @@ class Summary:
         """Get game version."""
         return mgz.const.VERSIONS[self._header.version], str(self._header.sub_version)[:5]
 
-    def get_mod(self):
-        """Get mod, if there is one."""
+    def get_dataset(self):
+        """Get dataset."""
         sample = self._header.initial.players[0].attributes.player_stats
         if 'mod' in sample and sample.mod['id'] > 0:
-            return sample.mod['name'], sample.mod['version']
-        return None, None
+            return sample.mod
+        elif 'trickle_food' in sample and sample.trickle_food:
+            return {
+                'id': 1,
+                'name': mgz.const.MODS.get(1),
+                'version': '<5.7.2'
+            }
+        return {
+            'id': 0,
+            'name': 'Age of Kings: The Conquerors',
+            'version': '1.0c'
+        }
 
     def get_owner(self):
         """Get rec owner (POV)."""
@@ -168,21 +178,21 @@ class Summary:
         total_num = player_num + computer_num
 
         diplomacy = {
-            'ffa': len(self._teams) == (total_num and
-                                        total_num > 2),
+            'FFA': (len(self._teams) == total_num) and total_num > 2,
             'TG':  len(self._teams) == 2 and total_num > 2,
             '1v1': total_num == 2,
         }
 
         diplomacy['type'] = 'unknown'
-        if diplomacy['ffa']:
-            diplomacy['type'] = 'ffa'
+        if diplomacy['FFA']:
+            diplomacy['type'] = 'FFA'
         if diplomacy['TG']:
             diplomacy['type'] = 'TG'
             size = len(self._teams[0])
             diplomacy['team_size'] = '{}v{}'.format(size, size)
         if diplomacy['1v1']:
             diplomacy['type'] = '1v1'
+            diplomacy['team_size'] = '1v1'
         return diplomacy
 
     def get_achievements(self, name):
@@ -227,6 +237,7 @@ class Summary:
         """
         ladder = None
         voobly = False
+        ratings = set()
         while self._handle.tell() < self.size:
             try:
                 op = mgz.body.operation.parse_stream(self._handle)
@@ -236,16 +247,21 @@ class Summary:
                         end = op.data.text.find("'", start)
                         ladder = op.data.text[start:end]
                         voobly = True
-                        break
-                    elif op.data.text.find('Voobly') > 0:
-                        voobly = True
+                    elif op.data.text.find('<Rating>') > 0:
+                        line = op.data.text
+                        player_start = line.find('>') + 2
+                        player_end = line.find(':', player_start)
+                        ratings.add(int(line[player_end + 2:len(line)]))
                     elif op.data.text.find('No ratings are available') > 0:
+                        voobly = True
+                        break
+                    elif op.data.text.find('This match was played at Voobly.com') > 0:
                         voobly = True
                         break
             except (construct.core.ConstructError, ValueError):
                 break
-        self._handle.seek(self._body_position)
-        return voobly, ladder
+        self._handle.seek(self.body_position)
+        return voobly, ladder, len(ratings) > 0 and ratings != {1600}
 
     def get_settings(self):
         """Get settings."""
@@ -265,7 +281,7 @@ class Summary:
         Use the first three synchronization checksums
         as a unique identifier for the match.
         """
-        self._handle.seek(self._body_position)
+        self._handle.seek(self.body_position)
         checksums = []
         while self._handle.tell() < self.size and len(checksums) < CHECKSUMS:
             op = mgz.body.operation.parse_stream(self._handle)
