@@ -130,8 +130,8 @@ def DifficultyEnum(ctx):
         ctx,
         hardest=0,
         hard=1,
-        standard=2,
-        easy=3,
+        moderate=2,
+        standard=3,
         easiest=4
     )
 

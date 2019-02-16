@@ -327,6 +327,16 @@ class Summary:
         else:
             return True if self._resigned else False
 
+    def get_mirror(self):
+        """Determine mirror match."""
+        mirror = False
+        if self.get_diplomacy()['1v1']:
+            civs = set()
+            for data in self.get_players():
+                civs.add(data['civilization'])
+            mirror = (len(civs) == 1)
+        return mirror
+
     def guess_winner(self, i):
         """Guess if a player won.
 
