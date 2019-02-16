@@ -16,6 +16,7 @@ MODS = {
     1: 'Wololo Kingdoms',
     2: 'Portuguese Civilization Mod III',
     3: 'Age of Chivalry',
+    4: 'Sengoku',
     7: 'Realms'
 }
 
