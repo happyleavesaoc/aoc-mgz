@@ -1,7 +1,7 @@
 """Scenario."""
 
 from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
-                       PascalString, String, Struct)
+                       PascalString, String, Struct, Bytes)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, StartingAgeEnum
 from mgz.util import Find
@@ -34,8 +34,8 @@ messages = "messages"/Struct(
     "defeat_id"/Int32ul,
     "history_id"/Int32ul,
     "scouts_id"/Int32ul,
-    "instructions"/PascalString(lengthfield="instructions_length"/Int16ul,
-                                encoding='latin1'), # this contains the map name
+    "instructions_length"/Int16ul,
+    "instructions"/Bytes(lambda ctx: ctx.instructions_length),
     "hints"/PascalString(lengthfield="hints_length"/Int16ul),
     "victory"/PascalString(lengthfield="victory_length"/Int16ul),
     "defeat"/PascalString(lengthfield="defeat_length"/Int16ul),
@@ -103,7 +103,7 @@ game_settings = "game_settings"/Struct(
     Padding(8),
     "map_id"/Int32ul,
     DifficultyEnum("difficulty"/Int32ul),
-    Padding(4),
+    "lock_teams"/Int32ul,
     Array(9, "player_info"/Struct(
         "data_ref"/Int32ul,
         PlayerTypeEnum("type"/Int32ul),

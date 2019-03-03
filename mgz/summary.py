@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import os
+import re
 import struct
 
 import construct
@@ -15,6 +16,32 @@ SEARCH_MAX_BYTES = 3000
 POSTGAME_LENGTH = 2096
 LOOKAHEAD = 9
 CHECKSUMS = 4
+ENCODING_MARKERS = [
+    ['Map Type: ', 'latin-1', 'en'],
+    ['Tipo de mapa: ', 'latin-1', 'es'],
+    ['Kartentyp: ', 'latin-1', 'de'],
+    ['Type de carte\xa0: ', 'latin-1', 'fr'],
+    ['Type de carte : ', 'latin-1', 'fr'],
+    ['Tipo di mappa: ', 'latin-1', 'it'],
+    ['Tipo de Mapa: ', 'latin-1', 'pt'],
+    ['Kaarttype', 'latin-1', 'nl'],
+    ['Harita Türü: ', 'ISO-8859-1', 'tr'],
+    ['Harita Sitili', 'ISO-8859-1', 'tr'],
+    ['Typ mapy: ', 'ISO-8859-2', None],
+    ['Тип карты: ', 'windows-1251', 'ru'],
+    ['Тип Карты: ', 'windows-1251', 'ru'],
+    ['マップの種類: ', 'SHIFT_JIS', 'jp'],
+    ['지도 종류', 'cp949', 'kr'],
+    ['地图类型: ', 'cp936', 'zh'],
+    ['地圖類別：', 'cp936', 'zh'],
+    ['地圖類別：', 'big5', 'zh'],
+    ['地图类别：', 'cp936', 'zh']
+]
+LANGUAGE_MARKERS = [
+    ['Dostepne', 'pl'],
+    ['Povolen', 'sk'],
+    ['Mozno', 'cs']
+]
 
 
 def find_postgame(data, size):
@@ -52,6 +79,18 @@ def parse_postgame(handle, size):
     raise IOError("could not find postgame")
 
 
+def ach(structure, fields):
+    """Get field from achievements structure."""
+    field = fields.pop(0)
+    if structure:
+        if hasattr(structure, field):
+            structure = getattr(structure, field)
+            if not fields:
+                return structure
+            return ach(structure, fields)
+    return None
+
+
 class Summary:
     """MGZ summary.
 
@@ -68,8 +107,11 @@ class Summary:
         self.body_position = self._handle.tell()
         self.size = size
         self.postgame = None
+        # TODO: make these into a proper cache
         self._teams = None
         self._resigned = set()
+        self._encoding = None
+        self._ratings = None
 
     def get_postgame(self):
         """Get postgame structure."""
@@ -188,8 +230,9 @@ class Summary:
             diplomacy['type'] = 'FFA'
         if diplomacy['TG']:
             diplomacy['type'] = 'TG'
-            size = len(self._teams[0])
-            diplomacy['team_size'] = '{}v{}'.format(size, size)
+            size_1 = len(self._teams[0])
+            size_2 = len(self._teams[1])
+            diplomacy['team_size'] = '{}v{}'.format(size_1, size_2)
         if diplomacy['1v1']:
             diplomacy['type'] = '1v1'
             diplomacy['team_size'] = '1v1'
@@ -204,67 +247,123 @@ class Summary:
         if not postgame:
             return None
         for achievements in postgame.achievements:
-            if name == achievements.player_name:
+            if name == achievements.player_name.replace(b'\x00', b''):
                 return achievements
         return None
 
     def get_players(self):
         """Get basic player info."""
+        ratings = self.get_ratings()
         for i, player in enumerate(self._header.initial.players[1:]):
             achievements = self.get_achievements(player.attributes.player_name)
             if achievements:
                 winner = achievements.victory
             else:
                 winner = self.guess_winner(i + 1)
+            feudal_time = ach(achievements, ['technology', 'feudal_time_int'])
+            castle_time = ach(achievements, ['technology', 'castle_time_int'])
+            imperial_time = ach(achievements, ['technology', 'imperial_time_int'])
+            name = player.attributes.player_name.decode(self.get_encoding())
             yield {
-                'name': player.attributes.player_name,
+                'name': name,
                 'civilization': player.attributes.civilization,
                 'human': self._header.scenario.game_settings.player_info[i + 1].type == 'human',
                 'number': i + 1,
                 'color_id': player.attributes.player_color,
                 'winner': winner,
-                'mvp': achievements.mvp if achievements else None,
-                'score': achievements.total_score if achievements else None,
-                'position': (player.attributes.camera_x, player.attributes.camera_y)
+                'mvp': ach(achievements, ['mvp']),
+                'score': ach(achievements, ['total_score']),
+                'position': (player.attributes.camera_x, player.attributes.camera_y),
+                'rate_snapshot': ratings.get(name),
+                'achievements': {
+                    'military': {
+                        'score': ach(achievements, ['military', 'score']),
+                        'units_killed': ach(achievements, ['military', 'units_killed']),
+                        'hit_points_killed': ach(achievements, ['military', 'hit_points_killed']),
+                        'units_lost': ach(achievements, ['military', 'units_lost']),
+                        'buildings_razed': ach(achievements, ['military', 'buildings_razed']),
+                        'hit_points_razed': ach(achievements, ['military', 'hit_points_razed']),
+                        'buildings_lost': ach(achievements, ['military', 'buildings_lost']),
+                        'units_converted': ach(achievements, ['military', 'units_converted'])
+                    },
+                    'economy': {
+                        'score': ach(achievements, ['economy', 'score']),
+                        'food_collected': ach(achievements, ['economy', 'food_collected']),
+                        'wood_collected': ach(achievements, ['economy', 'wood_collected']),
+                        'stone_collected': ach(achievements, ['economy', 'stone_collected']),
+                        'gold_collected': ach(achievements, ['economy', 'gold_collected']),
+                        'tribute_sent': ach(achievements, ['economy', 'tribute_sent']),
+                        'tribute_received': ach(achievements, ['economy', 'tribute_received']),
+                        'trade_gold': ach(achievements, ['economy', 'trade_gold']),
+                        'relic_gold': ach(achievements, ['economy', 'relic_gold'])
+                    },
+                    'technology': {
+                        'score': ach(achievements, ['technology', 'score']),
+                        'feudal_time': feudal_time if feudal_time and feudal_time > 0 else None,
+                        'castle_time': castle_time if castle_time and castle_time > 0 else None,
+                        'imperial_time': imperial_time if imperial_time and imperial_time > 0 else None,
+                        'explored_percent': ach(achievements, ['technology', 'explored_percent']),
+                        'research_count': ach(achievements, ['technology', 'research_count']),
+                        'research_percent': ach(achievements, ['technology', 'research_percent'])
+                    },
+                    'society': {
+                        'score': ach(achievements, ['society', 'score']),
+                        'total_wonders': ach(achievements, ['society', 'total_wonders']),
+                        'total_castles': ach(achievements, ['society', 'total_castles']),
+                        'total_relics': ach(achievements, ['society', 'relics_captured']),
+                        'villager_high': ach(achievements, ['society', 'villager_high'])
+                    }
+                }
             }
+
+    def get_ratings(self):
+        """Get player ratings."""
+        if not self._ratings:
+            self.get_ladder()
+        return self._ratings
 
     def get_ladder(self):
         """Get Voobly ladder.
 
         This is expensive if the rec is not from Voobly,
         since it will search the whole file. Returns tuple,
-        (from_voobly, ladder_name).
+        (from_voobly, ladder_name, rated, ratings).
         """
         ladder = None
         voobly = False
-        ratings = set()
+        ratings = {}
+        encoding = self.get_encoding()
         while self._handle.tell() < self.size:
             try:
                 op = mgz.body.operation.parse_stream(self._handle)
                 if op.type == 'message' and op.subtype == 'chat':
-                    if op.data.text.find('Voobly: Ratings provided') > 0:
-                        start = op.data.text.find("'") + 1
-                        end = op.data.text.find("'", start)
-                        ladder = op.data.text[start:end]
+                    text = op.data.text.decode(encoding)
+                    if text.find('Voobly: Ratings provided') > 0:
+                        start = text.find("'") + 1
+                        end = text.find("'", start)
+                        ladder = text[start:end]
                         voobly = True
-                    elif op.data.text.find('<Rating>') > 0:
-                        line = op.data.text
-                        player_start = line.find('>') + 2
-                        player_end = line.find(':', player_start)
-                        ratings.add(int(line[player_end + 2:len(line)]))
-                    elif op.data.text.find('No ratings are available') > 0:
+                    elif text.find('<Rating>') > 0:
+                        player_start = text.find('>') + 2
+                        player_end = text.find(':', player_start)
+                        player = text[player_start:player_end]
+                        ratings[player] = int(text[player_end + 2:len(text)])
+                    elif text.find('No ratings are available') > 0:
                         voobly = True
                         break
-                    elif op.data.text.find('This match was played at Voobly.com') > 0:
+                    elif text.find('This match was played at Voobly.com') > 0:
                         voobly = True
                         break
             except (construct.core.ConstructError, ValueError):
                 break
         self._handle.seek(self.body_position)
-        return voobly, ladder, len(ratings) > 0 and ratings != {1600}
+        self._ratings = ratings
+        rated = len(ratings) > 0 and set(ratings.values()) != {1600}
+        return voobly, ladder, rated, ratings
 
     def get_settings(self):
         """Get settings."""
+        postgame = self.get_postgame()
         return {
             'type': self._header.lobby.game_type,
             'difficulty': self._header.scenario.game_settings.difficulty,
@@ -272,13 +371,20 @@ class Summary:
             'reveal_map': self._header.lobby.reveal_map,
             'speed': mgz.const.SPEEDS.get(self._header.replay.game_speed),
             'cheats': self._header.replay.cheats_enabled,
-            'lock_teams': self._header.lobby.lock_teams
+            'lock_teams': self._header.lobby.lock_teams,
+            'starting_resources': postgame.resource_level if postgame else None,
+            'starting_age': postgame.starting_age if postgame else None,
+            'victory_condition': postgame.victory_type if postgame else None,
+            'team_together': not postgame.team_together if postgame else None,
+            'all_technologies': postgame.all_techs if postgame else None,
+            'lock_speed': postgame.lock_speed if postgame else None,
+            'multiqueue': None
         }
 
     def get_hash(self):
         """Compute match hash.
 
-        Use the first three synchronization checksums
+        Use the first four synchronization checksums
         as a unique identifier for the match.
         """
         self._handle.seek(self.body_position)
@@ -289,31 +395,75 @@ class Summary:
                 checksums.append(op.checksum.sync.to_bytes(8, 'big', signed=True))
         return hashlib.sha1(b''.join(checksums))
 
-    def get_map(self):
-        """Get the map name.
+    def get_encoding(self):
+        """Get text encoding."""
+        if not self._encoding:
+            self.get_map()
+        return self._encoding
 
-        TODO: Search all language strings.
-        """
+    def get_language(self):
+        """Get language."""
+        if not self._language:
+            self.get_map()
+        return self._language
+
+    def get_map(self):
+        """Get the map metadata."""
         map_id = self._header.scenario.game_settings.map_id
         instructions = self._header.scenario.messages.instructions
         size = mgz.const.MAP_SIZES[self._header.map_info.size_x]
+        name = 'Unknown'
+        language = None
+        encoding = 'unknown'
+
+        # detect encoding and language
+        for pair in ENCODING_MARKERS:
+            marker = pair[0]
+            test_encoding = pair[1]
+            e_m = marker.encode(test_encoding)
+            for line in instructions.split(b'\n'):
+                pos = line.find(e_m)
+                if pos > -1:
+                    encoding = test_encoding
+                    name = line[pos+len(e_m):].decode(encoding)
+                    language = pair[2]
+                    if name.find(' (') > 0:
+                        name = name.split(' (')[1][:-1].strip()
+                    break
+
+        # disambiguate certain languages
+        if not language:
+            language = 'unknown'
+            for pair in LANGUAGE_MARKERS:
+                if instructions.find(pair[0]) > -1:
+                    language = pair[1]
+                    break
+        self._encoding = encoding
+        self._language = language
+
+        # lookup base game map if applicable
         if map_id in mgz.const.MAP_NAMES:
-            return mgz.const.MAP_NAMES[map_id], size
-        else:
-            name = 'Unknown'
-            line = instructions.split('\n')[2]
-            if line.find(':') > 0:
-                name = line.split(":")[1].strip()
-            elif line.find('\xa1\x47') > 0:
-                name = line.split('\xa1\x47')[1].strip()
-            elif line.find("\xa3\xba") > 0:
-                name = line.split('\xa3\xba')[1].strip()
-            name = name.strip()
-            # Special case for maps (prefixed with language-specific name,
-            # real map name in parentheses.
-            if name.find(' (') > 0:
-                name = name.split(' (')[1][:-1]
-            return name, size
+            name = mgz.const.MAP_NAMES[map_id]
+
+        # extract map seed
+        match = re.search(b'\x00.*? (\-?[0-9]+)\x00.*?\.rms', instructions)
+        seed = None
+        if match:
+            seed = int(match.group(1))
+
+        # extract userpatch modes
+        has_modes = name.find(': !')
+        mode_string = ''
+        if has_modes > -1:
+            mode_string = name[has_modes + 3:]
+            name = name[:has_modes]
+        modes = {
+            'direct_placement': 'P' in mode_string,
+            'effect': 'C' in mode_string,
+            'guard_state': 'G' in mode_string
+        }
+
+        return name, size, seed, modes
 
     def get_completed(self):
         """Determine if the game was completed.

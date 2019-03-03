@@ -1,7 +1,7 @@
 """UserPatch 1.4+ achievements - appended to recorded game."""
 
 from construct import (Array, Byte, Flag, Int16ul, Int32sl, Int32ul, Padding,
-                       String, Struct)
+                       Peek, String, Struct, Bytes)
 
 from mgz.util import TimeSecAdapter
 
@@ -35,8 +35,11 @@ economy = "economy"/Struct(
 technology = "technology"/Struct(
     "score"/Int16ul,
     Padding(2),
+    Peek("feudal_time_int"/Int32sl),
     TimeSecAdapter("feudal_time"/Int32sl),
+    Peek("castle_time_int"/Int32sl),
     TimeSecAdapter("castle_time"/Int32sl),
+    Peek("imperial_time_int"/Int32sl),
     TimeSecAdapter("imperial_time"/Int32sl),
     "explored_percent"/Byte,
     "research_count"/Byte,
@@ -53,7 +56,7 @@ society = "society"/Struct(
 )
 
 achievements = "achievements"/Struct(
-    "player_name"/String(16, padchar=b'\x00', trimdir='right', encoding='latin1'),
+    "player_name"/Bytes(16),
     "total_score"/Int16ul,
     Array(8, "total_scores"/Int16ul),
     "victory"/Flag,

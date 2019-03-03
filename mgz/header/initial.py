@@ -3,7 +3,7 @@
 # pylint: disable=invalid-name,no-name-in-module
 
 from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32sl,
-                       Int32ul, Padding, String, Struct, Tell, this)
+                       Int32ul, Padding, String, Struct, Tell, this, Bytes)
 
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
 from mgz.header.objects import existing_object
@@ -17,8 +17,8 @@ attributes = "attributes"/Struct(
     "allied_los"/Int32ul,
     "allied_victory"/Flag,
     "player_name_length"/Int16ul,
-    "player_name"/String(this.player_name_length, padchar=b'\x00',
-                         trimdir='right', encoding='latin1'),
+    "player_name"/Bytes(this.player_name_length - 1),
+    Padding(1), # 0x00
     Padding(1), # 0x16
     "num_header_data"/Int32ul, # always 198
     Padding(1), # 0x21

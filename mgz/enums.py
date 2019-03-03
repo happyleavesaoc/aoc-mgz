@@ -96,7 +96,12 @@ def GameTypeEnum(ctx):
         RM=0,
         Regicide=1,
         DM=2,
-        Scenario=3
+        Scenario=3,
+        Campaign=4,
+        KingOfTheHill=5,
+        WonderRace=6,
+        DefendTheWonder=7,
+        TurboRandom=8
     )
 
 def ObjectTypeEnum(ctx):
@@ -118,10 +123,13 @@ def PlayerTypeEnum(ctx):
     """Player Type Enumeration."""
     return Enum(
         ctx,
-        invalid=0,
-        unknown=1,
+        absent=0,
+        closed=1,
         human=2,
-        computer=4
+        eliminated=3,
+        computer=4,
+        cyborg=5,
+        spectator=6
     )
 
 def DifficultyEnum(ctx):
@@ -173,8 +181,15 @@ def VictoryEnum(ctx):
         ctx,
         standard=0,
         conquest=1,
+        exploration=2,
+        ruins=3,
+        artifacts=4,
+        discoveries=5,
+        gold=6,
         time_limit=7,
         score=8,
+        standard2=9,
+        regicide=10,
         last_man=11
     )
 
@@ -195,7 +210,8 @@ def RevealMapEnum(ctx):
         ctx,
         normal=0,
         explored=1,
-        all_visible=2
+        all_visible=2,
+        no_fog=3,
     )
 
 def StartingAgeEnum(ctx):

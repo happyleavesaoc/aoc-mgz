@@ -108,7 +108,8 @@ viewlock = "viewlock"/Struct(
 chat = "chat"/Struct(
     Padding(4),
     "length"/Int32ul,
-    "text"/String(lambda ctx: ctx.length, padchar=b'\x00', trimdir='right', encoding='latin1')
+    "text"/Bytes(lambda ctx: ctx.length - 1),
+    Padding(1)
 )
 
 # Game start
