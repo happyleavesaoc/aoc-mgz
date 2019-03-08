@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import struct
+import time
 
 import construct
 import mgz
@@ -16,6 +17,7 @@ SEARCH_MAX_BYTES = 3000
 POSTGAME_LENGTH = 2096
 LOOKAHEAD = 9
 CHECKSUMS = 4
+MAX_SYNCS = 2000
 ENCODING_MARKERS = [
     ['Map Type: ', 'latin-1', 'en'],
     ['Tipo de mapa: ', 'latin-1', 'es'],
@@ -38,9 +40,11 @@ ENCODING_MARKERS = [
     ['地图类别：', 'cp936', 'zh']
 ]
 LANGUAGE_MARKERS = [
-    ['Dostepne', 'pl'],
-    ['Povolen', 'sk'],
-    ['Mozno', 'cs']
+    ['Dostepne', 'ISO-8859-2', 'pl'],
+    ['oszukiwania', 'ISO-8859-2', 'pl'],
+    ['Dozwoli', 'ISO-8859-2', 'pl'],
+    ['Povol', 'ISO-8859-2', 'cs'], # Povolené, Povolit
+    ['Mozno', 'ISO-8859-2', 'sk']
 ]
 
 
@@ -100,29 +104,44 @@ class Summary:
     def __init__(self, handle, size):
         """Initialize."""
         self._handle = handle
+        self.size = size
+        header_len, = struct.unpack('<I', self._handle.read(4))
+        self.body_position = header_len
+        self._handle.seek(0)
+        self._cache = {
+            'teams': None,
+            'resigned': set(),
+            'encoding': None,
+            'language': None,
+            'ratings': {},
+            'postgame': None,
+            'from_voobly': False,
+            'rated': False,
+            'ladder': None,
+            'hash': None,
+            'map': None
+        }
+
+    def work(self):
         try:
-            self._header = mgz.header.parse_stream(handle)
+            start = time.time()
+            self._header = mgz.header.parse_stream(self._handle)
+            LOGGER.info("parsed rec header in %.2f seconds", time.time() - start)
         except (construct.core.ConstructError, ValueError):
             raise RuntimeError("invalid mgz file")
-        self.body_position = self._handle.tell()
-        self.size = size
-        self.postgame = None
-        # TODO: make these into a proper cache
-        self._teams = None
-        self._resigned = set()
-        self._encoding = None
-        self._ratings = None
+        self._process_body()
+
 
     def get_postgame(self):
         """Get postgame structure."""
-        if self.postgame is not None:
-            return self.postgame
+        if self._cache['postgame'] is not None:
+            return self._cache['postgame']
         self._handle.seek(0)
         try:
-            self.postgame = parse_postgame(self._handle, self.size)
-            return self.postgame
+            self._cache['postgame'] = parse_postgame(self._handle, self.size)
+            return self._cache['postgame']
         except IOError:
-            self.postgame = False
+            self._cache['postgame'] = False
             return None
         finally:
             self._handle.seek(self.body_position)
@@ -139,7 +158,7 @@ class Summary:
                 duration += operation.time_increment
             elif operation.type == 'action':
                 if operation.action.type == 'resign':
-                    self._resigned.add(operation.action.player_id)
+                    self._cache['resigned'].add(operation.action.player_id)
         self._handle.seek(self.body_position)
         return duration
 
@@ -174,8 +193,8 @@ class Summary:
 
     def get_teams(self):
         """Get teams."""
-        if self._teams:
-            return self._teams
+        if self._cache['teams']:
+            return self._cache['teams']
         teams = []
         for j, player in enumerate(self._header.initial.players):
             added = False
@@ -202,12 +221,12 @@ class Summary:
                     added = True
             if not added and j != 0:
                 teams.append([j])
-        self._teams = teams
+        self._cache['teams'] = teams
         return teams
 
     def get_diplomacy(self):
         """Compute diplomacy."""
-        if not self._teams:
+        if not self._cache['teams']:
             self.get_teams()
 
         player_num = 0
@@ -220,8 +239,8 @@ class Summary:
         total_num = player_num + computer_num
 
         diplomacy = {
-            'FFA': (len(self._teams) == total_num) and total_num > 2,
-            'TG':  len(self._teams) == 2 and total_num > 2,
+            'FFA': (len(self._cache['teams']) == total_num) and total_num > 2,
+            'TG':  len(self._cache['teams']) == 2 and total_num > 2,
             '1v1': total_num == 2,
         }
 
@@ -230,8 +249,8 @@ class Summary:
             diplomacy['type'] = 'FFA'
         if diplomacy['TG']:
             diplomacy['type'] = 'TG'
-            size_1 = len(self._teams[0])
-            size_2 = len(self._teams[1])
+            size_1 = len(self._cache['teams'][0])
+            size_2 = len(self._cache['teams'][1])
             diplomacy['team_size'] = '{}v{}'.format(size_1, size_2)
         if diplomacy['1v1']:
             diplomacy['type'] = '1v1'
@@ -318,25 +337,36 @@ class Summary:
 
     def get_ratings(self):
         """Get player ratings."""
-        if not self._ratings:
+        if not self._cache['ratings']:
             self.get_ladder()
-        return self._ratings
+        return self._cache['ratings']
 
     def get_ladder(self):
+        return self._cache['from_voobly'], self._cache['ladder'], self._cache['rated'], self._cache['ratings']
+
+    def _process_body(self):
         """Get Voobly ladder.
 
         This is expensive if the rec is not from Voobly,
         since it will search the whole file. Returns tuple,
         (from_voobly, ladder_name, rated, ratings).
         """
-        ladder = None
-        voobly = False
+        start_time = time.time()
         ratings = {}
         encoding = self.get_encoding()
+        checksums = []
+        ladder= None
+        voobly = False
+        rated = False
+        i = 0
         while self._handle.tell() < self.size:
             try:
                 op = mgz.body.operation.parse_stream(self._handle)
-                if op.type == 'message' and op.subtype == 'chat':
+                if op.type == 'sync':
+                    i += 1
+                if op.type == 'sync' and op.checksum is not None and len(checksums) < CHECKSUMS:
+                    checksums.append(op.checksum.sync.to_bytes(8, 'big', signed=True))
+                elif op.type == 'message' and op.subtype == 'chat':
                     text = op.data.text.decode(encoding)
                     if text.find('Voobly: Ratings provided') > 0:
                         start = text.find("'") + 1
@@ -350,15 +380,22 @@ class Summary:
                         ratings[player] = int(text[player_end + 2:len(text)])
                     elif text.find('No ratings are available') > 0:
                         voobly = True
-                        break
+                        #break
                     elif text.find('This match was played at Voobly.com') > 0:
                         voobly = True
-                        break
+                        #break
+                if i > MAX_SYNCS:
+                    break
             except (construct.core.ConstructError, ValueError):
                 break
         self._handle.seek(self.body_position)
-        self._ratings = ratings
         rated = len(ratings) > 0 and set(ratings.values()) != {1600}
+        self._cache['hash'] = hashlib.sha1(b''.join(checksums))
+        self._cache['from_voobly'] = voobly
+        self._cache['ladder'] = ladder
+        self._cache['rated'] = rated
+        self._cache['ratings'] = ratings if rated else {}
+        LOGGER.info("parsed limited rec body in %.2f seconds", time.time() - start_time)
         return voobly, ladder, rated, ratings
 
     def get_settings(self):
@@ -382,6 +419,9 @@ class Summary:
         }
 
     def get_hash(self):
+        return self._cache['hash']
+
+    def _abc(self):
         """Compute match hash.
 
         Use the first four synchronization checksums
@@ -397,24 +437,28 @@ class Summary:
 
     def get_encoding(self):
         """Get text encoding."""
-        if not self._encoding:
+        if not self._cache['encoding']:
             self.get_map()
-        return self._encoding
+        return self._cache['encoding']
 
     def get_language(self):
         """Get language."""
-        if not self._language:
+        if not self._cache['language']:
             self.get_map()
-        return self._language
+        return self._cache['language']
 
     def get_map(self):
         """Get the map metadata."""
+        if self._cache['map']:
+            return self._cache['map']
         map_id = self._header.scenario.game_settings.map_id
         instructions = self._header.scenario.messages.instructions
         size = mgz.const.MAP_SIZES[self._header.map_info.size_x]
         name = 'Unknown'
         language = None
         encoding = 'unknown'
+        #for x in instructions.split(b'\n'):
+        #    print(x)
 
         # detect encoding and language
         for pair in ENCODING_MARKERS:
@@ -427,19 +471,17 @@ class Summary:
                     encoding = test_encoding
                     name = line[pos+len(e_m):].decode(encoding)
                     language = pair[2]
-                    if name.find(' (') > 0:
-                        name = name.split(' (')[1][:-1].strip()
                     break
 
         # disambiguate certain languages
         if not language:
             language = 'unknown'
             for pair in LANGUAGE_MARKERS:
-                if instructions.find(pair[0]) > -1:
-                    language = pair[1]
+                if instructions.find(pair[0].encode(pair[1])) > -1:
+                    language = pair[2]
                     break
-        self._encoding = encoding
-        self._language = language
+        self._cache['encoding'] = encoding
+        self._cache['language'] = language
 
         # lookup base game map if applicable
         if map_id in mgz.const.MAP_NAMES:
@@ -463,7 +505,11 @@ class Summary:
             'guard_state': 'G' in mode_string
         }
 
-        return name, size, seed, modes
+        # if name is in parentheses
+        if name.find(' (') > 0:
+            name = name.split(' (')[1][:-1].strip()
+        self._cache['map'] = (name, size, seed, modes)
+        return self._cache['map']
 
     def get_completed(self):
         """Determine if the game was completed.
@@ -475,7 +521,7 @@ class Summary:
         if postgame:
             return postgame.complete
         else:
-            return True if self._resigned else False
+            return True if self._cache['resigned'] else False
 
     def get_mirror(self):
         """Determine mirror match."""
@@ -497,6 +543,6 @@ class Summary:
             if i not in team:
                 continue
             for p in team:
-                if p in self._resigned:
+                if p in self._cache['resigned']:
                     return False
         return True
