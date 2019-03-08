@@ -457,8 +457,6 @@ class Summary:
         name = 'Unknown'
         language = None
         encoding = 'unknown'
-        #for x in instructions.split(b'\n'):
-        #    print(x)
 
         # detect encoding and language
         for pair in ENCODING_MARKERS:
