@@ -292,6 +292,7 @@ class Summary:
                 'winner': winner,
                 'mvp': ach(achievements, ['mvp']),
                 'score': ach(achievements, ['total_score']),
+                'random_civilization': ach(achievements, ['random_civ']),
                 'position': (player.attributes.camera_x, player.attributes.camera_y),
                 'rate_snapshot': ratings.get(name),
                 'achievements': {
