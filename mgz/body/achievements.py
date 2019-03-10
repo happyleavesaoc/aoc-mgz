@@ -64,7 +64,7 @@ achievements = "achievements"/Struct(
     "color_id"/Byte,
     "team"/Byte,
     "ally_count"/Byte,
-    "random_civ"/Flag,
+    "random_civ"/Flag, # never actually set
     "mvp"/Flag,
     Padding(3),
     "result"/Int32ul,

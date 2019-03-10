@@ -266,7 +266,8 @@ class Summary:
         if not postgame:
             return None
         for achievements in postgame.achievements:
-            if name == achievements.player_name.replace(b'\x00', b''):
+            # achievements player name can be shorter
+            if name.startswith(achievements.player_name.replace(b'\x00', b'')):
                 return achievements
         return None
 
@@ -292,7 +293,6 @@ class Summary:
                 'winner': winner,
                 'mvp': ach(achievements, ['mvp']),
                 'score': ach(achievements, ['total_score']),
-                'random_civilization': ach(achievements, ['random_civ']),
                 'position': (player.attributes.camera_x, player.attributes.camera_y),
                 'rate_snapshot': ratings.get(name),
                 'achievements': {
