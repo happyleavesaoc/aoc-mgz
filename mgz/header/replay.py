@@ -10,7 +10,7 @@ replay = "replay"/Struct(
     "old_time"/Int32ul,
     "world_time"/Int32ul,
     "old_world_time"/Int32ul,
-    "game_speed"/Int32ul, # world_time_delta
+    "game_speed_id"/Int32ul, # world_time_delta
     "world_time_delta_seconds"/Int32ul,
     "timer"/Float32l,
     "game_speed_float"/Float32l,

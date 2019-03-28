@@ -403,16 +403,37 @@ class Summary:
         """Get settings."""
         postgame = self.get_postgame()
         return {
-            'type': self._header.lobby.game_type,
-            'difficulty': self._header.scenario.game_settings.difficulty,
+            'type': (
+                self._header.lobby.game_type_id,
+                self._header.lobby.game_type
+            ),
+            'difficulty': (
+                self._header.scenario.game_settings.difficulty_id,
+                self._header.scenario.game_settings.difficulty
+            ),
             'population_limit': self._header.lobby.population_limit * 25,
-            'reveal_map': self._header.lobby.reveal_map,
-            'speed': mgz.const.SPEEDS.get(self._header.replay.game_speed),
+            'map_reveal_choice': (
+                self._header.lobby.reveal_map_id,
+                self._header.lobby.reveal_map
+            ),
+            'speed': (
+                self._header.replay.game_speed_id,
+                mgz.const.SPEEDS.get(self._header.replay.game_speed_id)
+            ),
             'cheats': self._header.replay.cheats_enabled,
             'lock_teams': self._header.lobby.lock_teams,
-            'starting_resources': postgame.resource_level if postgame else None,
-            'starting_age': postgame.starting_age if postgame else None,
-            'victory_condition': postgame.victory_type if postgame else None,
+            'starting_resources': (
+                postgame.resource_level_id if postgame else None,
+                postgame.resource_level if postgame else None,
+            ),
+            'starting_age': (
+                postgame.starting_age_id if postgame else None,
+                postgame.starting_age if postgame else None
+            ),
+            'victory_condition': (
+                postgame.victory_type_id if postgame else None,
+                postgame.victory_type if postgame else None
+            ),
             'team_together': not postgame.team_together if postgame else None,
             'all_technologies': postgame.all_techs if postgame else None,
             'lock_speed': postgame.lock_speed if postgame else None,
@@ -455,6 +476,7 @@ class Summary:
         map_id = self._header.scenario.game_settings.map_id
         instructions = self._header.scenario.messages.instructions
         size = mgz.const.MAP_SIZES[self._header.map_info.size_x]
+        dimension = self._header.map_info.size_x
         name = 'Unknown'
         language = None
         encoding = 'unknown'
@@ -507,7 +529,7 @@ class Summary:
         # if name is in parentheses
         if name.find(' (') > 0:
             name = name.split(' (')[1][:-1].strip()
-        self._cache['map'] = (name, size, seed, modes)
+        self._cache['map'] = (name, size, dimension, seed, modes)
         return self._cache['map']
 
     def get_completed(self):

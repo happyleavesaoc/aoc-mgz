@@ -17,7 +17,8 @@ MODS = {
     2: 'Portuguese Civilization Mod III',
     3: 'Age of Chivalry',
     4: 'Sengoku',
-    7: 'Realms'
+    7: 'Realms',
+    101: 'King of the Hippo'
 }
 
 SPEEDS = {

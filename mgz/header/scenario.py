@@ -1,7 +1,7 @@
 """Scenario."""
 
 from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
-                       PascalString, String, Struct, Bytes)
+                       PascalString, Peek, String, Struct, Bytes)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, StartingAgeEnum
 from mgz.util import Find
@@ -102,6 +102,7 @@ game_settings = "game_settings"/Struct(
     Padding(4),
     Padding(8),
     "map_id"/Int32ul,
+    Peek("difficulty_id"/Int32ul),
     DifficultyEnum("difficulty"/Int32ul),
     "lock_teams"/Int32ul,
     Array(9, "player_info"/Struct(

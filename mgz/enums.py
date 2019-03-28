@@ -108,14 +108,16 @@ def ObjectTypeEnum(ctx):
     """Object Type Enumeration."""
     return Enum(
         ctx,
-        gaia=10, # eyecandy
-        other=20, # flag
+        gaia=10, # eyecandy, static
+        other=20, # flag, animated
         doppelganger=25,
-        fish=30, # dead fish
-        bird=40,
-        projectile=60,
-        unit=70, # creatable
+        fish=30, # dead fish, moving
+        bird=40, # action
+        base=50, # base combat
+        projectile=60, # missile
+        unit=70, # creatable, combat
         building=80,
+        tree=90,
         default=Pass
     )
 
