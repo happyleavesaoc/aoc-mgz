@@ -1,6 +1,6 @@
 """Lobby."""
 
-from construct import Array, Byte, Flag, Int32ul, Padding, Peek, String, Struct
+from construct import Array, Byte, Bytes, Flag, Int32ul, Padding, Peek, String, Struct
 
 from mgz.enums import GameTypeEnum, RevealMapEnum
 
@@ -24,7 +24,7 @@ lobby = "lobby"/Struct(
         lambda ctx: ctx.num_chat, # pre-game chat messages
         "messages"/Struct(
             "message_length"/Int32ul,
-            "message"/String(lambda ctx: ctx.message_length, padchar=b'\x00', encoding='latin1')
+            "message"/Bytes(lambda ctx: ctx.message_length)
         )
     )
 )

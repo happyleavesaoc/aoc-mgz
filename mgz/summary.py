@@ -381,10 +381,8 @@ class Summary:
                         ratings[player] = int(text[player_end + 2:len(text)])
                     elif text.find('No ratings are available') > 0:
                         voobly = True
-                        #break
                     elif text.find('This match was played at Voobly.com') > 0:
                         voobly = True
-                        #break
                 if i > MAX_SYNCS:
                     break
             except (construct.core.ConstructError, ValueError):
@@ -443,20 +441,6 @@ class Summary:
     def get_hash(self):
         return self._cache['hash']
 
-    def _abc(self):
-        """Compute match hash.
-
-        Use the first four synchronization checksums
-        as a unique identifier for the match.
-        """
-        self._handle.seek(self.body_position)
-        checksums = []
-        while self._handle.tell() < self.size and len(checksums) < CHECKSUMS:
-            op = mgz.body.operation.parse_stream(self._handle)
-            if op.type == 'sync' and op.checksum is not None:
-                checksums.append(op.checksum.sync.to_bytes(8, 'big', signed=True))
-        return hashlib.sha1(b''.join(checksums))
-
     def get_encoding(self):
         """Get text encoding."""
         if not self._cache['encoding']:
@@ -477,6 +461,7 @@ class Summary:
         instructions = self._header.scenario.messages.instructions
         size = mgz.const.MAP_SIZES[self._header.map_info.size_x]
         dimension = self._header.map_info.size_x
+        custom = True
         name = 'Unknown'
         language = None
         encoding = 'unknown'
@@ -507,6 +492,7 @@ class Summary:
         # lookup base game map if applicable
         if map_id in mgz.const.MAP_NAMES:
             name = mgz.const.MAP_NAMES[map_id]
+            custom = False
 
         # extract map seed
         match = re.search(b'\x00.*? (\-?[0-9]+)\x00.*?\.rms', instructions)
@@ -522,14 +508,25 @@ class Summary:
             name = name[:has_modes]
         modes = {
             'direct_placement': 'P' in mode_string,
-            'effect': 'C' in mode_string,
-            'guard_state': 'G' in mode_string
+            'effect_quantity': 'C' in mode_string,
+            'guard_state': 'G' in mode_string,
+            'fixed_positions': 'F' in mode_string
         }
 
         # if name is in parentheses
         if name.find(' (') > 0:
             name = name.split(' (')[1][:-1].strip()
-        self._cache['map'] = (name, size, dimension, seed, modes)
+
+        self._cache['map'] = {
+            'id': map_id if not custom else None,
+            'name': name,
+            'size': size,
+            'dimension': dimension,
+            'seed': seed,
+            'modes': modes,
+            'custom': custom,
+            'zr': name.startswith('ZR@')
+        }
         return self._cache['map']
 
     def get_completed(self):
