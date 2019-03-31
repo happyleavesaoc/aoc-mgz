@@ -2,7 +2,7 @@
 
 from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16ub,
                        Int16ul, Int32ub, Int32ul, Padding, Peek, Struct,
-                       Switch)
+                       Switch, Pass)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
 from mgz.util import Find
@@ -48,7 +48,7 @@ additional_header = "additional_header"/Struct(
 )
 
 # Other - seems to be items under Units > Other in the scenario editor
-other = "other"/Struct(
+animated = "animated"/Struct(
     Embedded(additional_header),
     # The following sections can be refined with further research.
     # There are clearly some patterns.
@@ -56,11 +56,11 @@ other = "other"/Struct(
     If(lambda ctx: ctx.has_extra == 2, Padding(
         34
     )),
-    "speed"/Float32l
+    "turn_speed"/Float32l
 )
 
 # Units - typically villagers, scout, and any sheep within LOS
-unit = "unit"/Struct(
+combat = "combat"/Struct(
     Embedded(additional_header),
     # Not pretty, but we don't know how to parse a unit yet.
     # Also, this only works on non-restored games.
@@ -99,13 +99,14 @@ building = "building"/Struct(
 )
 
 # Mainly trees and mines
-gaia = "gaia"/Struct(
+static = "static"/Struct(
     Embedded(existing_object_header),
     Padding(14),
 )
 
+
 # This type has various classes of objects, we care about the fish
-fish = "fish"/Struct(
+moving = "moving"/Struct(
     Embedded(additional_header),
     "has_extra"/Byte,
     If(lambda ctx: ctx.has_extra == 2, Padding(
@@ -114,18 +115,55 @@ fish = "fish"/Struct(
     Padding(140)
 )
 
+action = "action"/Struct(
+    Embedded(animated),
+    "search_radius"/Float32l,
+    "work_rate"/Float32l
+)
+
+hit = "hit"/Struct(
+    "type"/Int16ul,
+    "amount"/Int16ul
+)
+
+base = "base"/Struct(
+    Embedded(action),
+    "base_armor"/Int16ul,
+    "attack_length"/Int16ul,
+    "attacks"/Array(lambda ctx: ctx.attack_length, hit),
+    "armors_length"/Int16ul,
+    "armors"/Array(lambda ctx: ctx.armors_length, hit),
+    "attacks_2"/Float32l,
+    "weapon_range_max"/Float32l,
+    "base_hit_chance"/Int16ul,
+    "projectile_object_id"/Int16ul,
+    "defense_terrain_bonus"/Int16ul,
+    "weapon_range_max_2"/Float32l,
+    "area_of_effect"/Float32l,
+    "weapon_range_min"/Float32l
+)
+
+missile = "missile"/Struct(
+    Embedded(base),
+    "targeting_type"/Byte
+)
+
 # Objects that exist on the map at the start of the recorded game
 existing_object = "objects"/Struct(
     ObjectTypeEnum("type"/Byte),
     "player_id"/Byte,
     Embedded("properties"/Switch(lambda ctx: ctx.type, {
-        "gaia": gaia,
-        "unit": unit,
+        "static": static,
+        "animated": animated,
+        "doppelganger": animated,
+        "moving": moving,
+        "action": action,
+        "base": base,
+        "missile": missile,
+        "combat": combat,
         "building": building,
-        "fish": fish,
-        "other": other,
-        "doppelganger": other
-    })),
+        "tree": static
+    }, default=Pass)),
     # These boundary bytes can occur in the middle of a set of objects, and at the end
     # There is probably a better way to check these
     Peek("extension1"/Int16ub),
