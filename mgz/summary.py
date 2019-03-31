@@ -519,7 +519,7 @@ class Summary:
 
         self._cache['map'] = {
             'id': map_id if not custom else None,
-            'name': name,
+            'name': name.strip(),
             'size': size,
             'dimension': dimension,
             'seed': seed,
