@@ -34,6 +34,7 @@ ENCODING_MARKERS = [
     ['Тип Карты: ', 'windows-1251', 'ru'],
     ['マップの種類: ', 'SHIFT_JIS', 'jp'],
     ['지도 종류', 'cp949', 'kr'],
+    ['地??型', 'big5', 'zh'],
     ['地图类型: ', 'cp936', 'zh'],
     ['地圖類別：', 'cp936', 'zh'],
     ['地圖類別：', 'big5', 'zh'],
@@ -465,7 +466,6 @@ class Summary:
         name = 'Unknown'
         language = None
         encoding = 'unknown'
-
         # detect encoding and language
         for pair in ENCODING_MARKERS:
             marker = pair[0]
