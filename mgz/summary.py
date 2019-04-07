@@ -6,6 +6,7 @@ import os
 import re
 import struct
 import time
+import zlib
 
 import construct
 import mgz
@@ -33,12 +34,13 @@ ENCODING_MARKERS = [
     ['Тип карты: ', 'windows-1251', 'ru'],
     ['Тип Карты: ', 'windows-1251', 'ru'],
     ['マップの種類: ', 'SHIFT_JIS', 'jp'],
-    ['지도 종류', 'cp949', 'kr'],
+    ['지도 종류: ', 'cp949', 'kr'],
     ['地??型', 'big5', 'zh'],
     ['地图类型: ', 'cp936', 'zh'],
     ['地圖類別：', 'cp936', 'zh'],
     ['地圖類別：', 'big5', 'zh'],
-    ['地图类别：', 'cp936', 'zh']
+    ['地图类别：', 'cp936', 'zh'],
+    ['地图类型：', 'GB2312', 'zh']
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
@@ -128,9 +130,9 @@ class Summary:
             start = time.time()
             self._header = mgz.header.parse_stream(self._handle)
             LOGGER.info("parsed rec header in %.2f seconds", time.time() - start)
-        except (construct.core.ConstructError, ValueError):
+            self._process_body()
+        except (construct.core.ConstructError, zlib.error, ValueError):
             raise RuntimeError("invalid mgz file")
-        self._process_body()
 
 
     def get_postgame(self):
@@ -245,17 +247,16 @@ class Summary:
             '1v1': total_num == 2,
         }
 
-        diplomacy['type'] = 'unknown'
+        diplomacy['type'] = 'Other'
+        team_sizes = sorted([len(team) for team in self._cache['teams']])
+        diplomacy['team_size'] = 'v'.join([str(size) for size in team_sizes])
         if diplomacy['FFA']:
             diplomacy['type'] = 'FFA'
-        if diplomacy['TG']:
+            diplomacy['team_size'] = 'FFA'
+        elif diplomacy['TG']:
             diplomacy['type'] = 'TG'
-            size_1 = len(self._cache['teams'][0])
-            size_2 = len(self._cache['teams'][1])
-            diplomacy['team_size'] = '{}v{}'.format(size_1, size_2)
-        if diplomacy['1v1']:
+        elif diplomacy['1v1']:
             diplomacy['type'] = '1v1'
-            diplomacy['team_size'] = '1v1'
         return diplomacy
 
     def get_achievements(self, name):
@@ -390,7 +391,7 @@ class Summary:
                 break
         self._handle.seek(self.body_position)
         rated = len(ratings) > 0 and set(ratings.values()) != {1600}
-        self._cache['hash'] = hashlib.sha1(b''.join(checksums))
+        self._cache['hash'] = hashlib.sha1(b''.join(checksums)) if len(checksums) == CHECKSUMS else None
         self._cache['from_voobly'] = voobly
         self._cache['ladder'] = ladder
         self._cache['rated'] = rated
@@ -460,12 +461,13 @@ class Summary:
             return self._cache['map']
         map_id = self._header.scenario.game_settings.map_id
         instructions = self._header.scenario.messages.instructions
-        size = mgz.const.MAP_SIZES[self._header.map_info.size_x]
+        size = mgz.const.MAP_SIZES.get(self._header.map_info.size_x)
         dimension = self._header.map_info.size_x
         custom = True
         name = 'Unknown'
         language = None
         encoding = 'unknown'
+
         # detect encoding and language
         for pair in ENCODING_MARKERS:
             marker = pair[0]
@@ -490,7 +492,9 @@ class Summary:
         self._cache['language'] = language
 
         # lookup base game map if applicable
-        if map_id in mgz.const.MAP_NAMES:
+        if map_id != 44:
+            if map_id not in mgz.const.MAP_NAMES:
+                raise ValueError('unspecified builtin map')
             name = mgz.const.MAP_NAMES[map_id]
             custom = False
 
@@ -512,10 +516,6 @@ class Summary:
             'guard_state': 'G' in mode_string,
             'fixed_positions': 'F' in mode_string
         }
-
-        # if name is in parentheses
-        if name.find(' (') > 0:
-            name = name.split(' (')[1][:-1].strip()
 
         self._cache['map'] = {
             'id': map_id if not custom else None,
