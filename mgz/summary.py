@@ -155,14 +155,17 @@ class Summary:
         if postgame:
             return postgame.duration_int * 1000
         duration = self._header.initial.restore_time
-        while self._handle.tell() < self.size:
-            operation = mgz.body.operation.parse_stream(self._handle)
-            if operation.type == 'sync':
-                duration += operation.time_increment
-            elif operation.type == 'action':
-                if operation.action.type == 'resign':
-                    self._cache['resigned'].add(operation.action.player_id)
-        self._handle.seek(self.body_position)
+        try:
+            while self._handle.tell() < self.size:
+                operation = mgz.body.operation.parse_stream(self._handle)
+                if operation.type == 'sync':
+                    duration += operation.time_increment
+                elif operation.type == 'action':
+                    if operation.action.type == 'resign':
+                        self._cache['resigned'].add(operation.action.player_id)
+            self._handle.seek(self.body_position)
+        except (construct.core.ConstructError, zlib.error, ValueError):
+            raise RuntimeError("invalid mgz file")
         return duration
 
     def get_restored(self):
