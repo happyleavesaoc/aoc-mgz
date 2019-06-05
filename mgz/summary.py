@@ -23,6 +23,7 @@ ENCODING_MARKERS = [
     ['Map Type: ', 'latin-1', 'en'],
     ['Tipo de mapa: ', 'latin-1', 'es'],
     ['Kartentyp: ', 'latin-1', 'de'],
+    ['Art der Karte: ', 'latin-1', 'de'],
     ['Type de carte\xa0: ', 'latin-1', 'fr'],
     ['Type de carte : ', 'latin-1', 'fr'],
     ['Tipo di mappa: ', 'latin-1', 'it'],
@@ -30,6 +31,9 @@ ENCODING_MARKERS = [
     ['Kaarttype', 'latin-1', 'nl'],
     ['Harita Türü: ', 'ISO-8859-1', 'tr'],
     ['Harita Sitili', 'ISO-8859-1', 'tr'],
+    ['Harita tipi', 'ISO-8859-1', 'tr'],
+    ['??? ?????: ', 'ascii', 'tr'], # corrupt lang dll?
+    ['Térkép tipusa', 'ISO-8859-1', 'hu'],
     ['Typ mapy: ', 'ISO-8859-2', None],
     ['Тип карты: ', 'windows-1251', 'ru'],
     ['Тип Карты: ', 'windows-1251', 'ru'],
@@ -40,7 +44,8 @@ ENCODING_MARKERS = [
     ['地圖類別：', 'cp936', 'zh'],
     ['地圖類別：', 'big5', 'zh'],
     ['地图类别：', 'cp936', 'zh'],
-    ['地图类型：', 'GB2312', 'zh']
+    ['地图类型：', 'GB2312', 'zh'],
+    ['颌玉拙墁：', 'cp936', 'zh']
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
@@ -179,6 +184,8 @@ class Summary:
     def get_dataset(self):
         """Get dataset."""
         sample = self._header.initial.players[0].attributes.player_stats
+        if 'mod' in sample and sample.mod['id'] == 0 and sample.mod['version'] == '2':
+            raise ValueError("invalid mod version")
         if 'mod' in sample and sample.mod['id'] > 0:
             return sample.mod
         elif 'trickle_food' in sample and sample.trickle_food:
@@ -466,10 +473,14 @@ class Summary:
         instructions = self._header.scenario.messages.instructions
         size = mgz.const.MAP_SIZES.get(self._header.map_info.size_x)
         dimension = self._header.map_info.size_x
+        if dimension == 255:
+            raise ValueError('invalid map size')
         custom = True
         name = 'Unknown'
         language = None
         encoding = 'unknown'
+        if instructions == b'\x00':
+            raise ValueError('empty instructions')
 
         # detect encoding and language
         for pair in ENCODING_MARKERS:
