@@ -1,9 +1,9 @@
 """Scenario."""
 
 from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
-                       PascalString, Peek, String, Struct, Bytes)
+                       PascalString, Peek, String, Struct, Bytes, If, Byte, IfThenElse)
 
-from mgz.enums import DifficultyEnum, PlayerTypeEnum, StartingAgeEnum
+from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
 from mgz.util import Find
 
 # pylint: disable=invalid-name
@@ -12,7 +12,7 @@ from mgz.util import Find
 # Scenario header.
 scenario_header = "scenario_header"/Struct(
     "next_uid"/Int32ul,
-    "constant"/Int32ul,
+    "constant"/Bytes(4),
     Array(16, "names"/String(256)),
     Array(16, "player_ids"/Int32ul),
     Array(16, "player_data"/Struct(
@@ -24,6 +24,9 @@ scenario_header = "scenario_header"/Struct(
     Padding(5),
     "elapsed_time"/Float32l,
     "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),
+    If(lambda ctx: ctx._._.version == 'VER 9.4',
+        Padding(64)
+    )
 )
 
 # Scenarios have intro text, a bitmap, and cinematics.
@@ -63,7 +66,11 @@ scenario_players = "players"/Struct(
         "wood"/Int32ul,
         "food"/Int32ul,
         "stone"/Int32ul,
-        Padding(8),
+        "unk0"/Int32ul,
+        "unk1"/Int32ul,
+        If(lambda ctx: ctx._._._.version == 'VER 9.4',
+            "unk2"/Int32ul
+        )
     )),
     Array(16, Padding(1)) # 0x01 x 16
 )
@@ -87,24 +94,32 @@ victory = "victory"/Struct(
 disables = "disables"/Struct(
     Padding(4),
     Padding(64),
-    Array(16, "num_disabled_techs"/Int32ul),
-    Array(16, Array(30, Padding(4))),
-    Array(16, "num_disabled_units"/Int32ul),
-    Array(16, Array(30, Padding(4))),
-    Array(16, "num_disabled_buildings"/Int32ul),
-    Array(16, Array(20, Padding(4))),
-    Padding(12),
+    IfThenElse(lambda ctx: ctx._._.version != 'VER 9.4',
+        Struct(
+            Array(16, "num_disabled_techs"/Int32ul),
+            Array(16, Array(30, Padding(4))),
+            Array(16, "num_disabled_units"/Int32ul),
+            Array(16, Array(30, Padding(4))),
+            Array(16, "num_disabled_buildings"/Int32ul),
+            Array(16, Array(20, Padding(4))),
+        ),
+        Padding(196)
+    ),
+    Padding(12)
 )
 
 # Game settings.
 game_settings = "game_settings"/Struct(
-    Array(16, StartingAgeEnum("starting_ages"/Int32sl)),
+    Array(16, AgeEnum("starting_ages"/Int32sl)),
     Padding(4),
     Padding(8),
     "map_id"/Int32ul,
     Peek("difficulty_id"/Int32ul),
     DifficultyEnum("difficulty"/Int32ul),
     "lock_teams"/Int32ul,
+    If(lambda ctx: ctx._._.version == 'VER 9.4',
+        Padding(29)
+    ),
     Array(9, "player_info"/Struct(
         "data_ref"/Int32ul,
         PlayerTypeEnum("type"/Int32ul),
@@ -112,7 +127,10 @@ game_settings = "game_settings"/Struct(
     )),
     Padding(36),
     Padding(4),
-    "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f', None),
+    IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
+        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None),
+        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f', None)
+    )
 )
 
 # Triggers.
@@ -120,6 +138,9 @@ triggers = "triggers"/Struct(
     Padding(1),
     "num_triggers"/Int32ul,
     # parse if num > 0
+    If(lambda ctx: ctx._._.version == 'VER 9.4',
+        Padding(1032)
+    )
 )
 
 # Scenario metadata.

@@ -1,6 +1,6 @@
 """Replay."""
 
-from construct import Array, Byte, Flag, Float32l, Int16ul, Int32ul, Padding, Struct
+from construct import Array, Byte, Flag, Float32l, Int16ul, Int32sl, Int32ul, Padding, Struct, If
 
 # pylint: disable=invalid-name
 
@@ -16,7 +16,7 @@ replay = "replay"/Struct(
     "game_speed_float"/Float32l,
     "temp_pause"/Byte,
     "next_object_id"/Int32ul,
-    "next_reusable_object_id"/Int32ul,
+    "next_reusable_object_id"/Int32sl,
     "random_seed"/Int32ul,
     "random_seed_2"/Int32ul,
     "rec_player"/Int16ul, # id of the rec owner
@@ -31,5 +31,6 @@ replay = "replay"/Struct(
     "king_campaign_player"/Byte,
     "king_campaign_scenario"/Byte,
     "player_turn"/Int32ul,
-    "player_time_delta"/Array(9, "turn"/Int32ul)
+    "player_time_delta"/Array(9, "turn"/Int32ul),
+    If(lambda ctx: ctx._.version == 'VER 9.4', Padding(8))
 )

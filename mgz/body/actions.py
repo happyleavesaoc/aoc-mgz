@@ -2,18 +2,19 @@
 
 from construct import (Array, Byte, Const, CString, Flag, Float32l, If,
                        Int16ul, Int32sl, Int32ul, Padding, Peek, String,
-                       Struct, this)
+                       Struct, this, Probe, Bytes, Computed, Embedded, IfThenElse)
 
 from mgz.body.achievements import achievements
 from mgz.enums import (DiplomacyStanceEnum, FormationEnum, GameActionModeEnum,
                        OrderTypeEnum, ReleaseTypeEnum, ResourceEnum,
                        ResourceLevelEnum, RevealMapEnum, StanceEnum,
-                       StartingAgeEnum, VictoryEnum)
-from mgz.util import TimeSecAdapter
+                       AgeEnum, VictoryEnum)
+from mgz.util import TimeSecAdapter, check_flags
 
 # pylint: disable=invalid-name
 
 # Not all actions are defined, not all actions are complete.
+
 
 interact = "interact"/Struct(
     "player_id"/Byte,
@@ -22,7 +23,9 @@ interact = "interact"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    If(lambda ctx: ctx.selected < 0xff, Array(
+    "next"/Peek(Bytes(4)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
+    "unit_ids"/If(lambda ctx: ctx.selected < 0xff, Array(
         lambda ctx: ctx.selected, "unit_ids"/Int32ul
     ))
 )
@@ -60,8 +63,10 @@ move = "move"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    If(lambda ctx: ctx.selected < 0xff, Array(
-        lambda ctx: ctx.selected, "unit_ids"/Int32ul
+    "next"/Peek(Bytes(4)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
+    "unit_ids"/If(lambda ctx: ctx.selected < 0xff, Array(
+        lambda ctx: ctx.selected, Int32ul
     ))
 )
 
@@ -121,8 +126,17 @@ research = "research"/Struct(
     Padding(3),
     "building_id"/Int32ul,
     "player_id"/Int16ul,
-    "technology_type"/Int16ul,
-    Padding(4),
+    "next"/Peek(Int16ul),
+    IfThenElse(lambda ctx: ctx.next == 0,
+        Embedded(Struct(
+            Padding(2),
+            "technology_type"/Int32ul,
+        )),
+        Embedded(Struct(
+            "technology_type"/Int16ul
+        ))
+    ),
+    Padding(4)
 )
 
 sell = "sell"/Struct(
@@ -259,9 +273,19 @@ wall = "wall"/Struct(
     "end_x"/Byte,
     "end_y"/Byte,
     Padding(1),
-    "building_id"/Int32ul,
-    Padding(4),
-    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
+    IfThenElse(lambda ctx: ctx._._.length - 16 - (ctx.selected * 4) == 8,
+        Embedded(Struct(
+            "unk"/Bytes(4),
+            "building_id"/Int32ul,
+            Padding(4),
+            "flags"/Bytes(4)
+        )),
+        Embedded(Struct(
+            "building_id"/Int32ul,
+            Padding(4),
+        ))
+    ),
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
 delete = "delete"/Struct(
@@ -290,6 +314,8 @@ repair = "repair"/Struct(
     "selected"/Byte,
     Padding(2),
     "repaired_id"/Int32ul,
+    "next"/Peek(Bytes(4)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 
@@ -342,6 +368,8 @@ order = "order"/Struct(
     "x"/Float32l,
     "y"/Float32l,
     Padding(4), # const
+    "next"/Peek(Bytes(4)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
 )
 
@@ -403,6 +431,14 @@ ai_command = "ai_command"/Struct(
     Padding(lambda ctx: ctx._._.length - 1)
 )
 
+de = "de"/Struct(
+    "player_id"/Byte,
+    "unknown0"/Padding(2),
+    "selected"/Byte,
+    "unknown1"/Padding(5),
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
+)
+
 postgame = "achievements"/Struct(
     Padding(3),
     "scenario_filename"/String(32, padchar=b'\x00', trimdir='right', encoding='latin1'),
@@ -423,11 +459,11 @@ postgame = "achievements"/Struct(
     Peek("victory_type_id"/Byte),
     VictoryEnum("victory_type"/Byte),
     Peek("starting_age_id"/Byte),
-    StartingAgeEnum("starting_age"/Byte),
-    Peek("resource_level_id"/Byte),
-    ResourceLevelEnum("resource_level"/Byte),
+    AgeEnum("starting_age"/Byte),
+    Peek("starting_resources_id"/Byte),
+    ResourceLevelEnum("starting_resources"/Byte),
     "all_techs"/Flag,
-    "team_together"/Flag, #(truth = 0, falsehood = 1),
+    "random_positions"/Flag,
     RevealMapEnum("reveal_map"/Byte),
     "is_deathmatch"/Flag,
     "is_regicide"/Flag,

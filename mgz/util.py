@@ -40,6 +40,14 @@ class ZlibCompressed(Tunnel):
         return zlib.decompress(data, wbits=-15)
 
 
+def check_flags(peek):
+    """Check byte sequence for only flag bytes."""
+    for b in peek:
+        if b not in [0, 1]:
+            return False
+    return True
+
+
 def convert_to_timestamp(time):
     """Convert int to timestamp string."""
     if time == -1:
@@ -144,11 +152,14 @@ class GotoObjectsEnd(Construct):
         # Try to find the first marker, a portion of the next player structure
         marker_up14 = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
         marker_up15 = read_bytes.find(b"\x16\xf0\x00\x00\x00\x21")
+        marker_de = read_bytes.find(b"\x16\xdb\x00\x00\x00\x21")
         marker = -1
-        if marker_up14 > 0 and marker_up15 < 0:
+        if marker_up14 > 0 and marker_up15 < 0 and marker_de < 0:
             marker = marker_up14
-        elif marker_up15 > 0 and marker_up14 < 0:
+        elif marker_up15 > 0 and marker_up14 < 0 and marker_de < 0:
             marker = marker_up15
+        elif marker_de > 0 and marker_up14 < 0 and marker_up15 < 0:
+            marker = marker_de
         # If it exists, we're not on the last player yet
         if marker > 0:
             # Backtrack through the player name
@@ -161,7 +172,12 @@ class GotoObjectsEnd(Construct):
         # Otherwise, this is the last player
         else:
             # Search for the scenario header
-            marker = read_bytes.find(b"\xf6\x28\x9c\x3f")
+            marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
+            marker_de = read_bytes.find(b"\x7b\x14\xae\x3f")
+            if marker_up > 0 and marker_de < 0:
+                marker = marker_up
+            elif marker_de > 0 and marker_up < 0:
+                marker = marker_de
             # Backtrack through the achievements and initial structure footer
             backtrack = ((1817 * (num_players - 1)) + 4 + 19)
         # Seek to the position we found

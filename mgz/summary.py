@@ -5,10 +5,12 @@ import logging
 import os
 import re
 import struct
+import tempfile
 import time
 import zlib
 
 import construct
+
 import mgz
 import mgz.body
 
@@ -21,7 +23,10 @@ CHECKSUMS = 4
 MAX_SYNCS = 2000
 ENCODING_MARKERS = [
     ['Map Type: ', 'latin-1', 'en'],
+    ['Map type: ', 'latin-1', 'en'],
+    ['Location: ', 'latin-1', 'en'],
     ['Tipo de mapa: ', 'latin-1', 'es'],
+    ['Ubicaci', 'latin-1', 'es'],
     ['Kartentyp: ', 'latin-1', 'de'],
     ['Art der Karte: ', 'latin-1', 'de'],
     ['Type de carte\xa0: ', 'latin-1', 'fr'],
@@ -109,10 +114,12 @@ class Summary:
     Access metadata that in most cases can be found quickly.
     """
 
-    def __init__(self, handle, size):
+    def __init__(self, handle, size, socket, dropbox):
         """Initialize."""
         self._handle = handle
         self.size = size
+        self.socket = socket
+        self.dropbox = dropbox
         header_len, = struct.unpack('<I', self._handle.read(4))
         self.body_position = header_len
         self._handle.seek(0)
@@ -124,10 +131,13 @@ class Summary:
             'ratings': {},
             'postgame': None,
             'from_voobly': False,
-            'rated': False,
+            'platform_id': None,
+            'platform_match_id': None,
+            'rated': None,
             'ladder': None,
             'hash': None,
-            'map': None
+            'map': None,
+            'lobby_name': None
         }
 
     def work(self):
@@ -138,7 +148,6 @@ class Summary:
             self._process_body()
         except (construct.core.ConstructError, zlib.error, ValueError):
             raise RuntimeError("invalid mgz file")
-
 
     def get_postgame(self):
         """Get postgame structure."""
@@ -153,6 +162,12 @@ class Summary:
             return None
         finally:
             self._handle.seek(self.body_position)
+
+    def get_header(self):
+        return self._header
+
+    def get_start_time(self):
+        return self._header.initial.restore_time
 
     def get_duration(self):
         """Get game duration."""
@@ -183,6 +198,12 @@ class Summary:
 
     def get_dataset(self):
         """Get dataset."""
+        if self._header.version == 'VER 9.4':
+            return {
+                'id': 100,
+                'name': 'Age of Empires II: Definitive Edition',
+                'version': self._header.version[4:]
+            }
         sample = self._header.initial.players[0].attributes.player_stats
         if 'mod' in sample and sample.mod['id'] == 0 and sample.mod['version'] == '2':
             raise ValueError("invalid mod version")
@@ -283,8 +304,15 @@ class Summary:
                 return achievements
         return None
 
+    def get_profile_ids(self):
+        """Get map of player color to profile IDs (DE only)."""
+        if self._header.de is not None:
+            return {p.color_id: p.profile_id.decode('ascii') for p in self._header.de.players if p.color_id >= 0}
+        return {}
+
     def get_players(self):
         """Get basic player info."""
+        profile_ids = self.get_profile_ids()
         ratings = self.get_ratings()
         for i, player in enumerate(self._header.initial.players[1:]):
             achievements = self.get_achievements(player.attributes.player_name)
@@ -307,6 +335,7 @@ class Summary:
                 'score': ach(achievements, ['total_score']),
                 'position': (player.attributes.camera_x, player.attributes.camera_y),
                 'rate_snapshot': ratings.get(name),
+                'user_id': profile_ids.get(player.attributes.player_color),
                 'achievements': {
                     'military': {
                         'score': ach(achievements, ['military', 'score']),
@@ -351,18 +380,31 @@ class Summary:
     def get_ratings(self):
         """Get player ratings."""
         if not self._cache['ratings']:
-            self.get_ladder()
+            self.get_platform()
         return self._cache['ratings']
 
-    def get_ladder(self):
-        return self._cache['from_voobly'], self._cache['ladder'], self._cache['rated'], self._cache['ratings']
+    def get_platform(self):
+        """Get platform data."""
+        lobby_name = None
+        guid_formatted = None
+        if self._header.de is not None:
+            lobby_name = self._header.de.lobby_name.decode(self.get_encoding())
+            guid = self._header.de.guid.hex()
+            guid_formatted = '{}-{}-{}-{}-{}'.format(guid[0:8], guid[8:12], guid[12:16], guid[16:20], guid[20:])
+        return {
+            'platform_id': self._cache['platform_id'],
+            'platform_match_id': guid_formatted,
+            'ladder': self._cache['ladder'],
+            'rated': self._cache['rated'],
+            'ratings': self._cache['ratings'],
+            'lobby_name': lobby_name if lobby_name and len(lobby_name) > 0 else None
+        }
 
     def _process_body(self):
         """Get Voobly ladder.
 
         This is expensive if the rec is not from Voobly,
-        since it will search the whole file. Returns tuple,
-        (from_voobly, ladder_name, rated, ratings).
+        since it will search the whole file. Sets cache.
         """
         start_time = time.time()
         ratings = {}
@@ -370,7 +412,7 @@ class Summary:
         checksums = []
         ladder= None
         voobly = False
-        rated = False
+        rated = None
         i = 0
         while self._handle.tell() < self.size:
             try:
@@ -400,18 +442,77 @@ class Summary:
             except (construct.core.ConstructError, ValueError):
                 break
         self._handle.seek(self.body_position)
-        rated = len(ratings) > 0 and set(ratings.values()) != {1600}
-        self._cache['hash'] = hashlib.sha1(b''.join(checksums)) if len(checksums) == CHECKSUMS else None
+        if voobly:
+            rated = len(ratings) > 0 and set(ratings.values()) != {1600}
+        if self._header.de:
+            self._cache['hash'] = hashlib.sha1(self._header.de.guid)
+        else:
+            self._cache['hash'] = hashlib.sha1(b''.join(checksums)) if len(checksums) == CHECKSUMS else None
         self._cache['from_voobly'] = voobly
+        if voobly:
+            self._cache['platform_id'] = 'voobly'
+        if self._header.de and self._header.de.multiplayer:
+            self._cache['platform_id'] = 'de'
         self._cache['ladder'] = ladder
         self._cache['rated'] = rated
         self._cache['ratings'] = ratings if rated else {}
         LOGGER.info("parsed limited rec body in %.2f seconds", time.time() - start_time)
-        return voobly, ladder, rated, ratings
+
+    def _get_all_techs(self, postgame, de):
+        """Get all techs flag."""
+        if de is not None:
+            return de.all_techs
+        if postgame is not None:
+            return postgame.all_techs
+        return None
+
+    def _get_lock_speed(self, postgame, de):
+        """Get lock speed flag."""
+        if de is not None:
+            return de.lock_speed
+        if postgame is not None:
+            return postgame.lock_speed
+        return None
+
+    def _get_team_together(self, postgame, de):
+        """Get team together flag."""
+        if de is not None:
+            return not de.random_positions
+        if postgame is not None:
+            return not postgame.random_positions
+        return None
+
+    def _get_victory_type(self, postgame, de):
+        """Get victory type."""
+        if de is not None:
+            return (de.victory_type_id, de.victory_type)
+        if postgame is not None:
+            return (postgame.victory_type_id, postgame.victory_type)
+        return None
+
+    def _get_starting_resources(self, postgame, de):
+        """Get starting resources."""
+        if de is not None:
+            return (de.starting_resources_id, de.starting_resources)
+        if postgame is not None:
+            return (postgame.starting_resources_id, postgame.starting_resources)
+        return None
+
+    def _get_starting_age(self, postgame, de):
+        """Get starting age."""
+        if de is not None:
+            return (de.starting_age_id, de.starting_age)
+        if postgame is not None:
+            return (postgame.starting_age_id, postgame.starting_age)
+        return None
 
     def get_settings(self):
         """Get settings."""
         postgame = self.get_postgame()
+        population_limit = self._header.lobby.population_limit
+        if self._header.de is None:
+            population_limit *= 25
+        game_speed_id = int(self._header.replay.game_speed_float * 100)
         return {
             'type': (
                 self._header.lobby.game_type_id,
@@ -421,36 +522,33 @@ class Summary:
                 self._header.scenario.game_settings.difficulty_id,
                 self._header.scenario.game_settings.difficulty
             ),
-            'population_limit': self._header.lobby.population_limit * 25,
+            'population_limit': population_limit,
             'map_reveal_choice': (
                 self._header.lobby.reveal_map_id,
                 self._header.lobby.reveal_map
             ),
             'speed': (
-                self._header.replay.game_speed_id,
-                mgz.const.SPEEDS.get(self._header.replay.game_speed_id)
+                game_speed_id,
+                mgz.const.SPEEDS.get(game_speed_id)
             ),
+            'starting_resources': self._get_starting_resources(postgame, self._header.de),
+            'starting_age': self._get_starting_age(postgame, self._header.de),
+            'ending_age': (
+                self._header.de.ending_age_id,
+                self._header.de.ending_age
+            ) if self._header.de else (None, None),
+            'victory_condition': self._get_victory_type(postgame, self._header.de),
+            'treaty_length': self._header.de.treaty_length if self._header.de else None,
             'cheats': self._header.replay.cheats_enabled,
+            'team_together': self._get_team_together(postgame, self._header.de),
+            'all_technologies': self._get_all_techs(postgame, self._header.de),
+            'lock_speed': self._get_lock_speed(postgame, self._header.de),
             'lock_teams': self._header.lobby.lock_teams,
-            'starting_resources': (
-                postgame.resource_level_id if postgame else None,
-                postgame.resource_level if postgame else None,
-            ),
-            'starting_age': (
-                postgame.starting_age_id if postgame else None,
-                postgame.starting_age if postgame else None
-            ),
-            'victory_condition': (
-                postgame.victory_type_id if postgame else None,
-                postgame.victory_type if postgame else None
-            ),
-            'team_together': not postgame.team_together if postgame else None,
-            'all_technologies': postgame.all_techs if postgame else None,
-            'lock_speed': postgame.lock_speed if postgame else None,
-            'multiqueue': None
+            'multiqueue': True if self._header.de is not None else None,
         }
 
     def get_hash(self):
+        """Get cached hash."""
         return self._cache['hash']
 
     def get_encoding(self):
@@ -482,7 +580,6 @@ class Summary:
         if instructions == b'\x00':
             raise ValueError('empty instructions')
 
-        # detect encoding and language
         for pair in ENCODING_MARKERS:
             marker = pair[0]
             test_encoding = pair[1]
@@ -491,7 +588,7 @@ class Summary:
                 pos = line.find(e_m)
                 if pos > -1:
                     encoding = test_encoding
-                    name = line[pos+len(e_m):].decode(encoding)
+                    name = line[pos+len(e_m):].decode(encoding).replace('.rms', '')
                     language = pair[2]
                     break
 
@@ -506,7 +603,7 @@ class Summary:
         self._cache['language'] = language
 
         # lookup base game map if applicable
-        if map_id != 44:
+        if (map_id != 44 and not self._header.de) or (map_id != 59 and self._header.de):
             if map_id not in mgz.const.MAP_NAMES:
                 raise ValueError('unspecified builtin map')
             name = mgz.const.MAP_NAMES[map_id]

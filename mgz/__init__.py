@@ -2,7 +2,7 @@
 
 # pylint: disable=invalid-name,no-name-in-module
 
-from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, this)
+from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, If, this)
 from mgz.util import MgzPrefixed, ZlibCompressed
 from mgz.header.ai import ai
 from mgz.header.replay import replay
@@ -11,11 +11,13 @@ from mgz.header.initial import initial
 from mgz.header.achievements import achievements
 from mgz.header.scenario import scenario
 from mgz.header.lobby import lobby
+from mgz.header.de import de
 
 
 compressed_header = Struct(
     "version"/CString(encoding='latin1'),
     "sub_version"/Float32l,
+    "de"/If(this.version == 'VER 9.4', de),
     ai,
     replay,
     map_info,

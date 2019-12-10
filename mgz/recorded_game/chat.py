@@ -8,11 +8,11 @@ class ChatMessage():
     """Parse a chat message."""
 
     # pylint: disable=too-many-arguments
-    def __init__(self, line, timestamp, players, diplomacy_type=None, source='game'):
+    def __init__(self, line, timestamp, players, diplomacy_type=None, origination='game'):
         """Initalize."""
         self.data = {
             'timestamp': timestamp,
-            'source': source
+            'origination': origination
         }
         if line.find('Voobly: Ratings provided') > 0:
             self._parse_ladder(line)
@@ -56,15 +56,15 @@ class ChatMessage():
         if line.find('<Team>') > 0:
             line = line.replace('<Team>', '', 1)
             prefix = ';'
-        source_start = line.find('<') + 1
-        source_end = line.find('>', source_start)
-        source = line[source_start:source_end]
-        name_end = line.find(':', source_end)
-        name = line[source_end + 2:name_end]
+        origination_start = line.find('<') + 1
+        origination_end = line.find('>', origination_start)
+        origination = line[origination_start:origination_end]
+        name_end = line.find(':', origination_end)
+        name = line[origination_end + 2:name_end]
         message = line[name_end + 2:]
         self.data.update({
             'type': 'injected',
-            'source': source.lower(),
+            'origination': origination.lower(),
             'name': name,
             'message': '{}{}'.format(prefix, message)
         })
@@ -73,7 +73,7 @@ class ChatMessage():
         player_start = line.find('#') + 2
         player_end = line.find(':', player_start)
         player = line[player_start:player_end]
-        if self.data['timestamp'] == '00:00:00':
+        if self.data['timestamp'] == 0:
             group = 'All'
         elif diplomacy_type == 'TG':
             group = 'Team'
@@ -82,17 +82,22 @@ class ChatMessage():
         if player.find('>') > 0:
             group = player[1:player.find('>')]
             player = player[player.find('>') + 1:]
+        if group.lower() in ['todos', 'всем', 'tous']:
+            group = 'All'
+        elif group.lower() in ['隊伍', 'squadra']:
+            group = 'Team'
         message = line[player_end + 2:]
         color = None
-        for _, player_h in players:
-            if player_h.player_name == player:
-                color = mgz.const.PLAYER_COLORS[player_h.player_color]
+        number = None
+        for player_h in players:
+            if player_h['name'] == player:
+                color = mgz.const.PLAYER_COLORS[player_h['color_id']]
+                number = player_h['number']
         self.data.update({
             'type': 'chat',
-            'player': player,
-            'message': message,
-            'color': color,
-            'to': group.lower()
+            'number': number,
+            'message': message.strip(),
+            'audience': group.lower()
         })
 
     def __repr__(self):
@@ -105,7 +110,7 @@ class ChatMessage():
         elif self.data['type'] == 'ladder':
             return 'Ladder: {}'.format(self.data['ladder'])
         elif self.data['type'] == 'injected':
-            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['source'],
+            return '{} <{}> {}: {}'.format(self.data['timestamp'], self.data['origination'],
                                            self.data['name'], self.data['message'])
         elif self.data['type'] == 'voobly':
             return 'Voobly: {}'.format(self.data['message'])

@@ -11,7 +11,7 @@ An Operation can be:
 
 from construct import (Struct, Byte, Switch, Embedded, Padding,
                        Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
-                       GreedyBytes, Computed, IfThenElse, Int16ul, Probe)
+                       GreedyBytes, Computed, IfThenElse, Int16ul)
 from mgz.enums import ActionEnum, OperationEnum, MessageEnum
 from mgz.body import actions, embedded
 from mgz.util import BoolAdapter
@@ -44,7 +44,7 @@ action_data = "action"/Struct(
         "ai_command": actions.ai_command,
         "spec": actions.spec,
         "build": actions.build,
-        "game": actions.game,
+        #"game": actions.game, # TODO: resolve for DE
         "patrol": actions.patrol,
         "wall": actions.wall,
         "delete": actions.delete,
@@ -65,11 +65,11 @@ action_data = "action"/Struct(
         "sell": actions.sell,
         "buy": actions.buy,
         "backtowork": actions.backtowork,
+        "de": actions.de,
         "postgame": actions.postgame
     }, default=Struct(
         "unk_action"/Computed(lambda ctx: ctx._.type),
-        "bytes"/Bytes(lambda ctx: ctx._._.length - 1),
-        Probe()
+        "bytes"/Bytes(lambda ctx: ctx._._.length - 1)
     ))),
     Padding(4)
 )
@@ -89,7 +89,15 @@ sync = "sync"/Struct(
     "checksum"/If(lambda ctx: not ctx.next, Struct(
         Padding(8),
         "sync"/Int32ul,
-        Padding(16)
+        Padding(8),
+        Peek("de"/Int32ul),
+        IfThenElse(lambda ctx: ctx.de > 0,
+            Struct(
+                Array(8, Padding(11 * 4))
+            ),
+            Padding(4)
+        ),
+        Padding(4)
     ))
 )
 
@@ -113,7 +121,7 @@ chat = "chat"/Struct(
 )
 
 # Game start
-start = "start"/Struct(
+start_impl = "start"/Struct(
     "checksum_interval"/Int32ul,
     BoolAdapter("multiplayer"/Int32ul),
     "rec_owner"/Int32ul,
@@ -127,9 +135,15 @@ start = "start"/Struct(
 message = "message"/Struct(
     MessageEnum("subtype"/Peek(Int32ul)),
     "data"/Switch(lambda ctx: ctx.subtype, {
-        "start": start,
+        "start": start_impl,
         "chat": chat
     })
+)
+
+# Start.
+start = "start"/Struct(
+    Padding(4),
+    start_impl
 )
 
 
@@ -143,6 +157,7 @@ operation = "operation"/Struct(
         "sync": sync,
         "viewlock": viewlock,
         "message": message,
+        "start": start,
         "embedded": embedded.embedded
     })),
     "end"/Tell

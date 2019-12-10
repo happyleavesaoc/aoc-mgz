@@ -9,7 +9,8 @@ VERSIONS = {
     'VER 9.C': 'userpatch 1.4 rc 2',
     'VER 9.D': 'userpatch 1.4',
     'VER 9.E': 'userpatch 1.5',
-    'VER 9.F': 'userpatch 1.5'
+    'VER 9.F': 'userpatch 1.5',
+    'VER 9.4': 'definitive edition'
 }
 
 MODS = {
@@ -24,6 +25,7 @@ MODS = {
 SPEEDS = {
     100: 'slow',
     150: 'standard',
+    169: 'standard', # de
     178: 'standard', # up15
     200: 'fast',
     237: 'fast' # up15

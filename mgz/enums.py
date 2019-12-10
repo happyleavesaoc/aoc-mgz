@@ -153,6 +153,7 @@ def OperationEnum(ctx):
         sync=2,
         viewlock=3,
         message=4,
+        start=5,
         default="embedded"
     )
 
@@ -216,18 +217,19 @@ def RevealMapEnum(ctx):
         no_fog=3,
     )
 
-def StartingAgeEnum(ctx):
-    """Starting Age Enumeration."""
+def AgeEnum(ctx):
+    """Age Enumeration."""
     return Enum(
         ctx,
         what=-2,
         unset=-1,
-        dark=0,
+        standard=0,
         feudal=1,
         castle=2,
         imperial=3,
         postimperial=4,
-        dmpostimperial=6
+        dmpostimperial=6,
+        default='unknown'
     )
 
 def TheirDiplomacyEnum(ctx):
@@ -363,6 +365,7 @@ def ActionEnum(ctx):
         droprelic=126,
         townbell=127,
         backtowork=128,
+        de=129,
         postgame=255,
         default=Pass
     )
