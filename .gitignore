@@ -1,5 +1,6 @@
 dist/
 mgz.egg-info/
+venv/
 .tox/
 *.pyc
 *.sqlite

@@ -1,12 +1,12 @@
 """Scenario."""
 
 from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
-                       PascalString, Peek, String, Struct, Bytes, If, Byte, IfThenElse)
+                       PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
 from mgz.util import Find
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, bad-continuation
 
 
 # Scenario header.

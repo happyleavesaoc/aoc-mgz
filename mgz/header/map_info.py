@@ -3,7 +3,7 @@
 from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
                        Int32ul, Padding, Struct, Bytes)
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, bad-continuation
 
 
 # Represents a single map type, defined by terrain type and elevation.

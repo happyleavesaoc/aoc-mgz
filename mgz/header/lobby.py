@@ -1,10 +1,10 @@
 """Lobby."""
 
-from construct import Array, Byte, Bytes, Flag, Int32ul, Padding, Peek, String, Struct, If
+from construct import Array, Byte, Bytes, Flag, Int32ul, Padding, Peek, Struct, If
 
 from mgz.enums import GameTypeEnum, RevealMapEnum
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, bad-continuation
 
 
 # Player inputs in the lobby, and several host settings.

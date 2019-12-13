@@ -1,5 +1,6 @@
 """MGZ parsing utilities."""
 
+import logging
 import struct
 import zlib
 from io import BytesIO
@@ -11,6 +12,11 @@ from mgz import const
 
 
 # pylint: disable=abstract-method,protected-access
+
+LOGGER = logging.getLogger(__name__)
+SEARCH_MAX_BYTES = 3000
+POSTGAME_LENGTH = 2096
+LOOKAHEAD = 9
 
 
 class MgzPrefixed(Subconstruct):
@@ -42,8 +48,8 @@ class ZlibCompressed(Tunnel):
 
 def check_flags(peek):
     """Check byte sequence for only flag bytes."""
-    for b in peek:
-        if b not in [0, 1]:
+    for i in peek:
+        if i not in [0, 1]:
             return False
     return True
 
@@ -76,8 +82,10 @@ class BoolAdapter(Adapter):
 
 
 class ModVersionAdapter(Adapter):
+    """Parse mod version."""
 
     def _decode(self, obj, context):
+        """Decode mod."""
         number = int(obj)
         mod_id = int(number / 1000)
         mod_version = '.'.join(list(str(number % 1000)))
@@ -143,6 +151,7 @@ class GotoObjectsEnd(Construct):
     Necessary since we can't parse objects from a resume game (yet).
     """
 
+    # pylint: disable=chained-comparison, too-many-locals
     def _parse(self, stream, context, path):
         """Parse until the end of objects data."""
         num_players = context._._._.replay.num_players
@@ -184,3 +193,26 @@ class GotoObjectsEnd(Construct):
         end = start + marker - backtrack
         stream.seek(end)
         return end
+
+
+def find_postgame(data, size):
+    """Find postgame and grab duration.
+
+    We can find postgame location by scanning the last few
+    thousand bytes of the rec and looking for a pattern as
+    follows:
+
+    [action op]    [action length]    [action type]
+    01 00 00 00    30 08 00 00        ff
+
+    The last occurance of this pattern signals the start of
+    the postgame structure. Note that the postgame action length
+    is always constant, unlike other actions.
+    """
+    pos = None
+    for i in range(size - SEARCH_MAX_BYTES, size - LOOKAHEAD):
+        op_type, length, action_type = struct.unpack('<IIB', data[i:i + LOOKAHEAD])
+        if op_type == 0x01 and length == POSTGAME_LENGTH and action_type == 0xFF:
+            LOGGER.debug("found postgame candidate @ %d with length %d", pos, length)
+            return i + LOOKAHEAD, length
+    return None, None

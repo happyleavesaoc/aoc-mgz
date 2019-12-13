@@ -2,7 +2,7 @@
 
 from construct import (Array, Byte, Const, CString, Flag, Float32l, If,
                        Int16ul, Int32sl, Int32ul, Padding, Peek, String,
-                       Struct, this, Probe, Bytes, Computed, Embedded, IfThenElse)
+                       Struct, this, Bytes, Embedded, IfThenElse)
 
 from mgz.body.achievements import achievements
 from mgz.enums import (DiplomacyStanceEnum, FormationEnum, GameActionModeEnum,
@@ -11,7 +11,7 @@ from mgz.enums import (DiplomacyStanceEnum, FormationEnum, GameActionModeEnum,
                        AgeEnum, VictoryEnum)
 from mgz.util import TimeSecAdapter, check_flags
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, bad-continuation
 
 # Not all actions are defined, not all actions are complete.
 
@@ -38,10 +38,10 @@ give_attribute = "give_attribute"/Struct(
 )
 
 add_attribute = "add_attribute"/Struct(
-     "player_id"/Byte,
-     "attribute"/Byte,
-     Padding(1),
-     "amount"/Float32l
+    "player_id"/Byte,
+    "attribute"/Byte,
+    Padding(1),
+    "amount"/Float32l
 )
 
 ai_interact = "ai_interact"/Struct(
@@ -299,6 +299,8 @@ attackground = "attackground"/Struct(
     Padding(2),
     "x"/Float32l,
     "y"/Float32l,
+    "next"/Peek(Bytes(4)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
 

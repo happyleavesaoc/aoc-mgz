@@ -17,7 +17,7 @@ from mgz.body import actions, embedded
 from mgz.util import BoolAdapter
 
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, bad-continuation
 
 
 # Action.
@@ -89,9 +89,9 @@ sync = "sync"/Struct(
     "checksum"/If(lambda ctx: not ctx.next, Struct(
         Padding(8),
         "sync"/Int32ul,
-        Padding(8),
-        Peek("de"/Int32ul),
-        IfThenElse(lambda ctx: ctx.de > 0,
+        "unknown"/Bytes(4),
+        "sequence"/Int32ul,
+        IfThenElse(lambda ctx: ctx.sequence > 0,
             Struct(
                 Array(8, Padding(11 * 4))
             ),
@@ -120,8 +120,8 @@ chat = "chat"/Struct(
     Padding(1)
 )
 
-# Game start
-start_impl = "start"/Struct(
+# Start
+start = "start"/Struct(
     "checksum_interval"/Int32ul,
     BoolAdapter("multiplayer"/Int32ul),
     "rec_owner"/Int32ul,
@@ -135,15 +135,15 @@ start_impl = "start"/Struct(
 message = "message"/Struct(
     MessageEnum("subtype"/Peek(Int32ul)),
     "data"/Switch(lambda ctx: ctx.subtype, {
-        "start": start_impl,
+        "start": start,
         "chat": chat
     })
 )
 
-# Start.
-start = "start"/Struct(
+# Match start.
+match_start = "match_start"/Struct(
     Padding(4),
-    start_impl
+    start
 )
 
 
@@ -157,7 +157,7 @@ operation = "operation"/Struct(
         "sync": sync,
         "viewlock": viewlock,
         "message": message,
-        "start": start,
+        "start": match_start,
         "embedded": embedded.embedded
     })),
     "end"/Tell

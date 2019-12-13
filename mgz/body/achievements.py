@@ -1,7 +1,7 @@
 """UserPatch 1.4+ achievements - appended to recorded game."""
 
 from construct import (Array, Byte, Flag, Int16ul, Int32sl, Int32ul, Padding,
-                       Peek, String, Struct, Bytes)
+                       Peek, Struct, Bytes)
 
 from mgz.util import TimeSecAdapter
 

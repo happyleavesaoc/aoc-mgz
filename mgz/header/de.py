@@ -1,6 +1,13 @@
-from construct import (Struct, Int32ul, Float32l, Array, Padding, Flag, Byte, Int16ul, Bytes, Int32sl, Int16sl, Peek, If)
+"""Definitive Edition structure."""
+
+from construct import (
+    Struct, Int32ul, Float32l, Array, Padding, Flag,
+    Byte, Int16ul, Bytes, Int32sl, Peek, If
+)
 
 from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum
+
+# pylint: disable=invalid-name, bad-continuation
 
 de = "de"/Struct(
     "options"/Int32sl,
