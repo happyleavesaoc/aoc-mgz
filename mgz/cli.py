@@ -181,7 +181,7 @@ async def run(args): # pylint: disable=too-many-branches
     """Entry point."""
     if args.cmd == CMD_PLAY:
         for rec in args.rec_path:
-            await play_rec(args.playback[0], rec)
+            await play_rec(args.playback.split(',')[0], rec)
     elif args.cmd == CMD_INFO:
         for rec in args.rec_path:
             print_info(rec)
@@ -207,7 +207,7 @@ def get_args():
     """Get arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--playback',
-                        default=os.environ.get('AOC_PLAYBACK', 'localhost:8080:/tmp').split(','))
+                        default=os.environ.get('AOC_PLAYBACK', 'localhost:8080:/tmp'))
     subparsers = parser.add_subparsers(dest='cmd')
     subparsers.required = True
     info = subparsers.add_parser(CMD_INFO)

@@ -13,15 +13,14 @@ import tqdm
 import websockets
 from construct.core import ConstructError
 
-import AOC.ConfigMessage
-import AOC.Restriction
-import AOC.GameMessage
+from AOC import ConfigMessage
+from AOC import GameMessage
 
 from mgz import fast
 
 
 LOGGER = logging.getLogger(__name__)
-WS_URL = 'ws://{}/listen'
+WS_URL = 'ws://{}'
 
 
 class Source(Enum):
@@ -30,22 +29,19 @@ class Source(Enum):
     MEMORY = 1
 
 
-def make_config(interval=1000, map_interval=15000, cycles=1):
+def make_config(interval=1000, cycles=1):
     """Make a configuration flatbuffer."""
     builder = flatbuffers.Builder(64)
-    AOC.ConfigMessage.ConfigMessageStart(builder)
-    AOC.ConfigMessage.ConfigMessageAddPlayerRestriction(builder, AOC.Restriction.Restriction.All)
-    AOC.ConfigMessage.ConfigMessageAddObjectRestriction(builder, AOC.Restriction.Restriction.InList)
-    AOC.ConfigMessage.ConfigMessageAddTickInterval(builder, interval)
-    AOC.ConfigMessage.ConfigMessageAddMapObjectTickInterval(builder, map_interval)
-    AOC.ConfigMessage.ConfigMessageAddUpdateCycles(builder, cycles)
-    builder.Finish(AOC.ConfigMessage.ConfigMessageEnd(builder))
+    ConfigMessage.ConfigMessageStart(builder)
+    ConfigMessage.ConfigMessageAddMessageIntervalMs(builder, interval)
+    ConfigMessage.ConfigMessageAddUpdateCycles(builder, cycles)
+    builder.Finish(ConfigMessage.ConfigMessageEnd(builder))
     return bytes(builder.Output())
 
 
 def read_message(buf):
     """Read a message from flatbuffer as a dict."""
-    return AOC.GameMessage.GameMessage.GetRootAsGameMessage(buf, 0)
+    return GameMessage.GameMessage.GetRootAsGameMessage(buf, 0)
 
 
 async def progress_bar(generator, duration):
@@ -83,17 +79,17 @@ class Client():
     @classmethod
     async def create(
             cls, playback, rec_path, start_time, duration,
-            interval=2000, map_interval=1000000, cycles=-1
+            interval=2000, cycles=100
     ):
         """Async factory."""
         self = Client(playback, rec_path)
         self.start_time = start_time
         self.duration = duration
-        self.state_ws = await self.start_instance(interval, map_interval, cycles)
+        self.state_ws = await self.start_instance(interval, cycles)
         LOGGER.info("launched instance for %s", rec_path)
         return self
 
-    async def start_instance(self, interval, map_interval, cycles):
+    async def start_instance(self, interval, cycles):
         """Start headless instance and connect."""
         shutil.copyfile(
             self.rec_path,
@@ -106,7 +102,7 @@ class Client():
                 url = WS_URL.format(self.socket)
                 LOGGER.info("trying to connect @ %s", url)
                 websocket = await websockets.connect(url, ping_timeout=None)
-                await websocket.send(make_config(interval, map_interval, cycles))
+                await websocket.send(make_config(interval, cycles))
                 LOGGER.info("sent configuration to websocket")
                 return websocket
             except (
@@ -151,8 +147,8 @@ class Client():
                     LOGGER.warning("socket timeout encountered")
                     self.close_all()
                     raise RuntimeError("socket timeout encountered")
-                ws_time = data.Tick()
-                if data.Finished():
+                ws_time = data.WorldTime()
+                if data.GameFinished():
                     LOGGER.info("state reader stream finished")
                     ws_done = True
                 yield ws_time, Source.MEMORY, data

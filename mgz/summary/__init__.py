@@ -1,5 +1,6 @@
 """MGZ Summary."""
 
+import asyncio
 import hashlib
 import logging
 import os
@@ -8,7 +9,6 @@ import tempfile
 import time
 import zlib
 
-import asyncio
 import construct
 
 import mgz
