@@ -10,7 +10,7 @@ from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
 tile = "tile"/Struct(
     "terrain_type"/Byte,
     IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
-        Bytes(6), # TODO: DE tile structure
+        Bytes(8), # TODO: DE tile structure
         Embedded("up15"/IfThenElse(lambda ctx: ctx.terrain_type == 255, Struct(
             "terrain_type"/Byte,
             "elevation"/Byte,

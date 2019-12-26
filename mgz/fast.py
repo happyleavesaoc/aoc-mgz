@@ -56,8 +56,7 @@ def chat(data):
         data.seek(-4, 1)
         start(data)
         return None
-    msg = data.read(length - 1)
-    data.read(1)
+    msg = data.read(length)
     return msg
 
 

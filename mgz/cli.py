@@ -2,6 +2,7 @@
 
 import asyncio
 import argparse
+import json
 import logging
 import os
 import struct
@@ -23,6 +24,7 @@ from mgz.util import find_postgame, LOOKAHEAD
 
 LOGGER = logging.getLogger(__name__)
 CMD_PLAY = 'play'
+CMD_EXTRACT = 'extract'
 CMD_INFO = 'info'
 CMD_CHAT = 'chat'
 CMD_VALIDATE = 'validate'
@@ -49,6 +51,18 @@ async def play_rec(playback, path):
         )
         async for _, _, _ in progress_bar(client.sync(), client.duration):
             pass
+
+
+async def extract_rec(playback, path):
+    """Extract data from a recorded game."""
+    with open(path, 'rb') as handle:
+        summary = Summary(handle, playback=playback)
+        data = await summary.async_extract()
+        for key, records in data.items():
+            print(key)
+            print('-------------')
+            for record in records:
+                print(json.dumps(record))
 
 
 def print_info(path):
@@ -92,7 +106,9 @@ def dump_rec(path):
     """Write parsed game to stdout."""
     with open(path, 'rb') as handle:
         size = os.fstat(handle.fileno()).st_size
-        mgz.header.parse_stream(handle)
+        header = mgz.header.parse_stream(handle)
+        print(header)
+        return
         while handle.tell() < size:
             operation = mgz.body.operation.parse_stream(handle)
             if operation.type == 'embedded':
@@ -102,9 +118,11 @@ def dump_rec(path):
 
 def print_chat(path):
     """Extract chat."""
+    print("CHAT")
     with open(path, 'rb') as handle:
         summary = Summary(handle)
         encoding = summary.get_encoding()
+        handle.seek(summary.body_pos)
         while handle.tell() < summary.size:
             operation = mgz.body.operation.parse_stream(handle)
             if operation.type == 'message' and operation.subtype == 'chat':
@@ -182,6 +200,9 @@ async def run(args): # pylint: disable=too-many-branches
     if args.cmd == CMD_PLAY:
         for rec in args.rec_path:
             await play_rec(args.playback.split(',')[0], rec)
+    elif args.cmd == CMD_EXTRACT:
+        for rec in args.rec_path:
+            await extract_rec(args.playback.split(',')[0], rec)
     elif args.cmd == CMD_INFO:
         for rec in args.rec_path:
             print_info(rec)
@@ -216,6 +237,8 @@ def get_args():
     chat.add_argument('rec_path', nargs='+')
     play = subparsers.add_parser(CMD_PLAY)
     play.add_argument('rec_path', nargs='+')
+    extract = subparsers.add_parser(CMD_EXTRACT)
+    extract.add_argument('rec_path', nargs='+')
     validate = subparsers.add_parser(CMD_VALIDATE)
     validate.add_argument('rec_path', nargs='+')
     dump = subparsers.add_parser(CMD_DUMP)

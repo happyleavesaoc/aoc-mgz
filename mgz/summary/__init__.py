@@ -67,6 +67,7 @@ class Summary:
             self._cache['file_hash'] = hashlib.sha1(self._handle.read()).hexdigest()
             self._handle.seek(body_pos)
             self._process_body()
+            self.body_pos = body_pos
         except (construct.core.ConstructError, zlib.error, ValueError):
             raise RuntimeError("invalid mgz file")
 
@@ -96,21 +97,25 @@ class Summary:
                     text = payload
                     if text is None:
                         continue
-                    text = text.decode(self.get_encoding())
-                    if text.find('Voobly: Ratings provided') > 0:
-                        start = text.find("'") + 1
-                        end = text.find("'", start)
-                        ladder = text[start:end]
-                        voobly = True
-                    elif text.find('<Rating>') > 0:
-                        player_start = text.find('>') + 2
-                        player_end = text.find(':', player_start)
-                        player = text[player_start:player_end]
-                        ratings[player] = int(text[player_end + 2:len(text)])
-                    elif text.find('No ratings are available') > 0:
-                        voobly = True
-                    elif text.find('This match was played at Voobly.com') > 0:
-                        voobly = True
+                    text = text.strip(b'\x00')
+                    try:
+                        text = text.decode(self.get_encoding())
+                        if text.find('Voobly: Ratings provided') > 0:
+                            start = text.find("'") + 1
+                            end = text.find("'", start)
+                            ladder = text[start:end]
+                            voobly = True
+                        elif text.find('<Rating>') > 0:
+                            player_start = text.find('>') + 2
+                            player_end = text.find(':', player_start)
+                            player = text[player_start:player_end]
+                            ratings[player] = int(text[player_end + 2:len(text)])
+                        elif text.find('No ratings are available') > 0:
+                            voobly = True
+                        elif text.find('This match was played at Voobly.com') > 0:
+                            voobly = True
+                    except UnicodeDecodeError:
+                        pass
             except EOFError:
                 break
         self._cache['duration'] = duration
@@ -275,6 +280,25 @@ class Summary:
                 civs.add(data['civilization'])
             mirror = (len(civs) == 1)
         return mirror
+
+    async def async_extract(self):
+        if self.get_dataset()['id'] != 1:
+            raise RuntimeError('extraction not supported')
+
+        temp = tempfile.NamedTemporaryFile()
+        self._handle.seek(0)
+        temp.write(self._handle.read())
+
+        return await get_extracted_data(
+            self._header,
+            self.get_encoding(),
+            self.get_diplomacy().get('type'),
+            self.get_players(),
+            self.get_start_time(),
+            self.get_duration(),
+            self._playback,
+            temp
+        )
 
     def extract(self):
         """Async wrapper around full extraction."""

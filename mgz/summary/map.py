@@ -34,7 +34,8 @@ ENCODING_MARKERS = [
     ['地圖類別：', 'big5', 'zh'],
     ['地图类别：', 'cp936', 'zh'],
     ['地图类型：', 'GB2312', 'zh'],
-    ['颌玉拙墁：', 'cp936', 'zh']
+    ['颌玉拙墁：', 'cp936', 'zh'],
+    ['位置：', 'utf-8', 'zh']
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
@@ -50,7 +51,6 @@ def extract_from_instructions(instructions):
     language = None
     encoding = 'unknown'
     name = 'Unknown'
-
     for pair in ENCODING_MARKERS:
         marker = pair[0]
         test_encoding = pair[1]
@@ -70,7 +70,6 @@ def extract_from_instructions(instructions):
             if instructions.find(pair[0].encode(pair[1])) > -1:
                 language = pair[2]
                 break
-
     return encoding, language, name
 
 
@@ -78,12 +77,12 @@ def lookup_name(map_id, name, is_de):
     """Lookup base game map if applicable."""
     custom = True
     if (map_id != 44 and not is_de) or (map_id != 59 and is_de):
-        if map_id not in mgz.const.MAP_NAMES:
-            raise ValueError('unspecified builtin map: ' + str(map_id))
-        if is_de:
+        if is_de and map_id in mgz.const.DE_MAP_NAMES:
             name = mgz.const.DE_MAP_NAMES[map_id]
-        else:
+        elif not is_de and map_id in mgz.const.MAP_NAMES:
             name = mgz.const.MAP_NAMES[map_id]
+        else:
+            raise ValueError('unspecified builtin map: ' + str(map_id))
         custom = False
     return name, custom
 

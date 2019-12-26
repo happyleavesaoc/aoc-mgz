@@ -79,7 +79,7 @@ class Client():
     @classmethod
     async def create(
             cls, playback, rec_path, start_time, duration,
-            interval=2000, cycles=100
+            interval=2000, cycles=10000
     ):
         """Async factory."""
         self = Client(playback, rec_path)
@@ -140,13 +140,12 @@ class Client():
                 LOGGER.info("MGZ parsing stream finished")
                 mgz_done = True
             while not ws_done and (ws_time <= mgz_time or mgz_done):
-                # probably need a try here to catch not enough bytes read
                 try:
                     data = await asyncio.wait_for(self.read_state().__anext__(), timeout=timeout)
-                except asyncio.TimeoutError:
-                    LOGGER.warning("socket timeout encountered")
+                except (asyncio.TimeoutError, asyncio.streams.IncompleteReadError):
+                    LOGGER.warning("socket timeout or read failure encountered")
                     self.close_all()
-                    raise RuntimeError("socket timeout encountered")
+                    raise RuntimeError("socket timeout or read failure encountered")
                 ws_time = data.WorldTime()
                 if data.GameFinished():
                     LOGGER.info("state reader stream finished")

@@ -116,8 +116,8 @@ viewlock = "viewlock"/Struct(
 chat = "chat"/Struct(
     Padding(4),
     "length"/Int32ul,
-    "text"/Bytes(lambda ctx: ctx.length - 1),
-    Padding(1)
+    "text"/Bytes(lambda ctx: ctx.length - 0),
+    Padding(0)
 )
 
 # Start

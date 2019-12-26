@@ -91,7 +91,7 @@ def _parse_chat(data, line, players, diplomacy_type):
             number = player_h['number']
     data.update({
         'type': 'chat',
-        'number': number,
+        'player_number': number,
         'message': message.strip(),
         'audience': group.lower()
     })

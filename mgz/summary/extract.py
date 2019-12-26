@@ -1,6 +1,7 @@
 """"Extract data via playback."""
 
 import logging
+from collections import defaultdict
 
 from mgz.playback import Client, Source
 from mgz.summary.chat import parse_chat
@@ -30,6 +31,9 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
 ):
     """Get extracted data."""
     timeseries = []
+    research = defaultdict(dict)
+    market = []
+    objects = {}
     chats = get_lobby_chat(header, encoding, diplomacy_type, players)
     client = await Client.create(playback, handle.name, start_time, duration)
 
@@ -43,11 +47,52 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
                 LOGGER.warning('could not decode chat')
 
         elif source == Source.MEMORY:
+            market.append({
+                'timestamp': tick,
+                'food': message.MarketCoefficients().Food(),
+                'wood': message.MarketCoefficients().Wood(),
+                'stone': message.MarketCoefficients().Stone()
+            })
+
+            for i in range(0, message.ObjectsLength()):
+                obj = message.Objects(i)
+                if obj.OwnerId() == 0:
+                    continue
+                if obj.Id() not in objects and obj.State() == 2:
+                    objects[obj.Id()] = {
+                        'player_number': obj.OwnerId(),
+                        'created': tick,
+                        'object_id': obj.MasterObjectId(),
+                        'destroyed': None,
+                        'destroyed_by_player_number': None,
+                        'destroyed_by_instance_id': None,
+                        'deleted': False
+                    }
+                elif obj.State() == 4 and obj.Id() in objects:
+                    data = {
+                        'destroyed': tick
+                    }
+                    """
+                    data = {}
+                    if obj.KilledByPlayerId() == -1:
+                        data = {
+                            'destroyed': tick,
+                            'deleted': True
+                        }
+                    elif obj.KilledByUnitId() in objects:
+                        data = {
+                            'destroyed': tick,
+                            'destroyed_by_player_number': obj.KilledByPlayerId(),
+                            'destroyed_by_instance_id': obj.KilledByUnitId()
+                        }
+                    """
+                    objects[obj.Id()].update(data)
+
             for i in range(0, message.PlayersLength()):
                 player = message.Players(i)
                 timeseries.append({
                     'timestamp': tick,
-                    'number': player.PlayerId(),
+                    'player_number': player.Id(),
                     'population': player.Population(),
                     'military': player.MilitaryPopulation(),
                     'percent_explored': player.PercentMapExplored(),
@@ -58,8 +103,25 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
                     'gold': int(player.Gold())
                 })
 
+                for j in range(0, player.TechsLength()):
+                    tech = player.Techs(j)
+                    if tech.State() == 3 and tech.IdIndex() not in research[player.Id()]:
+                        research[player.Id()][tech.IdIndex()] = {'started': tick, 'finished': None}
+                    elif tech.State() == 4 and tech.IdIndex() in research[player.Id()]:
+                        research[player.Id()][tech.IdIndex()]['finished'] = tick
+                    elif tech.State() == 2 and tech.IdIndex() in research[player.Id()]:
+                        del research[player.Id()][tech.IdIndex()]
+
+    r = []
+    for pid, techs in research.items():
+        for tid, values in techs.items():
+            r.append(dict(values, player_number=pid, technology_id=tid))
+    o = [dict(values, instance_id=oid) for oid, values in objects.items()]
     handle.close()
     return {
         'chat': chats,
-        'timeseries': timeseries
+        'timeseries': timeseries,
+        'research': r,
+        'market': market,
+        'objects': o
     }
