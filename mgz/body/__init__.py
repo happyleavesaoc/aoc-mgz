@@ -91,13 +91,8 @@ sync = "sync"/Struct(
         "sync"/Int32ul,
         "unknown"/Bytes(4),
         "sequence"/Int32ul,
-        IfThenElse(lambda ctx: ctx.sequence > 0,
-            Struct(
-                Array(8, Padding(11 * 4))
-            ),
-            Padding(4)
-        ),
-        Padding(4)
+        If(lambda ctx: ctx.sequence > 0, Bytes(332)),
+        Bytes(8)
     ))
 )
 

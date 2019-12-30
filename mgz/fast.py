@@ -23,10 +23,8 @@ def sync(data):
         data.read(4)
         seq, = struct.unpack('<I', data.read(4))
         if seq > 0:
-            data.read(8 * 11 * 4)
-        else:
-            data.read(4)
-        data.read(4)
+            data.read(332)
+        data.read(8)
     return increment, checksum
 
 
