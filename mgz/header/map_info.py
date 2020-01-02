@@ -1,7 +1,7 @@
 """Map info."""
 
 from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
-                       Int32ul, Padding, Struct, Bytes)
+                       Int32ul, Padding, Struct, Int16sl)
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -9,16 +9,22 @@ from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
 # Represents a single map type, defined by terrain type and elevation.
 tile = "tile"/Struct(
     "terrain_type"/Byte,
-    IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
-        Bytes(8), # TODO: DE tile structure
-        Embedded("up15"/IfThenElse(lambda ctx: ctx.terrain_type == 255, Struct(
+    Embedded(IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
+        Embedded(Struct(
+            "terrain_type"/Byte,
+            "elevation"/Byte,
+            "unk0"/Int16sl,
+            "unk1"/Int16sl,
+            "unk2"/Int16sl
+        )),
+        Embedded(IfThenElse(lambda ctx: ctx.terrain_type == 255, Struct(
             "terrain_type"/Byte,
             "elevation"/Byte,
             Padding(1)
         ), Struct(
             "elevation"/Byte
         )))
-    )
+    ))
 )
 
 
@@ -31,7 +37,7 @@ map_info = "map_info"/Struct(
     Array(lambda ctx: ctx.zone_num, Struct(
         IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
             Padding(lambda ctx: 2048 + (ctx._.tile_num * 2)),
-            Padding(lambda ctx: 1275 + ctx._.tile_num),
+            Padding(lambda ctx: 1275 + ctx._.tile_num)
         ),
         "num_floats"/Int32ul,
         Padding(lambda ctx: ctx.num_floats * 4),

@@ -53,12 +53,14 @@ async def play_rec(playback, path):
             pass
 
 
-async def extract_rec(playback, path):
+async def extract_rec(playback, path, select=None):
     """Extract data from a recorded game."""
     with open(path, 'rb') as handle:
         summary = Summary(handle, playback=playback)
         data = await summary.async_extract()
         for key, records in data.items():
+            if select and key != select:
+                continue
             print(key)
             print('-------------')
             for record in records:
@@ -106,9 +108,7 @@ def dump_rec(path):
     """Write parsed game to stdout."""
     with open(path, 'rb') as handle:
         size = os.fstat(handle.fileno()).st_size
-        header = mgz.header.parse_stream(handle)
-        print(header)
-        return
+        mgz.header.parse_stream(handle)
         while handle.tell() < size:
             operation = mgz.body.operation.parse_stream(handle)
             if operation.type == 'embedded':
@@ -118,7 +118,6 @@ def dump_rec(path):
 
 def print_chat(path):
     """Extract chat."""
-    print("CHAT")
     with open(path, 'rb') as handle:
         summary = Summary(handle)
         encoding = summary.get_encoding()
@@ -202,7 +201,7 @@ async def run(args): # pylint: disable=too-many-branches
             await play_rec(args.playback.split(',')[0], rec)
     elif args.cmd == CMD_EXTRACT:
         for rec in args.rec_path:
-            await extract_rec(args.playback.split(',')[0], rec)
+            await extract_rec(args.playback.split(',')[0], rec, args.select)
     elif args.cmd == CMD_INFO:
         for rec in args.rec_path:
             print_info(rec)
@@ -238,6 +237,7 @@ def get_args():
     play = subparsers.add_parser(CMD_PLAY)
     play.add_argument('rec_path', nargs='+')
     extract = subparsers.add_parser(CMD_EXTRACT)
+    extract.add_argument('-s', '--select')
     extract.add_argument('rec_path', nargs='+')
     validate = subparsers.add_parser(CMD_VALIDATE)
     validate.add_argument('rec_path', nargs='+')

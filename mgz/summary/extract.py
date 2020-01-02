@@ -5,9 +5,18 @@ from collections import defaultdict
 
 from mgz.playback import Client, Source
 from mgz.summary.chat import parse_chat
+from mgz import fast
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def has_diff(data, **kwargs):
+    """Simple dict subset diff."""
+    for key, value in kwargs.items():
+        if data.get(key) != value:
+            return True
+    return False
 
 
 def get_lobby_chat(header, encoding, diplomacy_type, players):
@@ -17,13 +26,142 @@ def get_lobby_chat(header, encoding, diplomacy_type, players):
         if not message.message:
             continue
         try:
-            chat = parse_chat(
+            chats.append(parse_chat(
                 message.message.decode(encoding), 0, players, diplomacy_type, origination='lobby'
-            )
-            chats.append(chat)
+            ))
         except UnicodeDecodeError:
             LOGGER.warning('could not decode lobby chat')
     return chats
+
+
+def sort_objects(objects):
+    """Sort objects in dependency order."""
+    sorted_objects = []
+    seen = set()
+
+    def add(i):
+        """DFS."""
+        destroyed_id = objects[i]['destroyed_by_instance_id']
+        if destroyed_id and destroyed_id not in seen:
+            add(destroyed_id)
+        if i not in seen:
+            sorted_objects.append(dict(objects[i], instance_id=i))
+            seen.add(i)
+
+    for k in objects.keys():
+        add(k)
+    return sorted_objects
+
+
+def flatten_research(research):
+    """Flatten research data."""
+    flat = []
+    for pid, techs in research.items():
+        for tid, values in techs.items():
+            flat.append(dict(values, player_number=pid, technology_id=tid))
+    return flat
+
+
+def build_timeseries_record(tick, player):
+    """Build a timeseries record."""
+    return {
+        'timestamp': tick,
+        'player_number': player.Id(),
+        'population': player.Population(),
+        'military': player.MilitaryPopulation(),
+        'percent_explored': player.PercentMapExplored(),
+        'headroom': int(player.Headroom()),
+        'food': int(player.Food()),
+        'wood': int(player.Wood()),
+        'stone': int(player.Stone()),
+        'gold': int(player.Gold()),
+        'relics_captured': int(player.VictoryPoints().RelicsCaptured()),
+        'relic_gold': int(player.VictoryPoints().RelicGold()),
+        'trade_profit': int(player.VictoryPoints().TradeProfit()),
+        'tribute_received': int(player.VictoryPoints().TributeReceived()),
+        'tribute_sent': int(player.VictoryPoints().TributeSent()),
+        'total_food': int(player.VictoryPoints().TotalFood()),
+        'total_wood': int(player.VictoryPoints().TotalWood()),
+        'total_gold': int(player.VictoryPoints().TotalGold()),
+        'total_stone': int(player.VictoryPoints().TotalStone())
+    }
+
+
+def update_research(player_number, tech, research):
+    """Update research structure."""
+    if tech.State() == 3 and tech.IdIndex() not in research[player_number]:
+        research[player_number][tech.IdIndex()] = {
+            'started': tech.LastStateChange(),
+            'finished': None
+        }
+    elif tech.State() == 4 and tech.IdIndex() in research[player_number]:
+        research[player_number][tech.IdIndex()]['finished'] = tech.LastStateChange()
+    elif tech.State() == 2 and tech.IdIndex() in research[player_number]:
+        del research[player_number][tech.IdIndex()]
+
+
+def update_market(tick, coefficients, market):
+    """Update market coefficients structure."""
+    last = None
+    change = True
+    food = coefficients.Food()
+    wood = coefficients.Wood()
+    stone = coefficients.Stone()
+    if market:
+        last = market[-1]
+        change = has_diff(last, food=food, wood=wood, stone=stone)
+    if change:
+        market.append({
+            'timestamp': tick,
+            'food': food,
+            'wood': wood,
+            'stone': stone
+        })
+
+def update_objects(tick, obj, objects, state, last):
+    """Update object/state structures."""
+    player_number = obj.OwnerId() if obj.OwnerId() > 0 else None
+    if obj.MasterObjectClass() not in [70, 80]:
+        return
+    if obj.Id() not in objects:
+        objects[obj.Id()] = {
+            'created': obj.CreatedTime(),
+            'destroyed': None,
+            'destroyed_by_instance_id': None,
+            'deleted': False,
+            'pos_x': obj.Position().X(),
+            'pos_y': obj.Position().Y()
+        }
+    elif obj.State() == 4 and obj.Id() in objects:
+        data = {
+            'destroyed': obj.KilledTime(),
+            'deleted': obj.DeletedByOwner()
+        }
+        if obj.KilledByUnitId() in objects:
+            data.update({
+                'destroyed_by_instance_id': obj.KilledByUnitId()
+            })
+        objects[obj.Id()].update(data)
+
+
+    change = (
+        obj.Id() not in last or
+        has_diff(last[obj.Id()], player_number=player_number, object_id=obj.MasterObjectId())
+    )
+    if change:
+        state.append({
+            'timestamp': tick,
+            'instance_id': obj.Id(),
+            'player_number': player_number,
+            'object_id': obj.MasterObjectId(),
+            'class_id': obj.MasterObjectClass(),
+        })
+
+    last[obj.Id()] = {
+        'player_number': player_number,
+        'object_id': obj.MasterObjectId(),
+        'class_id': obj.MasterObjectClass()
+    }
 
 
 async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-locals
@@ -34,11 +172,13 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
     research = defaultdict(dict)
     market = []
     objects = {}
+    state = []
+    last = {}
     chats = get_lobby_chat(header, encoding, diplomacy_type, players)
     client = await Client.create(playback, handle.name, start_time, duration)
 
     async for tick, source, message in client.sync(timeout=120):
-        if source == Source.MGZ and message[0] == 4:
+        if source == Source.MGZ and message[0] == fast.Operation.CHAT:
             try:
                 chats.append(parse_chat(
                     message[1].decode(encoding), tick, players, diplomacy_type
@@ -47,81 +187,24 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
                 LOGGER.warning('could not decode chat')
 
         elif source == Source.MEMORY:
-            market.append({
-                'timestamp': tick,
-                'food': message.MarketCoefficients().Food(),
-                'wood': message.MarketCoefficients().Wood(),
-                'stone': message.MarketCoefficients().Stone()
-            })
+            update_market(tick, message.MarketCoefficients(), market)
 
             for i in range(0, message.ObjectsLength()):
-                obj = message.Objects(i)
-                if obj.OwnerId() == 0:
-                    continue
-                if obj.Id() not in objects and obj.State() == 2:
-                    objects[obj.Id()] = {
-                        'player_number': obj.OwnerId(),
-                        'created': tick,
-                        'object_id': obj.MasterObjectId(),
-                        'destroyed': None,
-                        'destroyed_by_player_number': None,
-                        'destroyed_by_instance_id': None,
-                        'deleted': False
-                    }
-                elif obj.State() == 4 and obj.Id() in objects:
-                    data = {
-                        'destroyed': tick
-                    }
-                    """
-                    data = {}
-                    if obj.KilledByPlayerId() == -1:
-                        data = {
-                            'destroyed': tick,
-                            'deleted': True
-                        }
-                    elif obj.KilledByUnitId() in objects:
-                        data = {
-                            'destroyed': tick,
-                            'destroyed_by_player_number': obj.KilledByPlayerId(),
-                            'destroyed_by_instance_id': obj.KilledByUnitId()
-                        }
-                    """
-                    objects[obj.Id()].update(data)
+                update_objects(tick, message.Objects(i), objects, state, last)
 
             for i in range(0, message.PlayersLength()):
                 player = message.Players(i)
-                timeseries.append({
-                    'timestamp': tick,
-                    'player_number': player.Id(),
-                    'population': player.Population(),
-                    'military': player.MilitaryPopulation(),
-                    'percent_explored': player.PercentMapExplored(),
-                    'headroom': int(player.Headroom()),
-                    'food': int(player.Food()),
-                    'wood': int(player.Wood()),
-                    'stone': int(player.Stone()),
-                    'gold': int(player.Gold())
-                })
-
+                timeseries.append(build_timeseries_record(tick, player))
                 for j in range(0, player.TechsLength()):
-                    tech = player.Techs(j)
-                    if tech.State() == 3 and tech.IdIndex() not in research[player.Id()]:
-                        research[player.Id()][tech.IdIndex()] = {'started': tick, 'finished': None}
-                    elif tech.State() == 4 and tech.IdIndex() in research[player.Id()]:
-                        research[player.Id()][tech.IdIndex()]['finished'] = tick
-                    elif tech.State() == 2 and tech.IdIndex() in research[player.Id()]:
-                        del research[player.Id()][tech.IdIndex()]
+                    update_research(player.Id(), player.Techs(j), research)
 
-    r = []
-    for pid, techs in research.items():
-        for tid, values in techs.items():
-            r.append(dict(values, player_number=pid, technology_id=tid))
-    o = [dict(values, instance_id=oid) for oid, values in objects.items()]
     handle.close()
+
     return {
         'chat': chats,
         'timeseries': timeseries,
-        'research': r,
+        'research': flatten_research(research),
         'market': market,
-        'objects': o
+        'objects': sort_objects(objects),
+        'state': state
     }

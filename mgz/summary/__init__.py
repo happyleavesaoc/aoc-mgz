@@ -29,7 +29,7 @@ CHECKSUMS = 4
 MAX_SYNCS = 2000
 
 
-class Summary:
+class Summary: # pylint: disable=too-many-public-methods
     """MGZ summary.
 
     Access match summary data.
@@ -71,7 +71,7 @@ class Summary:
         except (construct.core.ConstructError, zlib.error, ValueError):
             raise RuntimeError("invalid mgz file")
 
-    def _process_body(self):
+    def _process_body(self): # pylint: disable=too-many-locals, too-many-statements, too-many-branches
         """Process rec body."""
         start_time = time.time()
         ratings = {}
@@ -252,7 +252,8 @@ class Summary:
                 self._header.scenario.game_settings.map_id,
                 self._header.scenario.messages.instructions,
                 self._header.map_info.size_x,
-                self._header.de is not None
+                self._header.de is not None,
+                self._header.map_info.tile
             )
         return self._cache['map']
 
@@ -282,6 +283,7 @@ class Summary:
         return mirror
 
     async def async_extract(self):
+        """Full extraction."""
         if self.get_dataset()['id'] != 1:
             raise RuntimeError('extraction not supported')
 
@@ -302,22 +304,5 @@ class Summary:
 
     def extract(self):
         """Async wrapper around full extraction."""
-        if self.get_dataset()['id'] != 1:
-            raise RuntimeError('extraction not supported')
-
         loop = asyncio.get_event_loop()
-
-        temp = tempfile.NamedTemporaryFile()
-        self._handle.seek(0)
-        temp.write(self._handle.read())
-
-        return loop.run_until_complete(get_extracted_data(
-            self._header,
-            self.get_encoding(),
-            self.get_diplomacy().get('type'),
-            self.get_players(),
-            self.get_start_time(),
-            self.get_duration(),
-            self._playback,
-            temp
-        ))
+        return loop.run_until_complete(self.async_extract())

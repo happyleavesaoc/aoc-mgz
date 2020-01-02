@@ -112,7 +112,24 @@ def get_modes(name):
     return name, modes
 
 
-def get_map_data(map_id, instructions, dimension, is_de):
+def get_tiles(tiles, dimension):
+    """Get map tile data."""
+    tile_x = 0
+    tile_y = 0
+    for tile in tiles:
+        if tile_x == dimension:
+            tile_x = 0
+            tile_y += 1
+        yield {
+            'x': tile_x,
+            'y': tile_y,
+            'terrain_id': tile.terrain_type,
+            'elevation': tile.elevation
+        }
+        tile_x += 1
+
+
+def get_map_data(map_id, instructions, dimension, is_de, tiles):
     """Get the map metadata."""
     if dimension == 255:
         raise ValueError('invalid map size')
@@ -132,5 +149,6 @@ def get_map_data(map_id, instructions, dimension, is_de):
         'seed': seed,
         'modes': modes,
         'custom': custom,
-        'zr': name.startswith('ZR@')
+        'zr': name.startswith('ZR@'),
+        'tiles': list(get_tiles(tiles, dimension))
     }, encoding, language

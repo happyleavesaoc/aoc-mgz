@@ -134,8 +134,8 @@ class Client():
                     op_type, payload = fast.operation(self._handle)
                     if op_type == fast.Operation.SYNC:
                         mgz_time += payload[0]
-                    elif op_type == fast.Operation.CHAT:
-                        yield mgz_time, Source.MGZ, (op_type, payload)
+                    elif op_type == fast.Operation.CHAT and payload:
+                        yield mgz_time, Source.MGZ, (op_type, payload.strip(b'\x00'))
             except (ConstructError, ValueError, EOFError):
                 LOGGER.info("MGZ parsing stream finished")
                 mgz_done = True
