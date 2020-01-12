@@ -31,6 +31,7 @@ CMD_VALIDATE = 'validate'
 CMD_DUMP = 'dump'
 CMD_MERGE = 'merge'
 CMD_HISTOGRAM = 'histogram'
+CMD_PAD = 'pad'
 
 
 class TqdmStream: # pylint: disable=too-few-public-methods
@@ -166,6 +167,20 @@ def merge_recs(part_one, part_two, output):
         merged.write(b_data[b_header_len + start_op_length:])
 
 
+def pad_rec(target_size, path, output):
+    """Pad a recorded game."""
+    with open(path, 'rb') as handle, open(output, 'wb') as padded:
+        data = handle.read()
+        data_length = len(data)
+        padded.write(data)
+        pad_length = target_size - data_length
+        if pad_length < 9:
+            raise ValueError('target size too small')
+        pad_op = struct.pack('<IIB', 1, pad_length, 0xfe)
+        pad_op += b'\x00' * (pad_length - 9)
+        padded.write(pad_op)
+
+
 def print_histogram(path):
     """Show operation and action histogram."""
     with open(path, 'rb') as handle:
@@ -220,6 +235,8 @@ async def run(args): # pylint: disable=too-many-branches
     elif args.cmd == CMD_HISTOGRAM:
         for rec in args.rec_path:
             print_histogram(rec)
+    elif args.cmd == CMD_PAD:
+        pad_rec(args.target_size, args.rec_path, args.output)
     await asyncio.sleep(0)
 
 
@@ -249,6 +266,10 @@ def get_args():
     merge.add_argument('output', default='merged.mgz')
     histogram = subparsers.add_parser(CMD_HISTOGRAM)
     histogram.add_argument('rec_path', nargs='+')
+    pad = subparsers.add_parser(CMD_PAD)
+    pad.add_argument('target_size', type=int)
+    pad.add_argument('rec_path')
+    pad.add_argument('output')
     return parser.parse_args()
 
 

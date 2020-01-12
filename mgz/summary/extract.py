@@ -34,25 +34,6 @@ def get_lobby_chat(header, encoding, diplomacy_type, players):
     return chats
 
 
-def sort_objects(objects):
-    """Sort objects in dependency order."""
-    sorted_objects = []
-    seen = set()
-
-    def add(i):
-        """DFS."""
-        destroyed_id = objects[i]['destroyed_by_instance_id']
-        if destroyed_id and destroyed_id not in seen:
-            add(destroyed_id)
-        if i not in seen:
-            sorted_objects.append(dict(objects[i], instance_id=i))
-            seen.add(i)
-
-    for k in objects.keys():
-        add(k)
-    return sorted_objects
-
-
 def flatten_research(research):
     """Flatten research data."""
     flat = []
@@ -205,6 +186,6 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
         'timeseries': timeseries,
         'research': flatten_research(research),
         'market': market,
-        'objects': sort_objects(objects),
+        'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
         'state': state
     }
