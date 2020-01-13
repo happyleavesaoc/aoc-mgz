@@ -21,7 +21,6 @@ from mgz.summary.dataset import get_dataset_data
 from mgz.summary.teams import get_teams_data
 from mgz.summary.players import get_players_data
 from mgz.summary.diplomacy import get_diplomacy_data
-from mgz.summary.extract import get_extracted_data
 
 
 LOGGER = logging.getLogger(__name__)
@@ -286,6 +285,10 @@ class Summary: # pylint: disable=too-many-public-methods
         """Full extraction."""
         if self.get_dataset()['id'] != 1:
             raise RuntimeError('extraction not supported')
+        if not self._playback:
+            raise RuntimeError('no playback host defined')
+
+        from mgz.summary.extract import get_extracted_data
 
         temp = tempfile.NamedTemporaryFile()
         self._handle.seek(0)
