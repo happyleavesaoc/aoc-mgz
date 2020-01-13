@@ -86,6 +86,7 @@ def print_info(path):
             ['Dataset', '{} {}'.format(dataset['name'], dataset['version'])],
             ['Hash', summary.get_hash().hexdigest()],
             ['Encoding', summary.get_encoding()],
+            ['Language', summary.get_language()],
             ['Map', summary.get_map()['name']] # pylint: disable=unsubscriptable-object
         ], tablefmt='plain'))
 

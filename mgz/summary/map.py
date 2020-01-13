@@ -42,7 +42,8 @@ LANGUAGE_MARKERS = [
     ['oszukiwania', 'ISO-8859-2', 'pl'],
     ['Dozwoli', 'ISO-8859-2', 'pl'],
     ['Povol', 'ISO-8859-2', 'cs'], # Povolené, Povolit
-    ['Mozno', 'ISO-8859-2', 'sk']
+    ['Mozno', 'ISO-8859-2', 'sk'],
+    ['Dobývací', 'ISO-8859-2', 'cs']
 ]
 
 
