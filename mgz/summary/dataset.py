@@ -5,11 +5,11 @@ import mgz
 
 def get_dataset_data(header):
     """Get dataset."""
-    if header.version == 'VER 9.4':
+    if header.major_version == 'VER 9.4':
         return {
             'id': 100,
             'name': 'Age of Empires II: Definitive Edition',
-            'version': header.version[4:]
+            'version': header.major_version[4:]
         }
     sample = header.initial.players[0].attributes.player_stats
     if 'mod' in sample and sample.mod['id'] == 0 and sample.mod['version'] == '2':

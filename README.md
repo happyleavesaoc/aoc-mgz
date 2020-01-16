@@ -4,6 +4,7 @@ Age of Empires II recorded game parsing and summarization in Python 3.
 
 ## Supported Versions
 
+- The Conquerors (.mgx)
 - Userpatch 1.4 (.mgz)
 - Userpatch 1.5 (.mgz)
 - Definitive Edition (.aoe2record)

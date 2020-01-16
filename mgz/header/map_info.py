@@ -3,13 +3,15 @@
 from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
                        Int32ul, Padding, Struct, Int16sl)
 
+from mgz.util import Version
+
 # pylint: disable=invalid-name, bad-continuation
 
 
 # Represents a single map type, defined by terrain type and elevation.
 tile = "tile"/Struct(
     "terrain_type"/Byte,
-    Embedded(IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
+    Embedded(IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         Embedded(Struct(
             "terrain_type"/Byte,
             "elevation"/Byte,
@@ -35,7 +37,7 @@ map_info = "map_info"/Struct(
     "tile_num"/Computed(lambda ctx: ctx.size_x * ctx.size_y),
     "zone_num"/Int32ul,
     Array(lambda ctx: ctx.zone_num, Struct(
-        IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
+        IfThenElse(lambda ctx: ctx._._.version == Version.DE,
             Padding(lambda ctx: 2048 + (ctx._.tile_num * 2)),
             Padding(lambda ctx: 1275 + ctx._.tile_num)
         ),

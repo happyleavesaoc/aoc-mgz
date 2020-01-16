@@ -8,7 +8,7 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
 from mgz.header.objects import existing_object
 from mgz.header.playerstats import player_stats
-from mgz.util import Find, GotoObjectsEnd, RepeatUpTo
+from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version
 
 # Player attributes.
 attributes = "attributes"/Struct(
@@ -54,20 +54,20 @@ player = "players"/Struct(
     attributes,
     "start_of_objects"/Find(b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00', None),
     # If this isn't a restored game, we can read all the existing objects
-    Embedded("not_restored"/If(this._.restore_time == 0 and this._._.version != 'VER 9.4', Struct(
+    Embedded("not_restored"/If(this._.restore_time == 0 and this._._.version != Version.DE, Struct(
         RepeatUpTo(b'\x00', existing_object),
         Padding(14),
         "end_of_objects"/GotoObjectsEnd() # Find the objects end just in case
     ))),
 
     # Can't parse existing objects in a restored game, skip the whole structure
-    Embedded("is_restored"/If(this._.restore_time > 0 and this._._.version != 'VER 9.4', Struct(
+    Embedded("is_restored"/If(this._.restore_time > 0 and this._._.version != Version.DE, Struct(
         "end_of_objects"/GotoObjectsEnd(),
         # Just an empty array for now
         Array(0, existing_object)
     ))),
     # Can't parse DE objects yet
-    Embedded("is_de"/If(this._._.version == 'VER 9.4', Struct(
+    Embedded("is_de"/If(this._._.version == Version.DE, Struct(
         "end_of_objects"/GotoObjectsEnd(),
         # Just an empty array for now
         Array(0, existing_object)

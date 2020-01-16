@@ -3,6 +3,7 @@
 import logging
 import struct
 import zlib
+from enum import Enum
 from io import BytesIO
 
 import construct.core
@@ -17,6 +18,20 @@ LOGGER = logging.getLogger(__name__)
 SEARCH_MAX_BYTES = 3000
 POSTGAME_LENGTH = 2096
 LOOKAHEAD = 9
+
+
+class Version(Enum):
+    """Version enumeration.
+
+    Using consts from https://github.com/goto-bus-stop/recanalyst/blob/master/src/Model/Version.php
+    for consistency.
+    """
+    AOK = 1
+    AOC = 5
+    AOC10C = 8
+    USERPATCH14 = 11
+    USERPATCH15 = 20
+    DE = 21
 
 
 class MgzPrefixed(Subconstruct):
@@ -44,6 +59,21 @@ class ZlibCompressed(Tunnel):
     def _decode(self, data, context):
         """Decode zlib without header bytes."""
         return zlib.decompress(data, wbits=-15)
+
+
+def get_version(major_version, minor_version):
+    """Get version based on version fields."""
+    if major_version == 'VER 9.3':
+        return Version.AOK
+    elif major_version == 'VER 9.4':
+        if minor_version > 12.97:
+            return Version.DE
+        return Version.AOC
+    elif major_version == 'VER 9.D':
+        return Version.USERPATCH14
+    elif major_version in ['VER 9.E', 'VER 9.F']:
+        return Version.USERPATCH15
+    raise ValueError('unsupported version')
 
 
 def check_flags(peek):

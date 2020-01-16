@@ -14,6 +14,7 @@ import construct
 import mgz
 import mgz.body
 from mgz import fast
+from mgz.util import Version
 
 from mgz.summary.map import get_map_data
 from mgz.summary.settings import get_settings_data
@@ -120,7 +121,7 @@ class Summary: # pylint: disable=too-many-public-methods
         self._cache['duration'] = duration
         if voobly:
             rated = ratings and set(ratings.values()) != {1600}
-        if self._header.de:
+        if self._header.version == Version.DE:
             self._cache['hash'] = hashlib.sha1(self._header.de.guid)
         else:
             self._cache['hash'] = hashlib.sha1(b''.join(checksums)) \
@@ -128,7 +129,7 @@ class Summary: # pylint: disable=too-many-public-methods
         self._cache['from_voobly'] = voobly
         if voobly:
             self._cache['platform_id'] = 'voobly'
-        if self._header.de and self._header.de.multiplayer:
+        if self._header.version == Version.DE and self._header.de.multiplayer:
             self._cache['platform_id'] = 'de'
         self._cache['ladder'] = ladder
         self._cache['rated'] = rated
@@ -157,7 +158,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def get_version(self):
         """Get game version."""
-        return mgz.const.VERSIONS[self._header.version], str(self._header.sub_version)[:5]
+        return mgz.const.VERSIONS[self._header.major_version], str(self._header.minor_version)[:5]
 
     def get_owner(self):
         """Get rec owner (POV)."""
@@ -175,7 +176,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def get_profile_ids(self):
         """Get map of player color to profile IDs (DE only)."""
-        if self._header.de is not None:
+        if self._header.version == Version.DE:
             return {
                 p.color_id: p.profile_id.decode('ascii')
                 for p in self._header.de.players
@@ -205,7 +206,7 @@ class Summary: # pylint: disable=too-many-public-methods
         """Get platform data."""
         lobby_name = None
         guid_formatted = None
-        if self._header.de is not None:
+        if self._header.version == Version.DE:
             lobby_name = self._header.de.lobby_name.decode(self.get_encoding()).strip()
             guid = self._header.de.guid.hex()
             guid_formatted = '{}-{}-{}-{}-{}'.format(
@@ -251,7 +252,7 @@ class Summary: # pylint: disable=too-many-public-methods
                 self._header.scenario.game_settings.map_id,
                 self._header.scenario.messages.instructions,
                 self._header.map_info.size_x,
-                self._header.de is not None,
+                self._header.version == Version.DE,
                 self._header.map_info.tile
             )
         return self._cache['map']
@@ -281,12 +282,14 @@ class Summary: # pylint: disable=too-many-public-methods
             mirror = (len(civs) == 1)
         return mirror
 
+    def can_playback(self):
+        """Indicate whether playback is possible."""
+        return self.get_dataset()['id'] == 1 and self._playback
+
     async def async_extract(self):
         """Full extraction."""
-        if self.get_dataset()['id'] != 1:
+        if not self.can_playback():
             raise RuntimeError('extraction not supported')
-        if not self._playback:
-            raise RuntimeError('no playback host defined')
 
         from mgz.summary.extract import get_extracted_data
 

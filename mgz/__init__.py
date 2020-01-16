@@ -2,8 +2,8 @@
 
 # pylint: disable=invalid-name,no-name-in-module
 
-from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, If, this)
-from mgz.util import MgzPrefixed, ZlibCompressed
+from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, If, Computed, this)
+from mgz.util import MgzPrefixed, ZlibCompressed, Version, get_version
 from mgz.header.ai import ai
 from mgz.header.replay import replay
 from mgz.header.map_info import map_info
@@ -15,9 +15,10 @@ from mgz.header.de import de
 
 
 compressed_header = Struct(
-    "version"/CString(encoding='latin1'),
-    "sub_version"/Float32l,
-    "de"/If(this.version == 'VER 9.4', de),
+    "major_version"/CString(encoding='latin1'),
+    "minor_version"/Float32l,
+    "version"/Computed(lambda ctx: get_version(ctx.major_version, ctx.minor_version)),
+    "de"/If(lambda ctx: ctx.version == Version.DE, de),
     ai,
     replay,
     map_info,

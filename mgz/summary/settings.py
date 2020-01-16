@@ -61,8 +61,6 @@ def _get_starting_age(postgame, de_data):
 def get_settings_data(postgame, header):
     """Get settings."""
     population_limit = header.lobby.population_limit
-    if header.de is None:
-        population_limit *= 25
     game_speed_id = int(header.replay.game_speed_float * 100)
     return {
         'type': (

@@ -4,7 +4,7 @@ from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
                        PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
-from mgz.util import Find
+from mgz.util import Find, Version
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -24,7 +24,7 @@ scenario_header = "scenario_header"/Struct(
     Padding(5),
     "elapsed_time"/Float32l,
     "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),
-    If(lambda ctx: ctx._._.version == 'VER 9.4',
+    If(lambda ctx: ctx._._.version == Version.DE,
         Padding(64)
     )
 )
@@ -68,7 +68,7 @@ scenario_players = "players"/Struct(
         "stone"/Int32ul,
         "unk0"/Int32ul,
         "unk1"/Int32ul,
-        If(lambda ctx: ctx._._._.version == 'VER 9.4',
+        If(lambda ctx: ctx._._._.version == Version.DE,
             "unk2"/Int32ul
         )
     )),
@@ -94,7 +94,7 @@ victory = "victory"/Struct(
 disables = "disables"/Struct(
     Padding(4),
     Padding(64),
-    IfThenElse(lambda ctx: ctx._._.version != 'VER 9.4',
+    IfThenElse(lambda ctx: ctx._._.version != Version.DE,
         Struct(
             Array(16, "num_disabled_techs"/Int32ul),
             Array(16, Array(30, Padding(4))),
@@ -117,7 +117,7 @@ game_settings = "game_settings"/Struct(
     Peek("difficulty_id"/Int32ul),
     DifficultyEnum("difficulty"/Int32ul),
     "lock_teams"/Int32ul,
-    If(lambda ctx: ctx._._.version == 'VER 9.4',
+    If(lambda ctx: ctx._._.version == Version.DE,
         Padding(29)
     ),
     Array(9, "player_info"/Struct(
@@ -127,7 +127,7 @@ game_settings = "game_settings"/Struct(
     )),
     Padding(36),
     Padding(4),
-    IfThenElse(lambda ctx: ctx._._.version == 'VER 9.4',
+    IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None),
         "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f', None)
     )
@@ -138,7 +138,7 @@ triggers = "triggers"/Struct(
     Padding(1),
     "num_triggers"/Int32ul,
     # parse if num > 0
-    If(lambda ctx: ctx._._.version == 'VER 9.4',
+    If(lambda ctx: ctx._._.version == Version.DE,
         Padding(1032)
     )
 )
