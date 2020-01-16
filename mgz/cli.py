@@ -82,7 +82,7 @@ def print_info(path):
             ['Completed', summary.get_completed()],
             ['Restored', header.initial.restore_time > 0],
             ['Postgame', bool(summary.get_postgame())],
-            ['Version', mgz.const.VERSIONS[header.major_version]],
+            ['Version', header.version],
             ['Dataset', '{} {}'.format(dataset['name'], dataset['version'])],
             ['Hash', summary.get_hash().hexdigest()],
             ['Encoding', summary.get_encoding()],

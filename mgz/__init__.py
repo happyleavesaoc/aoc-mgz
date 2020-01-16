@@ -2,7 +2,7 @@
 
 # pylint: disable=invalid-name,no-name-in-module
 
-from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, If, Computed, this)
+from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, If, Computed, this, Peek)
 from mgz.util import MgzPrefixed, ZlibCompressed, Version, get_version
 from mgz.header.ai import ai
 from mgz.header.replay import replay
@@ -30,8 +30,11 @@ compressed_header = Struct(
 )
 
 subheader = Struct(
-    "chapter_address"/Int32ul,
-    Embedded(MgzPrefixed(this._.header_length - 8, ZlibCompressed(compressed_header)))
+    "check"/Peek(Int32ul),
+    "chapter_address"/If(lambda ctx: ctx.check == 0, # TODO: could be greater
+        Int32ul
+    ),
+    Embedded(MgzPrefixed(lambda ctx: ctx._.header_length - 4 - (4 if ctx.check == 0 else 0), ZlibCompressed(compressed_header)))
 )
 
 """Header is compressed"""

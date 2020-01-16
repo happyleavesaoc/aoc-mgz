@@ -60,7 +60,7 @@ def chat(data):
 
 def start(data):
     """Handle start."""
-    data.read(28)
+    return data.read(28)
 
 
 def operation(data):
@@ -69,6 +69,8 @@ def operation(data):
         op_id, = struct.unpack('<I', data.read(4))
     except struct.error:
         raise EOFError
+    if op_id == 500:
+        return Operation.START, data.read(32)
     op_type = Operation(op_id)
     if op_type == Operation.ACTION:
         return op_type, action(data)

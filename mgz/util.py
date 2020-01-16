@@ -189,16 +189,19 @@ class GotoObjectsEnd(Construct):
         # Have to read everything to be able to use find()
         read_bytes = stream.read()
         # Try to find the first marker, a portion of the next player structure
+        marker_aok = read_bytes.find(b"\x16\xbd\x00\x00\x00\x21")
         marker_up14 = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
         marker_up15 = read_bytes.find(b"\x16\xf0\x00\x00\x00\x21")
         marker_de = read_bytes.find(b"\x16\xdb\x00\x00\x00\x21")
         marker = -1
-        if marker_up14 > 0 and marker_up15 < 0 and marker_de < 0:
+        if marker_up14 > 0 and marker_up15 < 0 and marker_de < 0 and marker_aok < 0:
             marker = marker_up14
-        elif marker_up15 > 0 and marker_up14 < 0 and marker_de < 0:
+        elif marker_up15 > 0 and marker_up14 < 0 and marker_de < 0 and marker_aok < 0:
             marker = marker_up15
-        elif marker_de > 0 and marker_up14 < 0 and marker_up15 < 0:
+        elif marker_de > 0 and marker_up14 < 0 and marker_up15 < 0 and marker_aok < 0:
             marker = marker_de
+        elif marker_aok > 0 and marker_up14 < 0 and marker_up15 < 0 and marker_de < 0:
+            marker = marker_aok
         # If it exists, we're not on the last player yet
         if marker > 0:
             # Backtrack through the player name
@@ -211,16 +214,19 @@ class GotoObjectsEnd(Construct):
         # Otherwise, this is the last player
         else:
             # Search for the scenario header
+            marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
             marker_de = read_bytes.find(b"\x7b\x14\xae\x3f")
-            if marker_up > 0 and marker_de < 0:
+            if marker_up > 0 and marker_de < 0 and marker_aok < 0:
                 marker = marker_up
-            elif marker_de > 0 and marker_up < 0:
+            elif marker_de > 0 and marker_up < 0 and marker_aok < 0:
                 marker = marker_de
+            elif marker_aok > 0 and marker_up < 0 and marker_de < 0:
+                marker = marker_aok
             # Backtrack through the achievements and initial structure footer
             backtrack = ((1817 * (num_players - 1)) + 4 + 19)
         # Seek to the position we found
-        end = start + marker - backtrack
+        end = start + marker - backtrack - 2
         stream.seek(end)
         return end
 

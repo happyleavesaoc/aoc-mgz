@@ -252,7 +252,7 @@ class Summary: # pylint: disable=too-many-public-methods
                 self._header.scenario.game_settings.map_id,
                 self._header.scenario.messages.instructions,
                 self._header.map_info.size_x,
-                self._header.version == Version.DE,
+                self._header.version,
                 self._header.map_info.tile
             )
         return self._cache['map']

@@ -1,6 +1,6 @@
 """Replay."""
 
-from construct import Array, Byte, Flag, Float32l, Int16ul, Int32sl, Int32ul, Padding, Struct, If
+from construct import Array, Byte, Flag, Float32l, Int16ul, Int32sl, Int32ul, Padding, Struct, If, Embedded
 
 from mgz.util import Version
 
@@ -23,8 +23,10 @@ replay = "replay"/Struct(
     "random_seed_2"/Int32ul,
     "rec_player"/Int16ul, # id of the rec owner
     "num_players"/Byte, # including gaia
-    "instant_build"/Flag,
-    "cheats_enabled"/Flag,
+    Embedded(If(lambda ctx: ctx._.version != Version.AOK, Struct(
+        "instant_build"/Flag,
+        "cheats_enabled"/Flag
+    ))),
     "game_mode"/Int16ul, # MP or SP?
     "campaign"/Int32ul,
     "campaign_player"/Int32ul,
