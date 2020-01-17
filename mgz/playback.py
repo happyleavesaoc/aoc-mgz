@@ -21,6 +21,7 @@ from mgz import fast
 
 LOGGER = logging.getLogger(__name__)
 WS_URL = 'ws://{}'
+MAX_ATTEMPTS = 5
 
 
 class Source(Enum):
@@ -97,7 +98,8 @@ class Client():
         )
         # wait for any existing AOC to be killed so we don't connect to wrong WS
         await asyncio.sleep(1)
-        while True:
+        attempts = 0
+        while attempts < MAX_ATTEMPTS:
             try:
                 url = WS_URL.format(self.socket)
                 LOGGER.info("trying to connect @ %s", url)
@@ -110,6 +112,8 @@ class Client():
                     websockets.exceptions.ConnectionClosed, websockets.exceptions.InvalidMessage
                 ):
                 await asyncio.sleep(1)
+                attempts += 1
+        raise RuntimeError('could not connect to playback websocket')
 
     async def read_state(self):
         """Read memory state messages."""
