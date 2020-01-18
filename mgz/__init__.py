@@ -15,9 +15,9 @@ from mgz.header.de import de
 
 
 compressed_header = Struct(
-    "major_version"/CString(encoding='latin1'),
-    "minor_version"/Float32l,
-    "version"/Computed(lambda ctx: get_version(ctx.major_version, ctx.minor_version)),
+    "game_version"/CString(encoding='latin1'),
+    "save_version"/Float32l,
+    "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version)),
     "de"/If(lambda ctx: ctx.version == Version.DE, de),
     ai,
     replay,

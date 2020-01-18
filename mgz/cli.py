@@ -83,7 +83,7 @@ def print_info(path):
             ['Completed', summary.get_completed()],
             ['Restored', header.initial.restore_time > 0],
             ['Postgame', bool(summary.get_postgame())],
-            ['Version', header.version],
+            ['Version', '{} ({}, {})'.format(header.version.name, header.game_version, round(header.save_version, 2))],
             ['Dataset', '{} {}'.format(dataset['name'], dataset['version'])],
             ['Hash', summary.get_hash().hexdigest()],
             ['Encoding', summary.get_encoding()],

@@ -32,6 +32,7 @@ class Version(Enum):
     USERPATCH14 = 11
     USERPATCH15 = 20
     DE = 21
+    USERPATCH14RC2 = 22
 
 
 class MgzPrefixed(Subconstruct):
@@ -61,17 +62,19 @@ class ZlibCompressed(Tunnel):
         return zlib.decompress(data, wbits=-15)
 
 
-def get_version(major_version, minor_version):
+def get_version(game_version, save_version):
     """Get version based on version fields."""
-    if major_version == 'VER 9.3':
+    if game_version == 'VER 9.3':
         return Version.AOK
-    elif major_version == 'VER 9.4':
-        if minor_version > 12.97:
+    elif game_version == 'VER 9.4':
+        if save_version > 12.97:
             return Version.DE
         return Version.AOC
-    elif major_version == 'VER 9.D':
+    elif game_version == 'VER 9.A':
+        return Version.USERPATCH14RC2
+    elif game_version == 'VER 9.D':
         return Version.USERPATCH14
-    elif major_version in ['VER 9.E', 'VER 9.F']:
+    elif game_version in ['VER 9.E', 'VER 9.F']:
         return Version.USERPATCH15
     raise ValueError('unsupported version')
 

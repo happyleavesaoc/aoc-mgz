@@ -158,7 +158,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def get_version(self):
         """Get game version."""
-        return mgz.const.VERSIONS[self._header.major_version], str(self._header.minor_version)[:5]
+        return self._header.version, self._header.game_version, self._header.save_version
 
     def get_owner(self):
         """Get rec owner (POV)."""
