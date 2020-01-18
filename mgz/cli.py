@@ -17,6 +17,7 @@ import mgz
 import mgz.const
 import mgz.header
 import mgz.util
+from mgz import fast, enums
 from mgz.summary import Summary
 from mgz.playback import Client, progress_bar
 from mgz.util import find_postgame, LOOKAHEAD
@@ -191,11 +192,12 @@ def print_histogram(path):
         actions = defaultdict(int)
         labels = {}
         while handle.tell() < size:
-            operation = mgz.body.operation.parse_stream(handle)
-            operations[operation.type] += 1
-            if operation.type == 'action':
-                action_id = '{0:#0{1}x}'.format(operation.action.type_int, 4)
-                labels[action_id] = operation.action.type
+            op_type, payload = fast.operation(handle)
+            operations[op_type.name] += 1
+            if op_type == fast.Operation.ACTION:
+                action_id = payload[1]
+                action_id = '{0:#0{1}x}'.format(payload[0].value, 4)
+                labels[action_id] = payload[0].name
                 actions[action_id] += 1
         print('Operations')
         print(tabulate([

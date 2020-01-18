@@ -89,9 +89,9 @@ class Summary: # pylint: disable=too-many-public-methods
                     duration += payload[0]
                     if payload[1] and len(checksums) < CHECKSUMS:
                         checksums.append(payload[1].to_bytes(8, 'big', signed=True))
-                elif operation == fast.Operation.ACTION and payload[0] == 255:
+                elif operation == fast.Operation.ACTION and payload[0] == fast.Action.POSTGAME:
                     self._cache['postgame'] = mgz.body.actions.postgame.parse(payload[1]['bytes'])
-                elif operation == fast.Operation.ACTION and payload[0] == 11:
+                elif operation == fast.Operation.ACTION and payload[0] == fast.Action.RESIGN:
                     self._cache['resigned'].add(payload[1]['player_id'])
                 elif operation == fast.Operation.CHAT:
                     text = payload
