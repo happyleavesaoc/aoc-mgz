@@ -154,6 +154,7 @@ def OperationEnum(ctx):
         viewlock=3,
         message=4,
         start=5,
+        raw_start=500,
         default="embedded"
     )
 

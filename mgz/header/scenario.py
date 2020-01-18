@@ -1,6 +1,6 @@
 """Scenario."""
 
-from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
+from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding, Embedded,
                        PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
@@ -36,14 +36,14 @@ messages = "messages"/Struct(
     "victory_id"/Int32ul,
     "defeat_id"/Int32ul,
     "history_id"/Int32ul,
-    "scouts_id"/Int32ul,
+    "scouts_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32ul),
     "instructions_length"/Int16ul,
     "instructions"/Bytes(lambda ctx: ctx.instructions_length),
     "hints"/PascalString(lengthfield="hints_length"/Int16ul),
     "victory"/PascalString(lengthfield="victory_length"/Int16ul),
     "defeat"/PascalString(lengthfield="defeat_length"/Int16ul),
     "history"/PascalString(lengthfield="history_length"/Int16ul),
-    "scouts"/PascalString(lengthfield="scouts_length"/Int16ul),
+    "scouts"/If(lambda ctx: ctx._._.version != Version.AOK, PascalString(lengthfield="scouts_length"/Int16ul)),
     "pg_cin"/PascalString(lengthfield="pg_cin_length"/Int16ul),
     "vict_cin"/PascalString(lengthfield="vict_cin_length"/Int16ul),
     "loss_cin"/PascalString(lengthfield="loss_cin_length"/Int16ul),
@@ -113,7 +113,7 @@ game_settings = "game_settings"/Struct(
     Array(16, AgeEnum("starting_ages"/Int32sl)),
     Padding(4),
     Padding(8),
-    "map_id"/Int32ul,
+    "map_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32ul),
     Peek("difficulty_id"/Int32ul),
     DifficultyEnum("difficulty"/Int32ul),
     "lock_teams"/Int32ul,

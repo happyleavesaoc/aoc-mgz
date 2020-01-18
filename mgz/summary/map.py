@@ -2,6 +2,7 @@
 
 import re
 import mgz
+from mgz.util import Version
 
 
 ENCODING_MARKERS = [
@@ -74,14 +75,17 @@ def extract_from_instructions(instructions):
     return encoding, language, name
 
 
-def lookup_name(map_id, name, is_de):
+def lookup_name(map_id, name, version):
     """Lookup base game map if applicable."""
     custom = True
+    is_de = version == Version.DE
     if (map_id != 44 and not is_de) or (map_id != 59 and is_de):
         if is_de and map_id in mgz.const.DE_MAP_NAMES:
             name = mgz.const.DE_MAP_NAMES[map_id]
         elif not is_de and map_id in mgz.const.MAP_NAMES:
             name = mgz.const.MAP_NAMES[map_id]
+        elif version == Version.AOK:
+            return name, False
         else:
             raise ValueError('unspecified builtin map: ' + str(map_id))
         custom = False
@@ -130,7 +134,7 @@ def get_tiles(tiles, dimension):
         tile_x += 1
 
 
-def get_map_data(map_id, instructions, dimension, is_de, tiles):
+def get_map_data(map_id, instructions, dimension, version, tiles):
     """Get the map metadata."""
     if dimension == 255:
         raise ValueError('invalid map size')
@@ -138,7 +142,7 @@ def get_map_data(map_id, instructions, dimension, is_de, tiles):
         raise ValueError('empty instructions')
 
     encoding, language, name = extract_from_instructions(instructions)
-    name, custom = lookup_name(map_id, name, is_de)
+    name, custom = lookup_name(map_id, name, version)
     seed = get_map_seed(instructions)
     name, modes = get_modes(name)
 

@@ -89,9 +89,9 @@ class Summary: # pylint: disable=too-many-public-methods
                     duration += payload[0]
                     if payload[1] and len(checksums) < CHECKSUMS:
                         checksums.append(payload[1].to_bytes(8, 'big', signed=True))
-                elif operation == fast.Operation.ACTION and payload[0] == 255:
+                elif operation == fast.Operation.ACTION and payload[0] == fast.Action.POSTGAME:
                     self._cache['postgame'] = mgz.body.actions.postgame.parse(payload[1]['bytes'])
-                elif operation == fast.Operation.ACTION and payload[0] == 11:
+                elif operation == fast.Operation.ACTION and payload[0] == fast.Action.RESIGN:
                     self._cache['resigned'].add(payload[1]['player_id'])
                 elif operation == fast.Operation.CHAT:
                     text = payload
@@ -158,7 +158,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def get_version(self):
         """Get game version."""
-        return mgz.const.VERSIONS[self._header.major_version], str(self._header.minor_version)[:5]
+        return self._header.version, self._header.game_version, self._header.save_version
 
     def get_owner(self):
         """Get rec owner (POV)."""
@@ -252,7 +252,7 @@ class Summary: # pylint: disable=too-many-public-methods
                 self._header.scenario.game_settings.map_id,
                 self._header.scenario.messages.instructions,
                 self._header.map_info.size_x,
-                self._header.version == Version.DE,
+                self._header.version,
                 self._header.map_info.tile
             )
         return self._cache['map']

@@ -199,17 +199,19 @@ player_stats = "player_stats"/Struct(
     "food_score"/Float32l,
     "wood_score"/Float32l,
     "stone_score"/Float32l,
-    "gold_score"/Float32l,
-    "wood_bonus0"/Float32l,
-    "food_bonus0"/Float32l,
-    "relic_rate"/Float32l,
-    "heresy"/Float32l,
-    "theocracy"/Float32l,
-    "crenellations"/Float32l,
-    "construction_rate_mod"/Float32l,
-    "hun_wonder_bonus"/Float32l,
-    "spies_discount"/Float32l,
-    Embedded(If(lambda ctx: ctx._.num_header_data == 219, Struct(
+    "gold_score"/Float32l, # 189 AOK
+    Embedded(If(lambda ctx: ctx._.num_header_data >= 198, Struct( # AOC
+        "wood_bonus0"/Float32l,
+        "food_bonus0"/Float32l,
+        "relic_rate"/Float32l,
+        "heresy"/Float32l,
+        "theocracy"/Float32l,
+        "crenellations"/Float32l,
+        "construction_rate_mod"/Float32l,
+        "hun_wonder_bonus"/Float32l,
+        "spies_discount"/Float32l,
+    ))),
+    Embedded(If(lambda ctx: ctx._.num_header_data == 219, Struct( # DE
         "unk2"/Float32l,
         "unk3"/Float32l,
         "unk4"/Float32l,
@@ -232,7 +234,7 @@ player_stats = "player_stats"/Struct(
         "unk21"/Float32l,
         "unk22"/Float32l
     ))),
-    Embedded(If(lambda ctx: ctx._.num_header_data == 240, Struct(
+    Embedded(If(lambda ctx: ctx._.num_header_data == 240, Struct( # WK
         ModVersionAdapter("mod"/Float32l),
         "unk2"/Float32l,
         "unk3"/Float32l,

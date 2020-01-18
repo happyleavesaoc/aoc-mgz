@@ -2,6 +2,8 @@
 import struct
 from enum import Enum
 
+CHECKSUM_INTERVAL = 500
+
 
 class Operation(Enum):
     """Operation types."""
@@ -10,6 +12,51 @@ class Operation(Enum):
     VIEWLOCK = 3
     CHAT = 4
     START = 5
+
+class Action(Enum):
+    """Action types."""
+    ORDER = 0
+    STOP = 1
+    WORK = 2
+    MOVE = 3
+    ADD_ATTRIBUTE = 5
+    GIVE_ATTRIBUTE = 6
+    AI_ORDER = 10
+    RESIGN = 11
+    SPECTATE = 15
+    ADD_WAYPOINT = 16
+    STANCE = 18
+    GUARD = 19
+    FOLLOW = 20
+    PATROL = 21
+    FORMATION = 23
+    SAVE = 27
+    GROUP_MULTI_WAYPOINTS = 31
+    CHAPTER = 32
+    AI_COMMAND = 53
+    MAKE = 100
+    RESEARCH = 101
+    BUILD = 102
+    GAME = 103
+    WALL = 105
+    DELETE = 106
+    ATTACK_GROUND = 107
+    TRIBUTE = 108
+    REPAIR = 110
+    UNGARRISON = 111
+    MULTIQUEUE = 112
+    GATE = 114
+    FLARE = 115
+    SPECIAL = 117
+    QUEUE = 119
+    GATHER_POINT = 120
+    SELL = 122
+    BUY = 123
+    DROP_RELIC = 126
+    TOWN_BELL = 127
+    BACK_TO_WORK = 128
+    DE = 129
+    POSTGAME = 255
 
 
 def sync(data):
@@ -36,21 +83,22 @@ def viewlock(data):
 def action(data):
     """Handle actions."""
     length, = struct.unpack('<I', data.read(4))
-    type_id = int.from_bytes(data.read(1), 'little')
+    action_id = int.from_bytes(data.read(1), 'little')
     action_bytes = data.read(length - 1)
     data.read(4)
     payload = {}
-    if type_id == 255: # postgame
+    action_type = Action(action_id)
+    if action_type == Action.POSTGAME:
         payload['bytes'] = action_bytes + data.read()
-    elif type_id == 11: # resign
+    elif action_type == Action.RESIGN:
         payload['player_id'] = action_bytes[0]
-    return type_id, payload
+    return action_type, payload
 
 
 def chat(data):
     """Handle chat."""
     check, length = struct.unpack('<II', data.read(8))
-    if check == 500:
+    if check == CHECKSUM_INTERVAL:
         data.seek(-4, 1)
         start(data)
         return None
@@ -60,7 +108,7 @@ def chat(data):
 
 def start(data):
     """Handle start."""
-    data.read(28)
+    return data.read(28)
 
 
 def operation(data):
@@ -69,6 +117,8 @@ def operation(data):
         op_id, = struct.unpack('<I', data.read(4))
     except struct.error:
         raise EOFError
+    if op_id == CHECKSUM_INTERVAL: # AOK
+        return Operation.START, data.read(32)
     op_type = Operation(op_id)
     if op_type == Operation.ACTION:
         return op_type, action(data)
