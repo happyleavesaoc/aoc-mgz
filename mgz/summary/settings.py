@@ -37,7 +37,7 @@ def _get_victory_type(postgame, de_data):
         return (de_data.victory_type_id, de_data.victory_type)
     if postgame is not None:
         return (postgame.victory_type_id, postgame.victory_type)
-    return None
+    return (None, None)
 
 
 def _get_starting_resources(postgame, de_data):
@@ -46,7 +46,7 @@ def _get_starting_resources(postgame, de_data):
         return (de_data.starting_resources_id, de_data.starting_resources)
     if postgame is not None:
         return (postgame.starting_resources_id, postgame.starting_resources)
-    return None
+    return (None, None)
 
 
 def _get_starting_age(postgame, de_data):
@@ -55,7 +55,7 @@ def _get_starting_age(postgame, de_data):
         return (de_data.starting_age_id, de_data.starting_age)
     if postgame is not None:
         return (postgame.starting_age_id, postgame.starting_age)
-    return None
+    return (None, None)
 
 
 def get_settings_data(postgame, header):
@@ -66,7 +66,7 @@ def get_settings_data(postgame, header):
         'type': (
             header.lobby.game_type_id,
             header.lobby.game_type
-        ),
+        ) if hasattr(header.lobby, 'game_type_id') else (0, 'RM'),
         'difficulty': (
             header.scenario.game_settings.difficulty_id,
             header.scenario.game_settings.difficulty
@@ -88,10 +88,10 @@ def get_settings_data(postgame, header):
         ) if header.de else (None, None),
         'victory_condition': _get_victory_type(postgame, header.de),
         'treaty_length': header.de.treaty_length if header.de else None,
-        'cheats': header.replay.cheats_enabled,
+        'cheats': header.replay.cheats_enabled if hasattr(header.replay, 'cheats_enabled') else False,
         'team_together': _get_team_together(postgame, header.de),
         'all_technologies': _get_all_techs(postgame, header.de),
         'lock_speed': _get_lock_speed(postgame, header.de),
-        'lock_teams': header.lobby.lock_teams,
+        'lock_teams': header.lobby.lock_teams if hasattr(header.replay, 'lock_teams') else True,
         'multiqueue': True if header.de is not None else None,
     }
