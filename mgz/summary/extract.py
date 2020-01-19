@@ -4,7 +4,6 @@ import logging
 from collections import defaultdict
 
 from mgz.playback import Client, Source
-from mgz.summary.chat import parse_chat
 from mgz import fast
 
 
@@ -17,21 +16,6 @@ def has_diff(data, **kwargs):
         if data.get(key) != value:
             return True
     return False
-
-
-def get_lobby_chat(header, encoding, diplomacy_type, players):
-    """Get lobby chat."""
-    chats = []
-    for message in header.lobby.messages:
-        if not message.message:
-            continue
-        try:
-            chats.append(parse_chat(
-                message.message.decode(encoding), 0, players, diplomacy_type, origination='lobby'
-            ))
-        except UnicodeDecodeError:
-            LOGGER.warning('could not decode lobby chat')
-    return chats
 
 
 def flatten_research(research):
@@ -155,34 +139,25 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
     objects = {}
     state = []
     last = {}
-    chats = get_lobby_chat(header, encoding, diplomacy_type, players)
     client = await Client.create(playback, handle.name, start_time, duration)
 
     async for tick, source, message in client.sync(timeout=120):
-        if source == Source.MGZ and message[0] == fast.Operation.CHAT:
-            try:
-                chats.append(parse_chat(
-                    message[1].decode(encoding), tick, players, diplomacy_type
-                ))
-            except UnicodeDecodeError:
-                LOGGER.warning('could not decode chat')
+        if source != Source.MEMORY:
+            continue
+        update_market(tick, message.MarketCoefficients(), market)
 
-        elif source == Source.MEMORY:
-            update_market(tick, message.MarketCoefficients(), market)
+        for i in range(0, message.ObjectsLength()):
+            update_objects(tick, message.Objects(i), objects, state, last)
 
-            for i in range(0, message.ObjectsLength()):
-                update_objects(tick, message.Objects(i), objects, state, last)
-
-            for i in range(0, message.PlayersLength()):
-                player = message.Players(i)
-                timeseries.append(build_timeseries_record(tick, player))
-                for j in range(0, player.TechsLength()):
-                    update_research(player.Id(), player.Techs(j), research)
+        for i in range(0, message.PlayersLength()):
+            player = message.Players(i)
+            timeseries.append(build_timeseries_record(tick, player))
+            for j in range(0, player.TechsLength()):
+                update_research(player.Id(), player.Techs(j), research)
 
     handle.close()
 
     return {
-        'chat': chats,
         'timeseries': timeseries,
         'research': flatten_research(research),
         'market': market,

@@ -1,12 +1,51 @@
 """Chat Messages."""
+from enum import Enum
+
+AGE_MARKER = 'advanced to the'
+SAVE_MARKERS = [
+    'Continuar con la partida en vez de guardar y salir',
+    'Voto iniciado para guardar y salir del juego',
+    'Chose to continue the game instead of save and exit',
+    'Initiated vote to save and exit the game',
+    'Vyber pokračovat ve hře místo ulo'
+]
+
+class Chat(Enum):
+    LADDER = 0
+    VOOBLY = 1
+    RATING = 2
+    INJECTED = 3
+    AGE = 4
+    SAVE = 5
+    MESSAGE = 6
 
 
-def parse_chat(line, timestamp, players, diplomacy_type=None, origination='game'):
+def get_lobby_chat(header, encoding, diplomacy_type, players):
+    """Get lobby chat."""
+    chats = []
+    for message in header.lobby.messages:
+        if not message.message:
+            continue
+        try:
+            chats.append(parse_chat(
+                message.message, encoding, 0, players, diplomacy_type, origination='lobby'
+            ))
+        except UnicodeDecodeError:
+            LOGGER.warning('could not decode lobby chat')
+    return chats
+
+
+def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, origination='game'):
     """Initalize."""
+    line = line.strip(b'\x00').decode(encoding)
     data = {
         'timestamp': timestamp,
         'origination': origination
     }
+    for save_marker in SAVE_MARKERS:
+        if line.find(save_marker) > 0:
+            data['type'] = Chat.SAVE
+            return data
     if line.find('Voobly: Ratings provided') > 0:
         _parse_ladder(data, line)
     elif line.find('Voobly') == 3:
@@ -15,40 +54,56 @@ def parse_chat(line, timestamp, players, diplomacy_type=None, origination='game'
         _parse_rating(data, line)
     elif line.find('@#0<') == 0:
         _parse_injected(data, line)
+    elif line.find(AGE_MARKER) > 0:
+        _parse_age_advance(data, line)
     else:
         _parse_chat(data, line, players, diplomacy_type)
     return data
 
 
+def _parse_age_advance(data, line):
+    """Parse age advancement message."""
+    start = line.find(AGE_MARKER)
+    data.update({
+        'type': Chat.AGE,
+        'age': line[start + len(AGE_MARKER) + 1:-1]
+    })
+
+
 def _parse_ladder(data, line):
+    """Parse ladder from chat."""
     start = line.find("'") + 1
     end = line.find("'", start)
     data.update({
-        'type': 'ladder',
+        'type': Chat.LADDER,
         'ladder': line[start:end]
     })
 
 
 def _parse_voobly(data, line):
+    """Parse voobly message from chat."""
     message = line[11:]
     data.update({
-        'type': 'voobly',
+        'type': Chat.VOOBLY,
         'message': message
     })
 
 
 def _parse_rating(data, line):
+    """Parse rating from chat."""
     player_start = line.find('>') + 2
     player_end = line.find(':', player_start)
     player = line[player_start:player_end]
     rating = int(line[player_end + 2:len(line)])
     data.update({
-        'type': 'rating',
+        'type': Chat.RATING,
         'player': player,
         'rating': rating
     })
 
+
 def _parse_injected(data, line):
+    """Parse injected chat."""
     prefix = ''
     if line.find('<Team>') > 0:
         line = line.replace('<Team>', '', 1)
@@ -60,7 +115,7 @@ def _parse_injected(data, line):
     name = line[origination_end + 2:name_end]
     message = line[name_end + 2:]
     data.update({
-        'type': 'injected',
+        'type': Chat.INJECTED,
         'origination': origination.lower(),
         'name': name,
         'message': '{}{}'.format(prefix, message)
@@ -68,7 +123,10 @@ def _parse_injected(data, line):
 
 
 def _parse_chat(data, line, players, diplomacy_type):
+    """Parse in-game chat message."""
     player_start = line.find('#') + 2
+    if line[4] == ' ':
+        player_start = line.find(' ') + 1
     player_end = line.find(':', player_start)
     player = line[player_start:player_end]
     if data['timestamp'] == 0:
@@ -90,7 +148,7 @@ def _parse_chat(data, line, players, diplomacy_type):
         if player_h['name'] == player:
             number = player_h['number']
     data.update({
-        'type': 'chat',
+        'type': Chat.MESSAGE,
         'player_number': number,
         'message': message.strip(),
         'audience': group.lower()

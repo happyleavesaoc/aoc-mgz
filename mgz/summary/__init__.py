@@ -22,6 +22,7 @@ from mgz.summary.dataset import get_dataset_data
 from mgz.summary.teams import get_teams_data
 from mgz.summary.players import get_players_data
 from mgz.summary.diplomacy import get_diplomacy_data
+from mgz.summary.chat import get_lobby_chat, parse_chat, Chat
 
 
 LOGGER = logging.getLogger(__name__)
@@ -63,6 +64,10 @@ class Summary: # pylint: disable=too-many-public-methods
             start = time.time()
             self._header = mgz.header.parse_stream(self._handle)
             LOGGER.info("parsed header in %.2f seconds", time.time() - start)
+            self._chats = get_lobby_chat(
+                self._header, self.get_encoding(),
+                self.get_diplomacy().get('type'), self.get_players()
+            )
             body_pos = self._handle.tell()
             self._cache['file_hash'] = hashlib.sha1(self._handle.read()).hexdigest()
             self._handle.seek(body_pos)
@@ -97,22 +102,16 @@ class Summary: # pylint: disable=too-many-public-methods
                     text = payload
                     if text is None:
                         continue
-                    text = text.strip(b'\x00')
                     try:
-                        text = text.decode(self.get_encoding())
-                        if text.find('Voobly: Ratings provided') > 0:
-                            start = text.find("'") + 1
-                            end = text.find("'", start)
-                            ladder = text[start:end]
-                            voobly = True
-                        elif text.find('<Rating>') > 0:
-                            player_start = text.find('>') + 2
-                            player_end = text.find(':', player_start)
-                            player = text[player_start:player_end]
-                            ratings[player] = int(text[player_end + 2:len(text)])
-                        elif text.find('No ratings are available') > 0:
-                            voobly = True
-                        elif text.find('This match was played at Voobly.com') > 0:
+                        parsed = parse_chat(
+                            text, self.get_encoding(), duration, self.get_players(), self.get_diplomacy().get('type')
+                        )
+                        self._chats.append(parsed)
+                        if parsed['type'] == Chat.RATING:
+                            ratings[parsed['player']] = parsed['rating']
+                        elif parsed['type'] == Chat.LADDER:
+                            ladder = parsed['ladder']
+                        elif parsed['type'] == Chat.VOOBLY:
                             voobly = True
                     except UnicodeDecodeError:
                         pass
@@ -135,6 +134,10 @@ class Summary: # pylint: disable=too-many-public-methods
         self._cache['rated'] = rated
         self._cache['ratings'] = ratings if rated else {}
         LOGGER.info("parsed body in %.2f seconds", time.time() - start_time)
+
+    def get_chat(self):
+        """Get chat messages."""
+        return self._chats
 
     def get_postgame(self):
         """Get postgame structure."""
