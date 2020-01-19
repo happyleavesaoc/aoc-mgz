@@ -7,7 +7,8 @@ SAVE_MARKERS = [
     'Voto iniciado para guardar y salir del juego',
     'Chose to continue the game instead of save and exit',
     'Initiated vote to save and exit the game',
-    'Vyber pokračovat ve hře místo ulo'
+    'Vyber pokračovat ve hře místo ulo',
+    'Escolha para continuar o jogo em vez de salvá-lo e fechá-lo'
 ]
 
 class Chat(Enum):
@@ -23,6 +24,8 @@ class Chat(Enum):
 def get_lobby_chat(header, encoding, diplomacy_type, players):
     """Get lobby chat."""
     chats = []
+    if not hasattr(header.lobby, 'messages'):
+        return chats
     for message in header.lobby.messages:
         if not message.message:
             continue
