@@ -99,11 +99,12 @@ class Client():
         # wait for any existing AOC to be killed so we don't connect to wrong WS
         await asyncio.sleep(1)
         attempts = 0
+        url = WS_URL.format(self.socket)
+        LOGGER.info("trying to connect @ %s", url)
         while attempts < MAX_ATTEMPTS:
             try:
-                url = WS_URL.format(self.socket)
-                LOGGER.info("trying to connect @ %s", url)
                 websocket = await websockets.connect(url, ping_timeout=None)
+                await asyncio.sleep(2)
                 await websocket.send(make_config(interval, cycles))
                 LOGGER.info("sent configuration to websocket")
                 return websocket

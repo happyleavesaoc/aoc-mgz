@@ -1,6 +1,8 @@
 """Chat Messages."""
+import logging
 from enum import Enum
 
+LOGGER = logging.getLogger(__name__)
 AGE_MARKER = 'advanced to the'
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',

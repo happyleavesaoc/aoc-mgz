@@ -119,7 +119,7 @@ class Summary: # pylint: disable=too-many-public-methods
                 break
         self._cache['duration'] = duration
         if voobly:
-            rated = ratings and set(ratings.values()) != {1600}
+            rated = len(ratings) > 0 and set(ratings.values()) != {1600}
         if self._header.version == Version.DE:
             self._cache['hash'] = hashlib.sha1(self._header.de.guid)
         else:

@@ -115,19 +115,19 @@ def operation(data):
     """Handle body operations."""
     try:
         op_id, = struct.unpack('<I', data.read(4))
+        if op_id == CHECKSUM_INTERVAL: # AOK
+            return Operation.START, data.read(32)
+        op_type = Operation(op_id)
+        if op_type == Operation.ACTION:
+            return op_type, action(data)
+        if op_type == Operation.SYNC:
+            return op_type, sync(data)
+        if op_type == Operation.VIEWLOCK:
+            return op_type, viewlock(data)
+        if op_type == Operation.CHAT:
+            return op_type, chat(data)
+        if op_type == Operation.START:
+            return op_type, start(data)
+        raise RuntimeError('unknown data encountered')
     except struct.error:
         raise EOFError
-    if op_id == CHECKSUM_INTERVAL: # AOK
-        return Operation.START, data.read(32)
-    op_type = Operation(op_id)
-    if op_type == Operation.ACTION:
-        return op_type, action(data)
-    if op_type == Operation.SYNC:
-        return op_type, sync(data)
-    if op_type == Operation.VIEWLOCK:
-        return op_type, viewlock(data)
-    if op_type == Operation.CHAT:
-        return op_type, chat(data)
-    if op_type == Operation.START:
-        return op_type, start(data)
-    raise RuntimeError('unknown data encountered')
