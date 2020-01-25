@@ -12,6 +12,7 @@ class Operation(Enum):
     VIEWLOCK = 3
     CHAT = 4
     START = 5
+    SAVE = 6
 
 class Action(Enum):
     """Action types."""
@@ -111,13 +112,24 @@ def start(data):
     return data.read(28)
 
 
+def save(data):
+    """Handle saved chapter."""
+    data.seek(-4, 1)
+    pos = data.tell()
+    length, address = struct.unpack('<II', data.read(8))
+    data.read(length - pos - 8)
+
+
 def operation(data):
     """Handle body operations."""
     try:
         op_id, = struct.unpack('<I', data.read(4))
         if op_id == CHECKSUM_INTERVAL: # AOK
             return Operation.START, data.read(32)
-        op_type = Operation(op_id)
+        try:
+            op_type = Operation(op_id)
+        except ValueError:
+            return Operation.SAVE, save(data)
         if op_type == Operation.ACTION:
             return op_type, action(data)
         if op_type == Operation.SYNC:
@@ -128,6 +140,5 @@ def operation(data):
             return op_type, chat(data)
         if op_type == Operation.START:
             return op_type, start(data)
-        raise RuntimeError('unknown data encountered')
     except struct.error:
         raise EOFError

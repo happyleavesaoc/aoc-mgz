@@ -22,6 +22,7 @@ from mgz import fast
 LOGGER = logging.getLogger(__name__)
 WS_URL = 'ws://{}'
 MAX_ATTEMPTS = 5
+IO_TIMEOUT = 5
 
 
 class Source(Enum):
@@ -103,18 +104,28 @@ class Client():
         LOGGER.info("trying to connect @ %s", url)
         while attempts < MAX_ATTEMPTS:
             try:
-                websocket = await websockets.connect(url, ping_timeout=None)
+                try:
+                    websocket = await asyncio.wait_for(websockets.connect(url, ping_timeout=None), timeout=IO_TIMEOUT)
+                except asyncio.TimeoutError:
+                    LOGGER.warning("timed out trying to connect, will retry")
+                    continue
                 await asyncio.sleep(2)
-                await websocket.send(make_config(interval, cycles))
+                try:
+                    await asyncio.wait_for(websocket.send(make_config(interval, cycles)), timeout=IO_TIMEOUT)
+                except asyncio.TimeoutError:
+                    LOGGER.error("failed to send configuration")
+                    break
                 LOGGER.info("sent configuration to websocket")
                 return websocket
             except (
                     ConnectionRefusedError, OSError,
                     websockets.exceptions.ConnectionClosed, websockets.exceptions.InvalidMessage
                 ):
+                LOGGER.info("trying again to connect ...")
                 await asyncio.sleep(1)
                 attempts += 1
-        raise RuntimeError('could not connect to playback websocket')
+        LOGGER.error("failed to launch playback")
+        raise RuntimeError("failed to launch playback")
 
     async def read_state(self):
         """Read memory state messages."""
@@ -146,7 +157,7 @@ class Client():
                 mgz_done = True
             while not ws_done and (ws_time <= mgz_time or mgz_done):
                 try:
-                    data = await asyncio.wait_for(self.read_state().__anext__(), timeout=timeout)
+                    data = await asyncio.wait_for(self.read_state().__anext__(), timeout=IO_TIMEOUT)
                 except (asyncio.TimeoutError, asyncio.streams.IncompleteReadError):
                     LOGGER.warning("socket timeout or read failure encountered")
                     self.close_all()
