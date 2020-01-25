@@ -141,7 +141,7 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
     last = {}
     client = await Client.create(playback, handle.name, start_time, duration)
 
-    async for tick, source, message in client.sync(timeout=60*2):
+    async for tick, source, message in client.sync(timeout=60*3):
         if source != Source.MEMORY:
             continue
         update_market(tick, message.MarketCoefficients(), market)

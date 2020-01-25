@@ -11,7 +11,7 @@ An Operation can be:
 
 from construct import (Struct, Byte, Switch, Embedded, Padding,
                        Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
-                       GreedyBytes, Computed, IfThenElse, Int16ul)
+                       GreedyBytes, Computed, IfThenElse, Int16ul, Int64ul)
 from mgz.enums import ActionEnum, OperationEnum, MessageEnum
 from mgz.body import actions, embedded
 from mgz.util import BoolAdapter
@@ -115,14 +115,36 @@ chat = "chat"/Struct(
     Padding(0)
 )
 
+
 # Start
 start = "start"/Struct(
     "checksum_interval"/Int32ul,
     BoolAdapter("multiplayer"/Int32ul),
     "rec_owner"/Int32ul,
     BoolAdapter("reveal_map"/Int32ul),
-    "record_sequence_numbers"/Int32ul,
+    "use_sequence_numbers"/Int32ul,
+)
+
+
+# AOK start.
+aok_start = "aok_start"/Struct(
+    Embedded(start),
+    "empires2_exe_size"/Int64ul,
+    Padding(4)
+)
+
+
+# AOC start.
+aoc_start = "aoc_start"/Struct(
+    Embedded(start),
     "number_of_chapters"/Int32ul
+)
+
+
+# DE start.
+de_start = "de_start"/Struct(
+    Padding(4),
+    Embedded(aoc_start)
 )
 
 
@@ -130,19 +152,10 @@ start = "start"/Struct(
 message = "message"/Struct(
     MessageEnum("subtype"/Peek(Int32ul)),
     "data"/Switch(lambda ctx: ctx.subtype, {
-        "start": start,
+        "start": aoc_start,
         "chat": chat
     })
 )
-
-# Match start.
-match_start = "match_start"/Struct(
-    Padding(4),
-    start
-)
-
-# Raw start (AOK).
-raw_start = "raw_start"/Bytes(32)
 
 
 # Operation.
@@ -155,8 +168,8 @@ operation = "operation"/Struct(
         "sync": sync,
         "viewlock": viewlock,
         "message": message,
-        "start": match_start,
-        "raw_start": raw_start,
+        "de_start": de_start,
+        "aok_start": aok_start,
         "embedded": embedded.embedded
     })),
     "end"/Tell
