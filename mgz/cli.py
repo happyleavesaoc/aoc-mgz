@@ -17,7 +17,7 @@ import mgz
 import mgz.const
 import mgz.header
 import mgz.util
-from mgz import fast, enums
+from mgz import fast
 from mgz.summary import Summary
 from mgz.playback import Client, progress_bar
 from mgz.util import find_postgame, LOOKAHEAD

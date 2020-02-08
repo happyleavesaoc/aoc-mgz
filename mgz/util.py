@@ -66,15 +66,15 @@ def get_version(game_version, save_version):
     """Get version based on version fields."""
     if game_version == 'VER 9.3':
         return Version.AOK
-    elif game_version == 'VER 9.4':
+    if game_version == 'VER 9.4':
         if save_version > 12.97:
             return Version.DE
         return Version.AOC
-    elif game_version == 'VER 9.A':
+    if game_version == 'VER 9.A':
         return Version.USERPATCH14RC2
-    elif game_version == 'VER 9.D':
+    if game_version == 'VER 9.D':
         return Version.USERPATCH14
-    elif game_version in ['VER 9.E', 'VER 9.F']:
+    if game_version in ['VER 9.E', 'VER 9.F']:
         return Version.USERPATCH15
     raise ValueError('unsupported version')
 
@@ -172,9 +172,8 @@ class RepeatUpTo(Subconstruct):
             stream.seek(start)
             if test == self.find:
                 break
-            else:
-                subobj = self.subcon._parse(stream, context, path)
-                objs.append(subobj)
+            subobj = self.subcon._parse(stream, context, path)
+            objs.append(subobj)
         return objs
 
 

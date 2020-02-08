@@ -8,10 +8,9 @@ import struct
 import time
 from enum import Enum
 
+import aiohttp
 import flatbuffers
 import tqdm
-import websockets
-from construct.core import ConstructError
 
 from AOC import ConfigMessage
 from AOC import GameMessage
@@ -22,6 +21,7 @@ from mgz import fast
 LOGGER = logging.getLogger(__name__)
 WS_URL = 'ws://{}'
 MAX_ATTEMPTS = 5
+TOTAL_TIMEOUT = 60 * 3
 IO_TIMEOUT = 5
 
 
@@ -81,13 +81,15 @@ class Client():
     @classmethod
     async def create(
             cls, playback, rec_path, start_time, duration,
-            interval=2000, cycles=10000
+            interval=2000, cycles=10000, total_timeout=TOTAL_TIMEOUT, io_timeout=IO_TIMEOUT
     ):
         """Async factory."""
         self = Client(playback, rec_path)
         self.start_time = start_time
         self.duration = duration
-        self.state_ws = await self.start_instance(interval, cycles)
+        self.total_timeout = total_timeout
+        self.io_timeout = io_timeout
+        self.session, self.state_ws = await self.start_instance(interval, cycles)
         LOGGER.info("launched instance for %s", rec_path)
         return self
 
@@ -98,41 +100,36 @@ class Client():
             os.path.join(self.dropbox_path, os.path.basename(self.rec_path))
         )
         # wait for any existing AOC to be killed so we don't connect to wrong WS
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         attempts = 0
         url = WS_URL.format(self.socket)
         LOGGER.info("trying to connect @ %s", url)
+        session = aiohttp.ClientSession()
         while attempts < MAX_ATTEMPTS:
             try:
+                websocket = await asyncio.wait_for(session.ws_connect(url), timeout=self.io_timeout)
                 try:
-                    websocket = await asyncio.wait_for(websockets.connect(url, ping_timeout=None), timeout=IO_TIMEOUT)
-                except asyncio.TimeoutError:
-                    LOGGER.warning("timed out trying to connect, will retry")
-                    continue
-                await asyncio.sleep(2)
-                try:
-                    await asyncio.wait_for(websocket.send(make_config(interval, cycles)), timeout=IO_TIMEOUT)
+                    await asyncio.wait_for(websocket.send_bytes(make_config(interval, cycles)), timeout=self.io_timeout)
                 except asyncio.TimeoutError:
                     LOGGER.error("failed to send configuration")
                     break
                 LOGGER.info("sent configuration to websocket")
-                return websocket
-            except (
-                    ConnectionRefusedError, OSError,
-                    websockets.exceptions.ConnectionClosed, websockets.exceptions.InvalidMessage
-                ):
+                return session, websocket
+            except (aiohttp.client_exceptions.ClientError, asyncio.TimeoutError):
                 LOGGER.info("trying again to connect ...")
                 await asyncio.sleep(1)
                 attempts += 1
         LOGGER.error("failed to launch playback")
+        self._handle.close()
+        await session.close()
         raise RuntimeError("failed to launch playback")
 
     async def read_state(self):
         """Read memory state messages."""
         async for message in self.state_ws:
-            yield read_message(message)
+            yield read_message(message.data)
 
-    async def sync(self, timeout=None):
+    async def sync(self):
         """Synchronize state and body messages."""
         mgz_time = self.start_time
         ws_time = 0
@@ -141,10 +138,9 @@ class Client():
         LOGGER.info("starting synchronization")
         start = time.time()
         while not mgz_done or not ws_done:
-            if timeout and time.time() - start > timeout:
-                LOGGER.warning("synchronization timeout encountered")
-                self.close_all()
-                raise RuntimeError("synchronization timeout encountered")
+            if self.total_timeout and time.time() - start > self.total_timeout:
+                LOGGER.warning("playback time exceeded timeout (%d%% completed)", int(mgz_time/self.duration * 100))
+                break
             try:
                 while not mgz_done and (mgz_time <= ws_time or ws_done):
                     op_type, payload = fast.operation(self._handle)
@@ -152,28 +148,23 @@ class Client():
                         mgz_time += payload[0]
                     elif op_type == fast.Operation.CHAT and payload:
                         yield mgz_time, Source.MGZ, (op_type, payload.strip(b'\x00'))
-            except (ConstructError, ValueError, EOFError):
+            except EOFError:
                 LOGGER.info("MGZ parsing stream finished")
                 mgz_done = True
             while not ws_done and (ws_time <= mgz_time or mgz_done):
                 try:
-                    data = await asyncio.wait_for(self.read_state().__anext__(), timeout=IO_TIMEOUT)
+                    data = await asyncio.wait_for(self.read_state().__anext__(), timeout=self.io_timeout)
                 except (asyncio.TimeoutError, asyncio.streams.IncompleteReadError):
-                    LOGGER.warning("socket timeout or read failure encountered")
-                    self.close_all()
-                    raise RuntimeError("socket timeout or read failure encountered")
+                    LOGGER.warning("state reader timeout")
+                    break
                 ws_time = data.WorldTime()
                 if data.GameFinished():
                     LOGGER.info("state reader stream finished")
                     ws_done = True
                 yield ws_time, Source.MEMORY, data
-        LOGGER.info("synchronization finished in %.2f seconds", time.time() - start)
-        self.close_all()
-
-    def close_all(self):
-        """Close websocket."""
-        try:
-            asyncio.ensure_future(self.state_ws.close())
-        except websockets.exceptions.ConnectionClosed:
-            pass
+        if ws_done and mgz_done:
+            LOGGER.info("synchronization finished in %.2f seconds", time.time() - start)
+        else:
+            raise RuntimeError("synchronization timeout encountered")
+        await self.session.close()
         self._handle.close()

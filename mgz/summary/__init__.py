@@ -287,7 +287,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def can_playback(self):
         """Indicate whether playback is possible."""
-        return self.get_dataset()['id'] == 1 and self._playback
+        return self._playback
 
     async def async_extract(self):
         """Full extraction."""
@@ -301,10 +301,6 @@ class Summary: # pylint: disable=too-many-public-methods
         temp.write(self._handle.read())
 
         return await get_extracted_data(
-            self._header,
-            self.get_encoding(),
-            self.get_diplomacy().get('type'),
-            self.get_players(),
             self.get_start_time(),
             self.get_duration(),
             self._playback,

@@ -31,9 +31,7 @@ compressed_header = Struct(
 
 subheader = Struct(
     "check"/Peek(Int32ul),
-    "chapter_address"/If(lambda ctx: ctx.check == 0, # TODO: could be greater
-        Int32ul
-    ),
+    "chapter_address"/If(lambda ctx: ctx.check == 0, Int32ul), # TODO: could be greater
     Embedded(MgzPrefixed(lambda ctx: ctx._.header_length - 4 - (4 if ctx.check == 0 else 0), ZlibCompressed(compressed_header)))
 )
 

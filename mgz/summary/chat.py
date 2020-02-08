@@ -14,6 +14,7 @@ SAVE_MARKERS = [
 ]
 
 class Chat(Enum):
+    """Chat types."""
     LADDER = 0
     VOOBLY = 1
     RATING = 2

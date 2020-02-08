@@ -4,10 +4,14 @@ import logging
 from collections import defaultdict
 
 from mgz.playback import Client, Source
-from mgz import fast
 
 
 LOGGER = logging.getLogger(__name__)
+CLASS_UNIT = 70
+CLASS_BUILDING = 80
+TECH_STATE_AVAILABLE = 2
+TECH_STATE_RESEARCHING = 3
+TECH_STATE_DONE = 4
 
 
 def has_diff(data, **kwargs):
@@ -54,14 +58,14 @@ def build_timeseries_record(tick, player):
 
 def update_research(player_number, tech, research):
     """Update research structure."""
-    if tech.State() == 3 and tech.IdIndex() not in research[player_number]:
+    if tech.State() == TECH_STATE_RESEARCHING and tech.IdIndex() not in research[player_number]:
         research[player_number][tech.IdIndex()] = {
             'started': tech.LastStateChange(),
             'finished': None
         }
-    elif tech.State() == 4 and tech.IdIndex() in research[player_number]:
+    elif tech.State() == TECH_STATE_DONE and tech.IdIndex() in research[player_number]:
         research[player_number][tech.IdIndex()]['finished'] = tech.LastStateChange()
-    elif tech.State() == 2 and tech.IdIndex() in research[player_number]:
+    elif tech.State() == TECH_STATE_AVAILABLE and tech.IdIndex() in research[player_number]:
         del research[player_number][tech.IdIndex()]
 
 
@@ -86,52 +90,69 @@ def update_market(tick, coefficients, market):
 def update_objects(tick, obj, objects, state, last):
     """Update object/state structures."""
     player_number = obj.OwnerId() if obj.OwnerId() > 0 else None
-    if obj.MasterObjectClass() not in [70, 80]:
+    if obj.MasterObjectClass() not in [CLASS_UNIT, CLASS_BUILDING]:
         return
     if obj.Id() not in objects:
         objects[obj.Id()] = {
             'created': obj.CreatedTime(),
             'destroyed': None,
             'destroyed_by_instance_id': None,
+            'destroyed_building_percent': None,
             'deleted': False,
-            'pos_x': obj.Position().X(),
-            'pos_y': obj.Position().Y()
+            'created_x': obj.Position().X(),
+            'created_y': obj.Position().Y(),
+            'destroyed_x': None,
+            'destroyed_y': None,
+            'building_started': None,
+            'building_completed': None
         }
-    elif obj.State() == 4 and obj.Id() in objects:
+    elif obj.KilledTime() > 0 and obj.Id() in objects:
         data = {
             'destroyed': obj.KilledTime(),
             'deleted': obj.DeletedByOwner()
         }
+        if obj.MasterObjectClass() == CLASS_UNIT:
+            data.update({
+                'destroyed_x': obj.Position().X(),
+                'destroyed_y': obj.Position().Y()
+            })
+        elif obj.MasterObjectClass() == CLASS_BUILDING:
+            data['destroyed_building_percent'] = obj.BuildingPercentComplete()
         if obj.KilledByUnitId() in objects:
             data.update({
                 'destroyed_by_instance_id': obj.KilledByUnitId()
             })
         objects[obj.Id()].update(data)
+    if obj.MasterObjectClass() == CLASS_BUILDING and obj.Id() in objects:
+        if obj.BuildingStartTime() > 0 and objects[obj.Id()]['building_started'] is None:
+            objects[obj.Id()]['building_started'] = obj.BuildingStartTime()
+        if obj.BuildingCompleteTime() > 0 and objects[obj.Id()]['building_completed'] is None:
+            objects[obj.Id()]['building_completed'] = obj.BuildingCompleteTime()
 
-
+    researching_technology_id = obj.CurrentlyResearchingTechId() if obj.CurrentlyResearchingTechId() > 0 else None
     change = (
         obj.Id() not in last or
-        has_diff(last[obj.Id()], player_number=player_number, object_id=obj.MasterObjectId())
+        has_diff(
+            last[obj.Id()],
+            player_number=player_number,
+            object_id=obj.MasterObjectId(),
+            researching_technology_id=researching_technology_id
+        )
     )
-    if change:
-        state.append({
-            'timestamp': tick,
-            'instance_id': obj.Id(),
-            'player_number': player_number,
-            'object_id': obj.MasterObjectId(),
-            'class_id': obj.MasterObjectClass(),
-        })
-
-    last[obj.Id()] = {
+    snapshot = {
+        'timestamp': tick,
+        'instance_id': obj.Id(),
         'player_number': player_number,
         'object_id': obj.MasterObjectId(),
-        'class_id': obj.MasterObjectClass()
+        'class_id': obj.MasterObjectClass(),
+        'researching_technology_id': researching_technology_id
     }
+    if change:
+        state.append(snapshot)
+    last[obj.Id()] = snapshot
 
 
-async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-locals
-        header, encoding, diplomacy_type, players, start_time, duration, playback, handle
-):
+async def get_extracted_data(start_time, duration, playback, handle): # pylint: disable=too-many-arguments, too-many-locals
     """Get extracted data."""
     timeseries = []
     research = defaultdict(dict)
@@ -140,8 +161,7 @@ async def get_extracted_data( # pylint: disable=too-many-arguments, too-many-loc
     state = []
     last = {}
     client = await Client.create(playback, handle.name, start_time, duration)
-
-    async for tick, source, message in client.sync(timeout=60*3):
+    async for tick, source, message in client.sync():
         if source != Source.MEMORY:
             continue
         update_market(tick, message.MarketCoefficients(), market)

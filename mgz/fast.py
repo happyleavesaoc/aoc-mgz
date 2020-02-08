@@ -116,7 +116,7 @@ def save(data):
     """Handle saved chapter."""
     data.seek(-4, 1)
     pos = data.tell()
-    length, address = struct.unpack('<II', data.read(8))
+    length, _ = struct.unpack('<II', data.read(8))
     data.read(length - pos - 8)
 
 
@@ -142,3 +142,4 @@ def operation(data):
             return op_type, start(data)
     except struct.error:
         raise EOFError
+    raise RuntimeError("unknown data received")

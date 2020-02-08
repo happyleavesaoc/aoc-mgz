@@ -1,6 +1,6 @@
 """Scenario."""
 
-from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding, Embedded,
+from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
                        PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
