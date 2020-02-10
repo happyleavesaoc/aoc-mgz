@@ -81,7 +81,7 @@ class Client():
     @classmethod
     async def create(
             cls, playback, rec_path, start_time, duration,
-            interval=2000, cycles=10000, total_timeout=TOTAL_TIMEOUT, io_timeout=IO_TIMEOUT
+            interval=1000, cycles=10000, total_timeout=TOTAL_TIMEOUT, io_timeout=IO_TIMEOUT
     ):
         """Async factory."""
         self = Client(playback, rec_path)

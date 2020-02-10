@@ -191,11 +191,12 @@ class GotoObjectsEnd(Construct):
         # Have to read everything to be able to use find()
         read_bytes = stream.read()
         # Try to find the first marker, a portion of the next player structure
+        # The byte that changes is the number of player stats fields
         # TODO: clean this up
         marker_aok = read_bytes.find(b"\x16\xbd\x00\x00\x00\x21")
         marker_up14 = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
         marker_up15 = read_bytes.find(b"\x16\xf0\x00\x00\x00\x21")
-        marker_de = read_bytes.find(b"\x16\xdb\x00\x00\x00\x21")
+        marker_de = read_bytes.find(b"\x16\xfb\x00\x00\x00\x21")
         marker = -1
         if marker_up14 > 0 and marker_up15 < 0 and marker_de < 0 and marker_aok < 0:
             marker = marker_up14

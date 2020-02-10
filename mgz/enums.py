@@ -265,6 +265,7 @@ def GameActionModeEnum(ctx):
         unk1=11,
         farm_queue=13,
         farm_unqueue=14,
+        de=16,
         default=Pass
     )
 
@@ -344,6 +345,7 @@ def ActionEnum(ctx):
         save=27,
         ai_waypoint=31,
         chapter=32,
+        de2=33,
         ai_command=53,
         ai_queue=100,
         research=101,

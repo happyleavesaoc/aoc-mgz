@@ -258,6 +258,7 @@ game = "game"/Struct(
         "amount"/Byte,
         Padding(7)
     )),
+    "de"/If(this.mode == 'de', Bytes(lambda ctx: ctx._._.length - 7)),
     Padding(3)
 )
 
@@ -439,6 +440,10 @@ de = "de"/Struct(
     "selected"/Byte,
     "unknown1"/Padding(5),
     Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
+)
+
+de2 = "de2"/Struct(
+    "unknown"/Bytes(lambda ctx: ctx._._.length - 1)
 )
 
 postgame = "achievements"/Struct(

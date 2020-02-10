@@ -34,6 +34,7 @@ class Action(Enum):
     SAVE = 27
     GROUP_MULTI_WAYPOINTS = 31
     CHAPTER = 32
+    DE2 = 33
     AI_COMMAND = 53
     MAKE = 100
     RESEARCH = 101
