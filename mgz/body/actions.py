@@ -258,7 +258,25 @@ game = "game"/Struct(
         "amount"/Byte,
         Padding(7)
     )),
-    "de"/If(this.mode == 'de', Bytes(lambda ctx: ctx._._.length - 7)),
+
+    # toggle farm auto seed queue
+    "farm_autoqueue"/If(this.mode == 'farm_autoqueue', Struct(
+        Padding(9)
+    )),
+
+    "fishtrap_queue" / If(this.mode == 'fishtrap_queue', Struct(
+        "amount" / Byte,
+        Padding(8)
+    )),
+    "fishtrap_unqueue" / If(this.mode == 'fishtrap_unqueue', Struct(
+        "amount" / Byte,
+        Padding(8)
+    )),
+
+    # toggle fish trap auto seed queue
+    "fishtrap_autoqueue"/If(this.mode == 'fishtrap_autoqueue', Struct(
+        Padding(9)
+    )),
     Padding(3)
 )
 
@@ -434,16 +452,36 @@ ai_command = "ai_command"/Struct(
     Padding(lambda ctx: ctx._._.length - 1)
 )
 
-de = "de"/Struct(
+"""DE Queue
+
+In DE queue and multi queue share the same command
+"""
+de_queue = "de_queue"/Struct(
     "player_id"/Byte,
-    "unknown0"/Padding(2),
+    "building_type"/Int16ul,
     "selected"/Byte,
-    "unknown1"/Padding(5),
-    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
+    Padding(1),
+    "unit_type"/Int16ul,
+    "queue_amount"/Byte,
+    Padding(1),
+    Array(lambda ctx: ctx.selected, "building_ids"/Int32ul)
 )
 
-de2 = "de2"/Struct(
-    "unknown"/Bytes(lambda ctx: ctx._._.length - 1)
+"""DE Attack Move
+
+It's almost the same as Patrol.
+
+10 X-coordinates followed by 10 Y-coordinates
+First of each is popped off for consistency with other actions
+"""
+de_attackmove = "de_attackmove"/Struct(
+    "selected"/Byte,
+    "waypoints"/Int16ul,
+    "x"/Float32l,
+    Array(9, "x_more"/Float32l),
+    "y"/Float32l,
+    Array(9, "y_more"/Float32l),
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul),
 )
 
 postgame = "achievements"/Struct(
