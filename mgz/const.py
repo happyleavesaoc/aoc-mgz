@@ -218,7 +218,11 @@ CIVILIZATION_NAMES = {
     28: 'Khmer',
     29: 'Malay',
     30: 'Burmese',
-    31: 'Vietnamese'
+    31: 'Vietnamese',
+    32: 'Bulgarians',
+    33: 'Tartars',
+    34: 'Cumans',
+    35: 'Lithuanians'
 }
 
 
