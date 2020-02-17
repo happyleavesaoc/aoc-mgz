@@ -19,7 +19,6 @@ import mgz.header
 import mgz.util
 from mgz import fast
 from mgz.summary import Summary
-from mgz.playback import Client, progress_bar
 from mgz.util import find_postgame, LOOKAHEAD
 
 
@@ -46,6 +45,7 @@ class TqdmStream: # pylint: disable=too-few-public-methods
 
 async def play_rec(playback, path):
     """Play a recorded game."""
+    from mgz.playback import Client, progress_bar
     with open(path, 'rb') as handle:
         summary = Summary(handle)
         client = await Client.create(
