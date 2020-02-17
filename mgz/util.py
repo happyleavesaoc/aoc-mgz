@@ -187,25 +187,13 @@ class GotoObjectsEnd(Construct):
     def _parse(self, stream, context, path):
         """Parse until the end of objects data."""
         num_players = context._._._.replay.num_players
+        marker_num = context._.attributes.num_header_data
         start = stream.tell()
         # Have to read everything to be able to use find()
         read_bytes = stream.read()
         # Try to find the first marker, a portion of the next player structure
         # The byte that changes is the number of player stats fields
-        # TODO: clean this up
-        marker_aok = read_bytes.find(b"\x16\xbd\x00\x00\x00\x21")
-        marker_up14 = read_bytes.find(b"\x16\xc6\x00\x00\x00\x21")
-        marker_up15 = read_bytes.find(b"\x16\xf0\x00\x00\x00\x21")
-        marker_de = read_bytes.find(b"\x16\xfb\x00\x00\x00\x21")
-        marker = -1
-        if marker_up14 > 0 and marker_up15 < 0 and marker_de < 0 and marker_aok < 0:
-            marker = marker_up14
-        elif marker_up15 > 0 and marker_up14 < 0 and marker_de < 0 and marker_aok < 0:
-            marker = marker_up15
-        elif marker_de > 0 and marker_up14 < 0 and marker_up15 < 0 and marker_aok < 0:
-            marker = marker_de
-        elif marker_aok > 0 and marker_up14 < 0 and marker_up15 < 0 and marker_de < 0:
-            marker = marker_aok
+        marker = read_bytes.find(b'\x16' + struct.pack('<I', int(marker_num)) + b'\x21')
         # If it exists, we're not on the last player yet
         if marker > 0:
             # Backtrack through the player name

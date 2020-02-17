@@ -1,8 +1,8 @@
 """Player stats."""
 
-from construct import Embedded, Float32l, If, Struct
+from construct import Embedded, Float32l, If, Struct, this, Array
 
-from mgz.util import ModVersionAdapter
+from mgz.util import ModVersionAdapter, Version
 
 # pylint: disable=invalid-name
 
@@ -199,8 +199,8 @@ player_stats = "player_stats"/Struct(
     "food_score"/Float32l,
     "wood_score"/Float32l,
     "stone_score"/Float32l,
-    "gold_score"/Float32l, # 189 AOK
-    Embedded(If(lambda ctx: ctx._.num_header_data >= 198, Struct( # AOC
+    "gold_score"/Float32l,
+    Embedded(If(this._._._._.version in [Version.AOC, Version.USERPATCH14, Version.USERPATCH15, Version.DE], Struct(
         "wood_bonus0"/Float32l,
         "food_bonus0"/Float32l,
         "relic_rate"/Float32l,
@@ -211,69 +211,12 @@ player_stats = "player_stats"/Struct(
         "hun_wonder_bonus"/Float32l,
         "spies_discount"/Float32l,
     ))),
-    Embedded(If(lambda ctx: ctx._.num_header_data == 251, Struct( # DE
-        "unk2"/Float32l,
-        "unk3"/Float32l,
-        "unk4"/Float32l,
-        "unk5"/Float32l,
-        "unk6"/Float32l,
-        "unk7"/Float32l,
-        "unk8"/Float32l,
-        "unk9"/Float32l,
-        "unk10"/Float32l,
-        "unk11"/Float32l,
-        "unk12"/Float32l,
-        "unk13"/Float32l,
-        "unk14"/Float32l,
-        "unk15"/Float32l,
-        "unk16"/Float32l,
-        "unk17"/Float32l,
-        "unk18"/Float32l,
-        "unk19"/Float32l,
-        "unk20"/Float32l,
-        "unk21"/Float32l,
-        "unk22"/Float32l,
-        "unk23"/Float32l,
-        "unk24"/Float32l,
-        "unk25"/Float32l,
-        "unk26"/Float32l,
-        "unk27"/Float32l,
-        "unk28"/Float32l,
-        "unk29"/Float32l,
-        "unk30"/Float32l,
-        "unk31"/Float32l,
-        "unk32"/Float32l,
-        "unk33"/Float32l,
-        "unk34"/Float32l,
-        "unk35"/Float32l,
-        "unk36"/Float32l,
-        "unk37"/Float32l,
-        "unk38"/Float32l,
-        "unk39"/Float32l,
-        "unk40"/Float32l,
-        "unk41"/Float32l,
-        "unk42"/Float32l,
-        "unk43"/Float32l,
-        "unk44"/Float32l,
-        "unk45"/Float32l,
-        "unk46"/Float32l,
-        "unk47"/Float32l,
-        "unk48"/Float32l,
-        "unk49"/Float32l,
-        "unk50"/Float32l,
-        "unk51"/Float32l,
-        "unk52"/Float32l,
-        "unk53"/Float32l,
-        "unk54"/Float32l,
+    Embedded(If(this._._._._.version == Version.DE, Struct(
+        Array(this._._.num_header_data - 198, Float32l)
     ))),
-    Embedded(If(lambda ctx: ctx._.num_header_data == 240, Struct( # WK
+    Embedded(If(this._._._._.version == Version.USERPATCH15, Struct(
         ModVersionAdapter("mod"/Float32l),
-        "unk2"/Float32l,
-        "unk3"/Float32l,
-        "unk4"/Float32l,
-        "unk5"/Float32l,
-        "unk6"/Float32l,
-        "unk7"/Float32l,
+        Array(6, Float32l),
         "trickle_food"/Float32l,
         "trickle_wood"/Float32l,
         "trickle_stone"/Float32l,
@@ -281,33 +224,6 @@ player_stats = "player_stats"/Struct(
         "reveal_enemy_tcs"/Float32l,
         "reveal_gaia_class_1"/Float32l,
         "reveal_gaia_class_2"/Float32l,
-        "unk15"/Float32l,
-        "unk16"/Float32l,
-        "unk17"/Float32l,
-        "unk18"/Float32l,
-        "unk19"/Float32l,
-        "unk20"/Float32l,
-        "unk21"/Float32l,
-        "unk22"/Float32l,
-        "unk23"/Float32l,
-        "unk24"/Float32l,
-        "unk25"/Float32l,
-        "unk26"/Float32l,
-        "unk27"/Float32l,
-        "unk28"/Float32l,
-        "unk29"/Float32l,
-        "unk30"/Float32l,
-        "unk31"/Float32l,
-        "unk32"/Float32l,
-        "unk33"/Float32l,
-        "unk34"/Float32l,
-        "unk35"/Float32l,
-        "unk36"/Float32l,
-        "unk37"/Float32l,
-        "unk38"/Float32l,
-        "unk39"/Float32l,
-        "unk40"/Float32l,
-        "unk41"/Float32l,
-        "unk42"/Float32l
+        Array(28, Float32l)
     )))
 )
