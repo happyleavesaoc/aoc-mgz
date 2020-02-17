@@ -34,7 +34,7 @@ class Action(Enum):
     SAVE = 27
     GROUP_MULTI_WAYPOINTS = 31
     CHAPTER = 32
-    DE2 = 33
+    DE_ATTACK_MOVE = 33
     AI_COMMAND = 53
     MAKE = 100
     RESEARCH = 101
@@ -57,7 +57,7 @@ class Action(Enum):
     DROP_RELIC = 126
     TOWN_BELL = 127
     BACK_TO_WORK = 128
-    DE = 129
+    DE_QUEUE = 129
     POSTGAME = 255
 
 

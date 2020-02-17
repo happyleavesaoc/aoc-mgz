@@ -65,8 +65,9 @@ action_data = "action"/Struct(
         "sell": actions.sell,
         "buy": actions.buy,
         "backtowork": actions.backtowork,
-        "de": actions.de,
-        "postgame": actions.postgame
+        "de_queue": actions.de_queue,
+        "postgame": actions.postgame,
+        "de_attackmove": actions.de_attackmove
     }, default=Struct(
         "unk_action"/Computed(lambda ctx: ctx._.type),
         "bytes"/Bytes(lambda ctx: ctx._._.length - 1)

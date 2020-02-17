@@ -265,7 +265,10 @@ def GameActionModeEnum(ctx):
         unk1=11,
         farm_queue=13,
         farm_unqueue=14,
-        de=16,
+        farm_autoqueue=16,
+        fishtrap_queue=17,
+        fishtrap_unqueue=18,
+        fishtrap_autoqueue=19,
         default=Pass
     )
 
@@ -345,7 +348,7 @@ def ActionEnum(ctx):
         save=27,
         ai_waypoint=31,
         chapter=32,
-        de2=33,
+        de_attackmove=33,
         ai_command=53,
         ai_queue=100,
         research=101,
@@ -368,7 +371,7 @@ def ActionEnum(ctx):
         droprelic=126,
         townbell=127,
         backtowork=128,
-        de=129,
+        de_queue=129,
         postgame=255,
         default=Pass
     )
