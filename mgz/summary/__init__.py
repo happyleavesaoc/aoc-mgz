@@ -289,7 +289,7 @@ class Summary: # pylint: disable=too-many-public-methods
         """Indicate whether playback is possible."""
         return self._playback
 
-    async def async_extract(self):
+    async def async_extract(self, interval=1000):
         """Full extraction."""
         if not self.can_playback():
             raise RuntimeError('extraction not supported')
@@ -304,10 +304,10 @@ class Summary: # pylint: disable=too-many-public-methods
             self.get_start_time(),
             self.get_duration(),
             self._playback,
-            temp
+            temp, interval
         )
 
-    def extract(self):
+    def extract(self, interval=1000):
         """Async wrapper around full extraction."""
         loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.async_extract())
+        return loop.run_until_complete(self.async_extract(interval))

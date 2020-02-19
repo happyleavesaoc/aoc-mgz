@@ -152,7 +152,7 @@ def update_objects(tick, obj, objects, state, last):
     last[obj.Id()] = snapshot
 
 
-async def get_extracted_data(start_time, duration, playback, handle): # pylint: disable=too-many-arguments, too-many-locals
+async def get_extracted_data(start_time, duration, playback, handle, interval):
     """Get extracted data."""
     timeseries = []
     research = defaultdict(dict)
@@ -160,7 +160,7 @@ async def get_extracted_data(start_time, duration, playback, handle): # pylint: 
     objects = {}
     state = []
     last = {}
-    client = await Client.create(playback, handle.name, start_time, duration)
+    client = await Client.create(playback, handle.name, start_time, duration, interval)
     async for tick, source, message in client.sync():
         if source != Source.MEMORY:
             continue

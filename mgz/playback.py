@@ -21,7 +21,7 @@ from mgz import fast
 LOGGER = logging.getLogger(__name__)
 WS_URL = 'ws://{}'
 MAX_ATTEMPTS = 5
-TOTAL_TIMEOUT = 60 * 3
+TOTAL_TIMEOUT = 60 * 4
 IO_TIMEOUT = 5
 
 
@@ -137,6 +137,7 @@ class Client():
         ws_done = False
         LOGGER.info("starting synchronization")
         start = time.time()
+        keep_reading = True
         while not mgz_done or not ws_done:
             if self.total_timeout and time.time() - start > self.total_timeout:
                 LOGGER.warning("playback time exceeded timeout (%d%% completed)", int(mgz_time/self.duration * 100))
@@ -156,12 +157,15 @@ class Client():
                     data = await asyncio.wait_for(self.read_state().__anext__(), timeout=self.io_timeout)
                 except (asyncio.TimeoutError, asyncio.streams.IncompleteReadError):
                     LOGGER.warning("state reader timeout")
+                    keep_reading = False
                     break
                 ws_time = data.WorldTime()
                 if data.GameFinished():
                     LOGGER.info("state reader stream finished")
                     ws_done = True
                 yield ws_time, Source.MEMORY, data
+            if not keep_reading:
+                break
         if ws_done and mgz_done:
             LOGGER.info("synchronization finished in %.2f seconds", time.time() - start)
         else:
