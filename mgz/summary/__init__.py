@@ -181,7 +181,7 @@ class Summary: # pylint: disable=too-many-public-methods
         """Get map of player color to profile IDs (DE only)."""
         if self._header.version == Version.DE:
             return {
-                p.color_id: p.profile_id.decode('ascii')
+                p.color_id: p.profile_id
                 for p in self._header.de.players
                 if p.color_id >= 0
             }
