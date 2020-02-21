@@ -2,7 +2,7 @@
 
 from construct import (
     Struct, Int32ul, Float32l, Array, Padding, Flag,
-    Byte, Int16ul, Bytes, Int32sl, Peek, If
+    Byte, Int16ul, Bytes, Int32sl, Peek, If, Const, RepeatUntil
 )
 
 from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum
@@ -71,13 +71,12 @@ de = "de"/Struct(
     "ranked"/Flag,
     "allow_specs"/Flag,
     Padding(19),
-    "strings"/Array(24,
+    "strings"/Array(23,
         Struct(
-            Padding(2),
+            Const(b"\x60\x0A"),
             "len"/Int16ul,
             "string"/Bytes(lambda ctx: ctx.len),
-            "next"/Int32ul,
-            If(lambda ctx: ctx.next == 42, Padding(4))
+            RepeatUntil(lambda x,lst,ctx: lst[-1] not in [21, 42], Int32ul)
         )
     ),
     Padding(244),
