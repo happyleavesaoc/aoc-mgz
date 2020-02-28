@@ -45,6 +45,7 @@ class Summary: # pylint: disable=too-many-public-methods
         self._cache = {
             'teams': None,
             'resigned': set(),
+            'cheaters': set(),
             'encoding': None,
             'language': None,
             'ratings': {},
@@ -94,10 +95,13 @@ class Summary: # pylint: disable=too-many-public-methods
                     duration += payload[0]
                     if payload[1] and len(checksums) < CHECKSUMS:
                         checksums.append(payload[1].to_bytes(8, 'big', signed=True))
-                elif operation == fast.Operation.ACTION and payload[0] == fast.Action.POSTGAME:
-                    self._cache['postgame'] = mgz.body.actions.postgame.parse(payload[1]['bytes'])
-                elif operation == fast.Operation.ACTION and payload[0] == fast.Action.RESIGN:
-                    self._cache['resigned'].add(payload[1]['player_id'])
+                elif operation == fast.Operation.ACTION:
+                    if payload[0] == fast.Action.POSTGAME:
+                        self._cache['postgame'] = mgz.body.actions.postgame.parse(payload[1]['bytes'])
+                    elif payload[0] == fast.Action.RESIGN:
+                        self._cache['resigned'].add(payload[1]['player_id'])
+                    elif payload[0] == fast.Action.TRIBUTE and payload[1]['player_id_to'] == 0:
+                        self._cache['cheaters'].add(payload[1]['player_id_from'])
                 elif operation == fast.Operation.CHAT:
                     text = payload
                     if text is None:
@@ -194,6 +198,7 @@ class Summary: # pylint: disable=too-many-public-methods
             self.get_postgame(),
             self.get_teams(),
             self._cache['resigned'],
+            self._cache['cheaters'],
             self.get_profile_ids(),
             self.get_ratings(),
             self.get_encoding()

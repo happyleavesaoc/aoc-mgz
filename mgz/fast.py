@@ -94,6 +94,9 @@ def action(data):
         payload['bytes'] = action_bytes + data.read()
     elif action_type == Action.RESIGN:
         payload['player_id'] = action_bytes[0]
+    elif action_type == Action.TRIBUTE:
+        payload['player_id_from'] = action_bytes[0]
+        payload['player_id_to'] = action_bytes[1]
     return action_type, payload
 
 

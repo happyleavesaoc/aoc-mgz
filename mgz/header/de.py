@@ -2,7 +2,7 @@
 
 from construct import (
     Struct, Int32ul, Float32l, Array, Padding, Flag,
-    Byte, Int16ul, Bytes, Int32sl, Peek, If, Const, RepeatUntil
+    Byte, Int16ul, Bytes, Int32sl, Peek, Const, RepeatUntil
 )
 
 from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum
@@ -76,7 +76,7 @@ de = "de"/Struct(
             Const(b"\x60\x0A"),
             "len"/Int16ul,
             "string"/Bytes(lambda ctx: ctx.len),
-            RepeatUntil(lambda x,lst,ctx: lst[-1] not in [21, 42], Int32ul)
+            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [21, 42], Int32ul)
         )
     ),
     Padding(244),

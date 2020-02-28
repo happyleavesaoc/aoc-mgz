@@ -42,7 +42,7 @@ def guess_winner(teams, resigned, i):
     return True
 
 
-def get_players_data(header, postgame, teams, resigned, profile_ids, ratings, encoding): # pylint: disable=too-many-arguments, too-many-locals
+def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, ratings, encoding): # pylint: disable=too-many-arguments, too-many-locals
     """Get basic player info."""
     out = []
     for i, player in enumerate(header.initial.players[1:]):
@@ -67,6 +67,7 @@ def get_players_data(header, postgame, teams, resigned, profile_ids, ratings, en
             'position': (player.attributes.camera_x, player.attributes.camera_y),
             'rate_snapshot': ratings.get(name),
             'user_id': profile_ids.get(player.attributes.player_color),
+            'cheater': (i + 1) in cheaters,
             'achievements': {
                 'military': {
                     'score': ach(achievements, ['military', 'score']),
