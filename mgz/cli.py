@@ -2,7 +2,6 @@
 
 import asyncio
 import argparse
-import json
 import logging
 import os
 import struct
@@ -66,7 +65,7 @@ async def extract_rec(playback, path, select=None):
             print(key)
             print('-------------')
             for record in records:
-                print(json.dumps(record))
+                print(record)
 
 
 def print_info(path):

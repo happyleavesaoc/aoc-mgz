@@ -14,6 +14,7 @@ class Operation(Enum):
     START = 5
     SAVE = 6
 
+
 class Action(Enum):
     """Action types."""
     ORDER = 0
@@ -82,21 +83,121 @@ def viewlock(data):
     data.read(12)
 
 
+def parse_action(action_type, data):
+    """Parse player, objects, and coordinates from actions."""
+    if action_type == Action.RESIGN:
+        return dict(player_id=data[0])
+    if action_type == Action.TRIBUTE:
+        return dict(player_id=data[0], player_id_to=data[1])
+    if action_type == Action.MOVE:
+        player_id, x, y = struct.unpack_from('<b10x2f', data)
+        return dict(player_id=player_id, x=x, y=y)
+    if action_type == Action.ORDER:
+        player_id, x, y = struct.unpack_from('<b10x2f', data)
+        return dict(player_id=player_id, x=x, y=y)
+    if action_type == Action.BUILD:
+        player_id, x, y = struct.unpack_from('<xh2f', data)
+        return dict(player_id=player_id, x=x, y=y)
+    if action_type == Action.STANCE:
+        object_ids = struct.unpack_from('<xx' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids))
+    if action_type == Action.RESEARCH:
+        object_id, player_id = struct.unpack_from('<3xIh', data)
+        return dict(player_id=player_id, object_ids=[object_id])
+    if action_type == Action.FORMATION:
+        player_id, (*object_ids) = struct.unpack_from('<xh4x' + str(data[0]) + 'I', data)
+        return dict(player_id=player_id, object_ids=list(object_ids))
+    if action_type == Action.QUEUE:
+        object_id, = struct.unpack_from('<3xI', data)
+        return dict(object_ids=[object_id])
+    if action_type == Action.GATHER_POINT:
+        _, x, y, (*object_ids) = struct.unpack_from('<3xI4x2f' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids), x=x, y=y)
+    if action_type == Action.MULTIQUEUE:
+        object_ids = struct.unpack_from('<7x' + str(data[5]) + 'I', data)
+        return dict(object_ids=list(object_ids))
+    if action_type == Action.PATROL:
+        x, y, (*object_ids) = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids), x=x, y=y)
+    if action_type == Action.SPECIAL: # does not support DE
+        _, x, y, (*object_ids) = struct.unpack_from('<3xi4x2f4x' + str(data[0]) + 'I', data)
+        if x > 0 and y > 0:
+            return dict(x=x, y=y, object_ids=list(object_ids))
+        return dict(object_ids=list(object_ids))
+    if action_type == Action.BACK_TO_WORK:
+        object_id, = struct.unpack_from('<3xI', data)
+        return dict(object_ids=[object_id])
+    if action_type == Action.UNGARRISON:
+        selected, = struct.unpack_from('<h', data)
+        x, y, (*object_ids) = struct.unpack_from('<3x2f8x' + str(selected) + 'I', data)
+        if x > 0 and y > 0:
+            return dict(object_ids=list(object_ids), x=x, y=y)
+        return dict(object_ids=list(object_ids))
+    if action_type == Action.BUY:
+        return dict(player_id=data[0])
+    if action_type == Action.SELL:
+        return dict(player_id=data[0])
+    if action_type == Action.DELETE:
+        object_id, player_id = struct.unpack_from('<3x2I', data)
+        return dict(player_id=player_id, object_ids=[object_id])
+    if action_type == Action.TOWN_BELL:
+        object_id, = struct.unpack_from('<3xI', data)
+        return dict(object_ids=[object_id])
+    if action_type == Action.WALL:
+        player_id, x, y = struct.unpack_from('<x3b', data)
+        return dict(player_id=player_id, x=x, y=y)
+    if action_type == Action.GAME:
+        return dict(player_id=data[1])
+    if action_type == Action.FLARE:
+        x, y, player_id = struct.unpack_from('<19x2fb', data)
+        return dict(player_id=player_id, x=x, y=y)
+    if action_type == Action.REPAIR: # does not support DE
+        object_ids = struct.unpack_from('<7x' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids))
+    if action_type == Action.STOP:
+        object_ids = struct.unpack_from('<x' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids))
+    if action_type == Action.GATE:
+        object_id, = struct.unpack_from('<3xI', data)
+        return dict(object_ids=[object_id])
+    if action_type == Action.FOLLOW:
+        object_ids = struct.unpack_from('<7x' + str(data[0]) + 'I', data)
+        return dict(object_ids=object_ids)
+    if action_type == Action.GUARD:
+        object_ids = struct.unpack('<7x' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids))
+    if action_type == Action.ATTACK_GROUND: # does not support DE
+        object_ids = []
+        selected, x, y = struct.unpack_from('<b2x2f', data)
+        if selected > 0:
+            object_ids = struct.unpack_from('<11x' + str(selected) + 'I', data)
+        return dict(object_ids=list(object_ids), x=x, y=y)
+    if action_type == Action.ADD_WAYPOINT:
+        object_ids = []
+        selected, x, y = struct.unpack_from('<xb2b', data)
+        if selected > 0:
+            object_ids = struct.unpack_from('<4x' + str(selected) + 'I', data)
+        return dict(object_ids=list(object_ids), x=x, y=y)
+    if action_type == Action.DE_QUEUE:
+        player_id, (*object_ids) = struct.unpack_from('<b8x' + str(data[3]) + 'I', data)
+        return dict(player_id=player_id, object_ids=object_ids)
+    if action_type == Action.DE_ATTACK_MOVE:
+        x, y, (*object_ids) = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids), x=x, y=y)
+    return dict()
+
+
 def action(data):
     """Handle actions."""
     length, = struct.unpack('<I', data.read(4))
     action_id = int.from_bytes(data.read(1), 'little')
     action_bytes = data.read(length - 1)
     data.read(4)
-    payload = {}
     action_type = Action(action_id)
     if action_type == Action.POSTGAME:
-        payload['bytes'] = action_bytes + data.read()
-    elif action_type == Action.RESIGN:
-        payload['player_id'] = action_bytes[0]
-    elif action_type == Action.TRIBUTE:
-        payload['player_id_from'] = action_bytes[0]
-        payload['player_id_to'] = action_bytes[1]
+        payload = dict(bytes=action_bytes + data.read())
+    else:
+        payload = parse_action(action_type, action_bytes)
     return action_type, payload
 
 
