@@ -10,7 +10,9 @@ SAVE_MARKERS = [
     'Chose to continue the game instead of save and exit',
     'Initiated vote to save and exit the game',
     'Vyber pokračovat ve hře místo ulo',
-    'Escolha para continuar o jogo em vez de salvá-lo e fechá-lo'
+    'Escolha para continuar o jogo em vez de salvá-lo e fechá-lo',
+    'Выберете Продолжить Игру вместо Сохранить и Выйти.',
+    'Choisir pour continuer la partie au lieu d\'enregistrer et quitter.'
 ]
 
 class Chat(Enum):

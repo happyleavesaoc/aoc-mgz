@@ -44,15 +44,24 @@ def build_timeseries_record(tick, player):
         'wood': int(player.Wood()),
         'stone': int(player.Stone()),
         'gold': int(player.Gold()),
-        'relics_captured': int(player.VictoryPoints().RelicsCaptured()),
-        'relic_gold': int(player.VictoryPoints().RelicGold()),
-        'trade_profit': int(player.VictoryPoints().TradeProfit()),
-        'tribute_received': int(player.VictoryPoints().TributeReceived()),
-        'tribute_sent': int(player.VictoryPoints().TributeSent()),
-        'total_food': int(player.VictoryPoints().TotalFood()),
-        'total_wood': int(player.VictoryPoints().TotalWood()),
-        'total_gold': int(player.VictoryPoints().TotalGold()),
-        'total_stone': int(player.VictoryPoints().TotalStone())
+        'total_housed_time': int(player.CumulativeHousedTime()),
+        'total_popcapped_time': int(player.CumulativePopCappedTime()),
+        'relics_captured': int(player.VictoryPointsAndAttributes().VpRelicsCaptured()),
+        'relic_gold': int(player.VictoryPointsAndAttributes().VpRelicGold()),
+        'trade_profit': int(player.VictoryPointsAndAttributes().VpTradeProfit()),
+        'tribute_received': int(player.VictoryPointsAndAttributes().VpTributeReceived()),
+        'tribute_sent': int(player.VictoryPointsAndAttributes().VpTributeSent()),
+        'total_food': int(player.VictoryPointsAndAttributes().VpTotalFood()),
+        'total_wood': int(player.VictoryPointsAndAttributes().VpTotalWood()),
+        'total_gold': int(player.VictoryPointsAndAttributes().VpTotalGold()),
+        'total_stone': int(player.VictoryPointsAndAttributes().VpTotalStone()),
+        'value_spent_buildings': int(player.VictoryPointsAndAttributes().AttrValueSpentBuildings()),
+        'value_spent_research': int(player.VictoryPointsAndAttributes().AttrValueSpentResearch()),
+        'value_lost_units': int(player.VictoryPointsAndAttributes().AttrValueLostUnits()),
+        'value_lost_buildings': int(player.VictoryPointsAndAttributes().AttrValueLostBuildings()),
+        'value_current_units': int(player.VictoryPointsAndAttributes().AttrValueCurrentUnits()),
+        'value_current_buildings': int(player.VictoryPointsAndAttributes().AttrValueCurrentBuildings()),
+        'value_objects_destroyed': int(player.VictoryPointsAndAttributes().AttrValueObjectsDestroyed())
     }
 
 
@@ -87,13 +96,17 @@ def update_market(tick, coefficients, market):
             'stone': stone
         })
 
-def update_objects(tick, obj, objects, state, last):
-    """Update object/state structures."""
+
+def add_objects(obj, objects):
+    """Add objects."""
     player_number = obj.OwnerId() if obj.OwnerId() > 0 else None
     if obj.MasterObjectClass() not in [CLASS_UNIT, CLASS_BUILDING]:
         return
     if obj.Id() not in objects:
         objects[obj.Id()] = {
+            'initial_player_number': player_number,
+            'initial_object_id': obj.MasterObjectId(),
+            'initial_class_id': obj.MasterObjectClass(),
             'created': obj.CreatedTime(),
             'destroyed': None,
             'destroyed_by_instance_id': None,
@@ -104,9 +117,17 @@ def update_objects(tick, obj, objects, state, last):
             'destroyed_x': None,
             'destroyed_y': None,
             'building_started': None,
-            'building_completed': None
+            'building_completed': None,
+            'total_idle_time': None
         }
-    elif obj.KilledTime() > 0 and obj.Id() in objects:
+
+
+def update_objects(tick, obj, objects, state, last):
+    """Update object/state structures."""
+    player_number = obj.OwnerId() if obj.OwnerId() > 0 else None
+    if obj.MasterObjectClass() not in [CLASS_UNIT, CLASS_BUILDING]:
+        return
+    if obj.KilledTime() > 0 and obj.Id() in objects:
         data = {
             'destroyed': obj.KilledTime(),
             'deleted': obj.DeletedByOwner()
@@ -123,11 +144,15 @@ def update_objects(tick, obj, objects, state, last):
                 'destroyed_by_instance_id': obj.KilledByUnitId()
             })
         objects[obj.Id()].update(data)
+
     if obj.MasterObjectClass() == CLASS_BUILDING and obj.Id() in objects:
         if obj.BuildingStartTime() > 0 and objects[obj.Id()]['building_started'] is None:
             objects[obj.Id()]['building_started'] = obj.BuildingStartTime()
         if obj.BuildingCompleteTime() > 0 and objects[obj.Id()]['building_completed'] is None:
             objects[obj.Id()]['building_completed'] = obj.BuildingCompleteTime()
+
+    if obj.Id() in objects:
+        objects[obj.Id()]['total_idle_time'] = int(obj.CumulativeIdleTime())
 
     researching_technology_id = obj.CurrentlyResearchingTechId() if obj.CurrentlyResearchingTechId() > 0 else None
     change = (
@@ -164,7 +189,12 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
     async for tick, source, message in client.sync():
         if source != Source.MEMORY:
             continue
+
         update_market(tick, message.MarketCoefficients(), market)
+
+        # Add any new objects before updating to ensure fks are present for updates
+        for i in range(0, message.ObjectsLength()):
+            add_objects(message.Objects(i), objects)
 
         for i in range(0, message.ObjectsLength()):
             update_objects(tick, message.Objects(i), objects, state, last)
