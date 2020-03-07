@@ -277,11 +277,19 @@ game = "game"/Struct(
     "fishtrap_autoqueue"/If(this.mode == 'fishtrap_autoqueue', Struct(
         Padding(9)
     )),
+
+    # toggles the default stance when units are created. All players start on aggressive by default, if the player
+    # (initially) has defensive enabled it is called right before the first unit is queued, and again every time
+    # the player toggles it in the game options menu
+    "default_stance" / If(this.mode == 'default_stance', Struct(
+        Padding(9)
+    )),
     Padding(3)
 )
 
 droprelic = "droprelic"/Struct(
-    Padding(lambda ctx: ctx._._.length - 1)
+    Const(b"\x00\x00\x00"),
+    'unit_id'/Int32ul
 )
 
 wall = "wall"/Struct(
