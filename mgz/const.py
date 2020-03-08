@@ -183,7 +183,8 @@ MAP_SIZES = {
     168: 'medium',
     200: 'normal',
     220: 'large',
-    240: 'giant'
+    240: 'giant',
+    255: 'maximum'
 }
 
 
