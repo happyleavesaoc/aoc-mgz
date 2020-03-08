@@ -72,11 +72,11 @@ def get_version(game_version, save_version):
         return Version.AOC
     if game_version == 'VER 9.A':
         return Version.USERPATCH14RC2
-    if game_version == 'VER 9.D':
+    if game_version in ['VER 9.B', 'VER 9.C', 'VER 9.D']:
         return Version.USERPATCH14
     if game_version in ['VER 9.E', 'VER 9.F']:
         return Version.USERPATCH15
-    raise ValueError('unsupported version')
+    raise ValueError('unsupported version: {}, {}'.format(game_version, save_version))
 
 
 def check_flags(peek):

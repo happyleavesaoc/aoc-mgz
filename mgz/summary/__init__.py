@@ -74,8 +74,8 @@ class Summary: # pylint: disable=too-many-public-methods
             self._handle.seek(body_pos)
             self._process_body()
             self.body_pos = body_pos
-        except (construct.core.ConstructError, zlib.error, ValueError):
-            raise RuntimeError("invalid mgz file")
+        except (construct.core.ConstructError, zlib.error, ValueError) as e:
+            raise RuntimeError("invalid mgz file: {}".format(e))
 
     def _process_body(self): # pylint: disable=too-many-locals, too-many-statements, too-many-branches
         """Process rec body."""
