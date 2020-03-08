@@ -88,7 +88,8 @@ def parse_action(action_type, data):
     if action_type == Action.RESIGN:
         return dict(player_id=data[0])
     if action_type == Action.TRIBUTE:
-        return dict(player_id=data[0], player_id_to=data[1])
+        player_id, player_id_to, resource_id, amount, fee = struct.unpack_from('<bbbff', data)
+        return dict(player_id=player_id, player_id_to=player_id_to, resource_id=resource_id, amount=amount, fee=fee)
     if action_type == Action.MOVE:
         player_id, x, y = struct.unpack_from('<b10x2f', data)
         return dict(player_id=player_id, x=x, y=y)
@@ -134,9 +135,11 @@ def parse_action(action_type, data):
             return dict(object_ids=list(object_ids), x=x, y=y)
         return dict(object_ids=list(object_ids))
     if action_type == Action.BUY:
-        return dict(player_id=data[0])
+        player_id, resource_id, amount = struct.unpack_from('<bbb', data)
+        return dict(player_id=player_id, resource_id=resource_id, amount=amount)
     if action_type == Action.SELL:
-        return dict(player_id=data[0])
+        player_id, resource_id, amount = struct.unpack_from('<bbb', data)
+        return dict(player_id=player_id, resource_id=resource_id, amount=amount)
     if action_type == Action.DELETE:
         object_id, player_id = struct.unpack_from('<3x2I', data)
         return dict(player_id=player_id, object_ids=[object_id])

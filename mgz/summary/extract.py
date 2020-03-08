@@ -213,6 +213,8 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
     state = []
     last = {}
     actions = []
+    tribute = []
+    transactions = []
     client = await Client.create(playback, handle.name, start_time, duration, interval)
     async for tick, source, message in client.sync():
         if source == Source.MEMORY:
@@ -234,6 +236,10 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
         elif source == Source.MGZ:
             if message[0] == fast.Operation.ACTION:
                 actions.append((tick, *message[1]))
+                if message[1][0] == fast.Action.TRIBUTE:
+                    tribute.append((tick, message[1][1]))
+                elif message[1][0] in [fast.Action.BUY, fast.Action.SELL]:
+                    transactions.append((tick, *message[1]))
 
     handle.close()
 
@@ -243,5 +249,7 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
         'market': market,
         'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
         'state': state,
-        'actions': list(enrich_actions(actions, objects, state))
+        'actions': list(enrich_actions(actions, objects, state)),
+        'tribute': tribute,
+        'transactions': transactions
     }
