@@ -206,10 +206,11 @@ class GotoObjectsEnd(Construct):
         # Otherwise, this is the last player
         else:
             # Search for the scenario header
+            # TODO: make this section more reliable
             marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
             marker_de = read_bytes.find(b"\x7b\x14\xae\x3f")
-            if marker_up > 0 and marker_de < 0 and marker_aok < 0:
+            if marker_up > 0 and marker_de < 0: # aok marker can appear in up
                 marker = marker_up
             elif marker_de > 0 and marker_up < 0 and marker_aok < 0:
                 marker = marker_de
