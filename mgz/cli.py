@@ -59,6 +59,7 @@ async def extract_rec(playback, path, select=None):
     with open(path, 'rb') as handle:
         summary = Summary(handle, playback=playback)
         data = await summary.async_extract()
+        print('version: {}, runtime: {}'.format(data['version'], data['runtime']))
         for key, records in data.items():
             if select and key != select:
                 continue

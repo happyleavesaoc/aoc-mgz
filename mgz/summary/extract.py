@@ -1,7 +1,9 @@
 """"Extract data via playback."""
 
 import logging
+import time
 from collections import defaultdict
+from datetime import timedelta
 
 from mgz import fast
 from mgz.playback import Client, Source
@@ -56,13 +58,16 @@ def build_timeseries_record(tick, player):
         'total_wood': int(player.VictoryPointsAndAttributes().VpTotalWood()),
         'total_gold': int(player.VictoryPointsAndAttributes().VpTotalGold()),
         'total_stone': int(player.VictoryPointsAndAttributes().VpTotalStone()),
-        'value_spent_objects': int(player.VictoryPointsAndAttributes().AttrValueSpentBuildings()),
+        'value_spent_objects': int(player.VictoryPointsAndAttributes().AttrValueSpentObjects()),
         'value_spent_research': int(player.VictoryPointsAndAttributes().AttrValueSpentResearch()),
         'value_lost_units': int(player.VictoryPointsAndAttributes().AttrValueLostUnits()),
         'value_lost_buildings': int(player.VictoryPointsAndAttributes().AttrValueLostBuildings()),
         'value_current_units': int(player.VictoryPointsAndAttributes().AttrValueCurrentUnits()),
         'value_current_buildings': int(player.VictoryPointsAndAttributes().AttrValueCurrentBuildings()),
-        'value_objects_destroyed': int(player.VictoryPointsAndAttributes().AttrValueObjectsDestroyed())
+        'value_objects_destroyed': int(player.VictoryPointsAndAttributes().AttrValueObjectsDestroyed()),
+        'kills': int(player.VictoryPointsAndAttributes().AttrKills()),
+        'deaths': int(player.VictoryPointsAndAttributes().AttrDeaths()),
+        'razes': int(player.VictoryPointsAndAttributes().AttrRazes())
     }
 
 
@@ -215,9 +220,14 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
     actions = []
     tribute = []
     transactions = []
+    version = None
+    start = time.time()
     client = await Client.create(playback, handle.name, start_time, duration, interval)
     async for tick, source, message in client.sync():
         if source == Source.MEMORY:
+            if not version:
+                version = message.StateReaderVersion().decode('ascii')
+
             update_market(tick, message.MarketCoefficients(), market)
 
             # Add any new objects before updating to ensure fks are present for updates
@@ -244,6 +254,8 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
     handle.close()
 
     return {
+        'version': version,
+        'runtime': timedelta(seconds=int(time.time() - start)),
         'timeseries': timeseries,
         'research': flatten_research(research),
         'market': market,
