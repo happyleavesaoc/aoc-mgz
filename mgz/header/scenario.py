@@ -118,7 +118,7 @@ game_settings = "game_settings"/Struct(
     DifficultyEnum("difficulty"/Int32ul),
     "lock_teams"/Int32ul,
     If(lambda ctx: ctx._._.version == Version.DE,
-        Padding(29)
+        Padding(30)
     ),
     Array(9, "player_info"/Struct(
         "data_ref"/Int32ul,

@@ -36,6 +36,7 @@ class Action(Enum):
     GROUP_MULTI_WAYPOINTS = 31
     CHAPTER = 32
     DE_ATTACK_MOVE = 33
+    DE_UNKNOWN = 38
     AI_COMMAND = 53
     MAKE = 100
     RESEARCH = 101
