@@ -23,8 +23,8 @@ interact = "interact"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    "next"/Peek(Bytes(4)),
-    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
+    "next"/Peek(Bytes(8)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(8)),
     "unit_ids"/If(lambda ctx: ctx.selected < 0xff, Array(
         lambda ctx: ctx.selected, "unit_ids"/Int32ul
     ))
@@ -63,8 +63,8 @@ move = "move"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    "next"/Peek(Bytes(4)),
-    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
+    "next"/Peek(Bytes(8)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(8)),
     "unit_ids"/If(lambda ctx: ctx.selected < 0xff, Array(
         lambda ctx: ctx.selected, Int32ul
     ))
@@ -126,17 +126,10 @@ research = "research"/Struct(
     Padding(3),
     "building_id"/Int32ul,
     "player_id"/Int16ul,
-    "next"/Peek(Int16ul),
-    IfThenElse(lambda ctx: ctx.next == 0,
-        Embedded(Struct(
-            Padding(2),
-            "technology_type"/Int32ul,
-        )),
-        Embedded(Struct(
-            "technology_type"/Int16ul
-        ))
-    ),
-    Padding(4)
+    "selected"/Int16ul,
+    "technology_type"/Int32ul,
+    Padding(4),
+    Array(lambda ctx: ctx.selected, "selected_ids"/Int32ul)
 )
 
 sell = "sell"/Struct(
@@ -249,7 +242,7 @@ game = "game"/Struct(
         Padding(9)
     )),
     "farm_queue"/If(this.mode == 'farm_queue', Struct(
-        "player_id"/Byte,
+        "count"/Byte,
         "amount"/Byte,
         Padding(7)
     )),

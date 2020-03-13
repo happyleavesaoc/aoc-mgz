@@ -117,13 +117,17 @@ game_settings = "game_settings"/Struct(
     Peek("difficulty_id"/Int32ul),
     DifficultyEnum("difficulty"/Int32ul),
     "lock_teams"/Int32ul,
+
     If(lambda ctx: ctx._._.version == Version.DE,
-        Padding(29)
+        Padding(29
+                + 1
+                )
     ),
+
     Array(9, "player_info"/Struct(
         "data_ref"/Int32ul,
         PlayerTypeEnum("type"/Int32ul),
-        "name"/PascalString(lengthfield="name_length"/Int32ul)
+        "name"/PascalString(lengthfield="name_length"/Int32ul),
     )),
     Padding(36),
     Padding(4),
@@ -146,6 +150,7 @@ triggers = "triggers"/Struct(
 # Scenario metadata.
 scenario = "scenario"/Struct(
     scenario_header,
+    Padding(0x2528),
     messages,
     scenario_players,
     victory,
