@@ -136,8 +136,6 @@ def get_tiles(tiles, dimension):
 
 def get_map_data(map_id, instructions, dimension, version, tiles):
     """Get the map metadata."""
-    if dimension == 255:
-        raise ValueError('invalid map size')
     if instructions == b'\x00':
         raise ValueError('empty instructions')
 

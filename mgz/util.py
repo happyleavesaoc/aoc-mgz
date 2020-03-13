@@ -72,11 +72,11 @@ def get_version(game_version, save_version):
         return Version.AOC
     if game_version == 'VER 9.A':
         return Version.USERPATCH14RC2
-    if game_version == 'VER 9.D':
+    if game_version in ['VER 9.B', 'VER 9.C', 'VER 9.D']:
         return Version.USERPATCH14
     if game_version in ['VER 9.E', 'VER 9.F']:
         return Version.USERPATCH15
-    raise ValueError('unsupported version')
+    raise ValueError('unsupported version: {}, {}'.format(game_version, save_version))
 
 
 def check_flags(peek):
@@ -206,10 +206,11 @@ class GotoObjectsEnd(Construct):
         # Otherwise, this is the last player
         else:
             # Search for the scenario header
+            # TODO: make this section more reliable
             marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
-            marker_de = read_bytes.find(b"\x7b\x14\xae\x3f")
-            if marker_up > 0 and marker_de < 0 and marker_aok < 0:
+            marker_de = read_bytes.find(b"\x29\x5c\xaf\x3f")
+            if marker_up > 0 and marker_de < 0: # aok marker can appear in up
                 marker = marker_up
             elif marker_de > 0 and marker_up < 0 and marker_aok < 0:
                 marker = marker_de

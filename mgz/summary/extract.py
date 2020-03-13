@@ -1,8 +1,11 @@
 """"Extract data via playback."""
 
 import logging
+import time
 from collections import defaultdict
+from datetime import timedelta
 
+from mgz import fast
 from mgz.playback import Client, Source
 
 
@@ -55,13 +58,16 @@ def build_timeseries_record(tick, player):
         'total_wood': int(player.VictoryPointsAndAttributes().VpTotalWood()),
         'total_gold': int(player.VictoryPointsAndAttributes().VpTotalGold()),
         'total_stone': int(player.VictoryPointsAndAttributes().VpTotalStone()),
-        'value_spent_buildings': int(player.VictoryPointsAndAttributes().AttrValueSpentBuildings()),
+        'value_spent_objects': int(player.VictoryPointsAndAttributes().AttrValueSpentObjects()),
         'value_spent_research': int(player.VictoryPointsAndAttributes().AttrValueSpentResearch()),
         'value_lost_units': int(player.VictoryPointsAndAttributes().AttrValueLostUnits()),
         'value_lost_buildings': int(player.VictoryPointsAndAttributes().AttrValueLostBuildings()),
         'value_current_units': int(player.VictoryPointsAndAttributes().AttrValueCurrentUnits()),
         'value_current_buildings': int(player.VictoryPointsAndAttributes().AttrValueCurrentBuildings()),
-        'value_objects_destroyed': int(player.VictoryPointsAndAttributes().AttrValueObjectsDestroyed())
+        'value_objects_destroyed': int(player.VictoryPointsAndAttributes().AttrValueObjectsDestroyed()),
+        'kills': int(player.VictoryPointsAndAttributes().AttrKills()),
+        'deaths': int(player.VictoryPointsAndAttributes().AttrDeaths()),
+        'razes': int(player.VictoryPointsAndAttributes().AttrRazes())
     }
 
 
@@ -177,6 +183,32 @@ def update_objects(tick, obj, objects, state, last):
     last[obj.Id()] = snapshot
 
 
+def enrich_actions(actions, objects, states):
+    """Attach player to anonymous actions."""
+    owners = defaultdict(list)
+    for state in states:
+        owners[state['instance_id']].append((state['timestamp'], state['player_number']))
+    last = None
+    for (tick, action_type, payload) in actions:
+        if 'player_id' not in payload and 'object_ids' in payload:
+            for object_id in payload['object_ids']:
+                if object_id not in owners:
+                    continue
+                for (timestamp, player_number) in owners[object_id]:
+                    if timestamp > tick:
+                        payload['player_id'] = player_number
+                        break
+                if object_id not in objects:
+                    continue
+                if 'player_id' not in payload:
+                    payload['player_id'] = objects[object_id]['initial_player_number']
+                    break
+        action = (tick, action_type, payload)
+        if action != last and 'player_id' in payload and payload['player_id'] is not None:
+            yield action
+            last = action
+
+
 async def get_extracted_data(start_time, duration, playback, handle, interval):
     """Get extracted data."""
     timeseries = []
@@ -185,32 +217,51 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
     objects = {}
     state = []
     last = {}
+    actions = []
+    tribute = []
+    transactions = []
+    version = None
+    start = time.time()
     client = await Client.create(playback, handle.name, start_time, duration, interval)
     async for tick, source, message in client.sync():
-        if source != Source.MEMORY:
-            continue
+        if source == Source.MEMORY:
+            if not version:
+                version = message.StateReaderVersion().decode('ascii')
 
-        update_market(tick, message.MarketCoefficients(), market)
+            update_market(tick, message.MarketCoefficients(), market)
 
-        # Add any new objects before updating to ensure fks are present for updates
-        for i in range(0, message.ObjectsLength()):
-            add_objects(message.Objects(i), objects)
+            # Add any new objects before updating to ensure fks are present for updates
+            for i in range(0, message.ObjectsLength()):
+                add_objects(message.Objects(i), objects)
 
-        for i in range(0, message.ObjectsLength()):
-            update_objects(tick, message.Objects(i), objects, state, last)
+            for i in range(0, message.ObjectsLength()):
+                update_objects(tick, message.Objects(i), objects, state, last)
 
-        for i in range(0, message.PlayersLength()):
-            player = message.Players(i)
-            timeseries.append(build_timeseries_record(tick, player))
-            for j in range(0, player.TechsLength()):
-                update_research(player.Id(), player.Techs(j), research)
+            for i in range(0, message.PlayersLength()):
+                player = message.Players(i)
+                timeseries.append(build_timeseries_record(tick, player))
+                for j in range(0, player.TechsLength()):
+                    update_research(player.Id(), player.Techs(j), research)
+
+        elif source == Source.MGZ:
+            if message[0] == fast.Operation.ACTION:
+                actions.append((tick, *message[1]))
+                if message[1][0] == fast.Action.TRIBUTE:
+                    tribute.append((tick, message[1][1]))
+                elif message[1][0] in [fast.Action.BUY, fast.Action.SELL]:
+                    transactions.append((tick, *message[1]))
 
     handle.close()
 
     return {
+        'version': version,
+        'runtime': timedelta(seconds=int(time.time() - start)),
         'timeseries': timeseries,
         'research': flatten_research(research),
         'market': market,
         'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
-        'state': state
+        'state': state,
+        'actions': list(enrich_actions(actions, objects, state)),
+        'tribute': tribute,
+        'transactions': transactions
     }

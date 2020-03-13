@@ -22,7 +22,7 @@ LOGGER = logging.getLogger(__name__)
 WS_URL = 'ws://{}'
 MAX_ATTEMPTS = 5
 TOTAL_TIMEOUT = 60 * 4
-IO_TIMEOUT = 5
+IO_TIMEOUT = 10
 
 
 class Source(Enum):
@@ -149,6 +149,8 @@ class Client():
                         mgz_time += payload[0]
                     elif op_type == fast.Operation.CHAT and payload:
                         yield mgz_time, Source.MGZ, (op_type, payload.strip(b'\x00'))
+                    elif op_type == fast.Operation.ACTION:
+                        yield mgz_time, Source.MGZ, (op_type, payload)
             except EOFError:
                 LOGGER.info("MGZ parsing stream finished")
                 mgz_done = True

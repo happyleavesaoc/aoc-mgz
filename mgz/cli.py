@@ -2,7 +2,6 @@
 
 import asyncio
 import argparse
-import json
 import logging
 import os
 import struct
@@ -60,13 +59,14 @@ async def extract_rec(playback, path, select=None):
     with open(path, 'rb') as handle:
         summary = Summary(handle, playback=playback)
         data = await summary.async_extract()
+        print('version: {}, runtime: {}'.format(data['version'], data['runtime']))
         for key, records in data.items():
             if select and key != select:
                 continue
             print(key)
             print('-------------')
             for record in records:
-                print(json.dumps(record))
+                print(record)
 
 
 def print_info(path):
@@ -123,12 +123,8 @@ def print_chat(path):
     """Extract chat."""
     with open(path, 'rb') as handle:
         summary = Summary(handle)
-        encoding = summary.get_encoding()
-        handle.seek(summary.body_pos)
-        while handle.tell() < summary.size:
-            operation = mgz.body.operation.parse_stream(handle)
-            if operation.type == 'message' and operation.subtype == 'chat':
-                print(operation.data.text.decode(encoding))
+        for c in summary.get_chat():
+            print(c)
 
 
 def merge_recs(part_one, part_two, output):
