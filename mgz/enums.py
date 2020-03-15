@@ -334,6 +334,7 @@ def ActionEnum(ctx):
         stop=1,
         ai_interact=2,
         move=3,
+        create=4,
         add_attribute=5,
         give_attribute=6,
         ai_move=10,

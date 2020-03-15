@@ -28,6 +28,7 @@ action_data = "action"/Struct(
         "interact": actions.interact,
         "move": actions.move,
         "stop": actions.stop,
+        "create": actions.create,
         "stance": actions.stance,
         "guard": actions.guard,
         "follow": actions.follow,

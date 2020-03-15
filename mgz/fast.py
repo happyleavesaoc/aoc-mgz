@@ -20,6 +20,7 @@ class Action(Enum):
     ORDER = 0
     STOP = 1
     WORK = 2
+    CREATE = 4
     MOVE = 3
     ADD_ATTRIBUTE = 5
     GIVE_ATTRIBUTE = 6
@@ -93,6 +94,9 @@ def parse_action(action_type, data):
         return dict(player_id=player_id, player_id_to=player_id_to, resource_id=resource_id, amount=amount, fee=fee)
     if action_type == Action.MOVE:
         player_id, x, y = struct.unpack_from('<b10x2f', data)
+        return dict(player_id=player_id, x=x, y=y)
+    if action_type == Action.CREATE:
+        player_id, x, y = struct.unpack_from('<3xhx2f', data)
         return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.ORDER:
         player_id, x, y = struct.unpack_from('<b10x2f', data)
