@@ -76,7 +76,7 @@ de = "de"/Struct(
             Const(b"\x60\x0A"),
             "len"/Int16ul,
             "string"/Bytes(lambda ctx: ctx.len),
-            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [21, 42], Int32ul)
+            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 42], Int32ul)
         )
     ),
     Padding(244),
