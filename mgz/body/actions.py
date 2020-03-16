@@ -521,3 +521,8 @@ postgame = "achievements"/Struct(
     Padding(4),
     Array(lambda ctx: (8 - ctx.player_num) * 63, Padding(4)),
 )
+
+de_autoscout = "de_autoscout"/Struct(
+    "player_id?"/Byte,
+    "unit_id"/Int32ul
+)
