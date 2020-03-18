@@ -16,6 +16,7 @@ import mgz.body
 from mgz import fast
 from mgz.util import Version
 
+from mgz.summary.consts import VALID_BUILDINGS
 from mgz.summary.map import get_map_data
 from mgz.summary.settings import get_settings_data
 from mgz.summary.dataset import get_dataset_data
@@ -103,6 +104,8 @@ class Summary: # pylint: disable=too-many-public-methods
                     elif payload[0] == fast.Action.TRIBUTE and payload[1]['player_id_to'] == 0:
                         self._cache['cheaters'].add(payload[1]['player_id'])
                     elif payload[0] == fast.Action.CREATE:
+                        self._cache['cheaters'].add(payload[1]['player_id'])
+                    elif payload[0] == fast.Action.BUILD and payload[1]['building_id'] not in VALID_BUILDINGS:
                         self._cache['cheaters'].add(payload[1]['player_id'])
                 elif operation == fast.Operation.CHAT:
                     text = payload

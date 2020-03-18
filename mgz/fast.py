@@ -102,8 +102,8 @@ def parse_action(action_type, data):
         player_id, x, y = struct.unpack_from('<b10x2f', data)
         return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.BUILD:
-        player_id, x, y = struct.unpack_from('<xh2f', data)
-        return dict(player_id=player_id, x=x, y=y)
+        player_id, x, y, building_id = struct.unpack_from('<xh2fI', data)
+        return dict(player_id=player_id, x=x, y=y, building_id=building_id)
     if action_type == Action.STANCE:
         object_ids = struct.unpack_from('<xx' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids))
