@@ -1,22 +1,51 @@
 """Objects."""
 
 from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16ub,
-                       Int16ul, Int32ub, Int32ul, Padding, Peek, Struct,
-                       Switch, Pass)
+                       Int16ul, Int32ub, Int32ul, Padding, Peek, Struct, Int32sl,
+                       Switch, Pass, RepeatUntil, Bytes, LazyBound)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
 from mgz.util import Find
+from mgz.header.unit_type import unit_type
 
 # pylint: disable=invalid-name
 
 
-# Object IDs can be looked up via Advanced Genie Editor.
 
-# Existing objects all have the same header.
-existing_object_header = "header"/Struct(
-    ObjectEnum("object_type"/Int16ul),
+active_sprite = "active_sprite"/Struct(
+    "id"/Int16ul,
+    "x"/Int32ul,
+    "y"/Int32ul,
+    "frame"/Int16ul,
+    "invisible"/Byte
+)
+
+animated_sprite = "animated_sprite"/Struct(
+    "animate_interval"/Int32ul,
+    "animate_last"/Int32ul,
+    "last_frame"/Int16ul,
+    "frame_changed"/Byte,
+    "frame_looped"/Byte,
+    "animate_flag"/Byte,
+    "last_speed"/Float32l
+)
+
+sprite_list = "sprite_list"/Struct(
+    "type"/Byte,
+    If(lambda ctx: ctx.type != 0, active_sprite),
+    If(lambda ctx: ctx.type == 2, animated_sprite),
+    Embedded(If(lambda ctx: ctx.type != 0, Struct(
+        "order"/Byte,
+        "flag"/Byte,
+        "count"/Byte
+    )))
+)
+
+
+static = "static"/Struct(
+    "object_type"/Int16ul,
     "sprite"/Int16ul,
-    "inside_id"/Int32ul,
+    "garrisoned_in_id"/Int32sl,
     "hitpoints"/Float32l,
     "object_state"/Byte,
     "sleep"/Flag,
@@ -33,144 +62,322 @@ existing_object_header = "header"/Struct(
     "shadow_offset_y"/Int16ul,
     ResourceEnum("resource_type"/Int16sl),
     "amount"/Float32l,
-)
-
-additional_header = "additional_header"/Struct(
-    Embedded(existing_object_header),
     "worker_count"/Byte,
     "current_damage"/Byte,
     "damaged_lately_timer"/Byte,
     "under_attack"/Byte,
     "pathing_group_len"/Int32ul,
-    "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, Int32ul),
-    "group_id"/Byte,
-    "already_called"/Byte,
+    "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul),
+    "group_id"/Int32sl,
+    "roo_already_called"/Byte,
+    "has_sprite_list"/Byte,
+    "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list))
 )
 
-# Other - seems to be items under Units > Other in the scenario editor
+
 animated = "animated"/Struct(
-    Embedded(additional_header),
-    # The following sections can be refined with further research.
-    # There are clearly some patterns.
-    "has_extra"/Byte,
-    If(lambda ctx: ctx.has_extra == 2, Padding(
-        34
-    )),
+    Embedded(static),
     "turn_speed"/Float32l
 )
 
-# Units - typically villagers, scout, and any sheep within LOS
-combat = "combat"/Struct(
-    Embedded(additional_header),
-    # Not pretty, but we don't know how to parse a unit yet.
-    # Also, this only works on non-restored games.
-    # This isn't a constant footer, these are actually initial values of some sort.
-    "end_of_unit"/Find(b'\xff\xff\xff\xff\x00\x00\x80\xbf\x00\x00\x80\xbf\xff\xff\xff' \
-                       b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00', None)
+
+path_data = "path_data"/Struct(
+    "id"/Int32ul,
+    "linked_path_type"/Int32ul,
+    "waypoint_level"/Int32ul,
+    "path_id"/Int32ul,
+    "waypoint"/Int32ul,
+    #"disable_flags"/Int32sl,
+    #"enable_flags"/Int32sl,
+    "state"/Int32sl,
+    "range"/Float32l,
+    "target_id"/Int32ul,
+    "pause_time"/Float32l,
+    "continue_counter"/Int32ul,
+    "flags"/Int32ul
 )
 
-# Buildings - ID doesn't match Build action ID - buildings can have multiple parts
-building = "building"/Struct(
-    Embedded(additional_header),
-    # The following sections can be refined with further research.
-    # There are clearly some patterns.
-    "has_extra"/Byte,
-    If(lambda ctx: ctx.has_extra == 2, Padding(
-        17
-    )),
-    Padding(16),
-    "has_extra2"/Byte,
-    If(lambda ctx: ctx.has_extra2 == 1, Padding(
-        17
-    )),
-    Padding(127),
-    "c1"/Int16ul,
-    "c2"/Int16ul,
-    If(lambda ctx: ctx.c1 > 0, "more"/Struct(
-        Array(lambda ctx: ctx._.c2, Padding(8)),
-        Padding(2)
-    )),
-    Padding(274),
-    "num"/Byte,
-    If(lambda ctx: ctx.num < 100, Array(
-        lambda ctx: ctx.num, "id2"/Int32ul
-    )),
-    Padding(93),
-)
-
-# Mainly trees and mines
-static = "static"/Struct(
-    Embedded(existing_object_header),
-    Padding(14),
+vector = Struct(
+    "x"/Float32l,
+    "y"/Float32l,
+    "z"/Float32l
 )
 
 
-# This type has various classes of objects, we care about the fish
+movement_data = "movement"/Struct(
+    "velocity"/vector,
+    "acceleration"/vector
+)
+
 moving = "moving"/Struct(
-    Embedded(additional_header),
-    "has_extra"/Byte,
-    If(lambda ctx: ctx.has_extra == 2, Padding(
-        17
-    )),
-    Padding(140)
+    Embedded(animated),
+    "trail_remainder"/Int32ul,
+    "velocity"/vector,
+    "angle"/Float32l,
+    "turn_towards_time"/Int32ul,
+    "turn_timer"/Int32ul,
+    "continue_counter"/Int32ul,
+    "current_terrain_exception_1"/Int32sl,
+    "current_terrain_exception_2"/Int32sl,
+    "waiting_to_move"/Byte,
+    "wait_delays_count"/Byte,
+    "on_ground"/Byte,
+    "num_path_data"/Int32ul,
+    "path_data"/Array(lambda ctx: ctx.num_path_data, path_data),
+    "has_future_path_data"/Int32ul,
+    "future_path_data"/If(lambda ctx: ctx.has_future_path_data > 0, path_data),
+    "has_movement_data"/Int32ul,
+    "movement_data"/If(lambda ctx: ctx.has_movement_data > 0, movement_data),
+    "position"/vector,
+    "orientation_forward"/vector,
+    "orientation_right"/vector,
+    "last_move_time"/Int32ul,
+    "num_user_defined_waypoints"/Int32ul,
+    "user_defined_waypoints"/Array(lambda ctx: ctx.num_user_defined_waypoints, vector),
+    "has_substitute_position"/Int32ul,
+    "substitute_position"/vector,
+    "consecutive_subsitute_count"/Int32ul
+)
+
+unit_action = Struct(
+    "type"/Int16ul,
+    "data"/If(lambda ctx: ctx.type > 0, Struct(
+        "state"/Int32ul,
+        "target_object_pointer"/Int32sl,
+        "target_object_pointer2"/Int32sl,
+        "target_object_id"/Int32sl,
+        "target_object_id_2"/Int32sl,
+        "position"/vector,
+        "timer"/Float32l,
+        "target_moved_state"/Byte,
+        "task_id"/Int16ul,
+        "sub_action_value"/Byte,
+        "sub_actions"/LazyBound(lambda x: action_list),
+        "sprite_id"/Int16sl,
+        If(lambda ctx: ctx._.type == 1, Struct(
+            "range"/Float32l
+        )),
+         If(lambda ctx: ctx._.type == 3, Struct(
+            "first_time"/Int32ul
+        )),
+        If(lambda ctx: ctx._.type == 21, Struct(
+            "work_timer"/Float32l
+        ))
+    ))
+)
+
+action_list = "action_list"/Struct(
+    "actions"/RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, unit_action)
 )
 
 action = "action"/Struct(
-    Embedded(animated),
-    "search_radius"/Float32l,
-    "work_rate"/Float32l
+    Embedded(moving),
+    "waiting"/Byte,
+    "command_flag"/Byte,
+    "selected_group_info"/Int16ul,
+    "actions"/action_list
 )
 
-hit = "hit"/Struct(
-    "type"/Int16ul,
-    "amount"/Int16ul
-)
-
-base = "base"/Struct(
+base_combat = "base_combat"/Struct(
     Embedded(action),
-    "base_armor"/Int16ul,
-    "attack_length"/Int16ul,
-    "attacks"/Array(lambda ctx: ctx.attack_length, hit),
-    "armors_length"/Int16ul,
-    "armors"/Array(lambda ctx: ctx.armors_length, hit),
-    "attacks_2"/Float32l,
-    "weapon_range_max"/Float32l,
-    "base_hit_chance"/Int16ul,
-    "projectile_object_id"/Int16ul,
-    "defense_terrain_bonus"/Int16ul,
-    "weapon_range_max_2"/Float32l,
-    "area_of_effect"/Float32l,
-    "weapon_range_min"/Float32l
+    "formation_id"/Byte,
+    "formation_row"/Byte,
+    "formation_col"/Byte,
+    "attack_timer"/Float32l,
+    "capture_flag"/Byte,
+    "multi_unified_points"/Byte,
+    "large_object_radius"/Byte,
+    "attack_count"/Int32ul
 )
 
 missile = "missile"/Struct(
-    Embedded(base),
-    "targeting_type"/Byte
+    Embedded(base_combat),
+    "max_range"/Float32l,
+    "fired_from_id"/Int32ul,
+    "own_base"/Byte,
+    "base"/If(lambda ctx: ctx.own_base > 0, unit_type),
+)
+
+waypoint = "waypoint"/Struct(
+    vector,
+    "facet_to_next_waypoint"/Byte,
+    Padding(3)
+)
+
+gatherpoint = "gatherpoint"/Struct(
+    "exists"/Int32ul,
+    "position"/vector,
+    "object_id"/Int32sl,
+    "unit_type_id"/Int16sl
+)
+
+path = "path"/Struct(
+)
+
+order = "order"/Struct(
+    "issuer"/Int32ul,
+    "type"/Int32ul,
+    "priority"/Int32ul,
+    "target_id"/Int32ul,
+    "target_player"/Int32ul,
+    "target_location"/vector,
+    "range"/Float32l
+)
+
+notification = "notification"/Struct(
+    "caller"/Int32ul,
+    "recipient"/Int32ul,
+    "notification_type"/Int32ul,
+    "params"/Array(3, Int32ul)
+)
+
+order_history = "order_history"/Struct(
+    "order"/Int32ul,
+    "action"/Int32ul,
+    "time"/Int32ul,
+    "position"/vector,
+    "target_id"/Int32ul,
+    "target_attack_category"/Int32ul,
+    "target_position"/vector
+)
+
+retarget = "retarget"/Struct(
+    "target_id"/Int32ul,
+    "retarget_timeout"/Int32ul
+)
+
+unit_ai = "ai"/Struct(
+    "mood"/Int32ul,
+    "current_order"/Int32ul,
+    "current_order_priority"/Int32ul,
+    "current_action"/Int32ul,
+    "current_target"/Int32ul,
+    "current_target_type"/Int16ul,
+    Padding(2),
+    "current_target_location"/vector,
+    "desired_target_distance"/Float32l,
+    "last_action"/Int32ul,
+    "last_order"/Int32ul,
+    "last_target"/Int32ul,
+    "last_target_type"/Int32ul,
+    "last_update_type"/Int32ul,
+    "idle_timer"/Int32ul,
+    "idle_timeout"/Int32ul,
+    "adjusted_idle_timeout"/Int32ul,
+    "secondary_timer"/Int32ul,
+    "look_around_timer"/Int32ul,
+    "look_around_timeout"/Int32ul,
+    "defend_target"/Int32ul,
+    "defense_buffer"/Float32l,
+    "last_world_position"/waypoint,
+    "num_orders"/Int32ul,
+    "orders"/Array(lambda ctx: ctx.num_orders, order),
+    "num_notifications"/Int32ul,
+    "notifications"/Array(lambda ctx: ctx.num_notifications, notification),
+    "num_attacking_units"/Int32ul,
+    "attacking_units"/Array(lambda ctx: ctx.num_attacking_units, Int32ul),
+    "stop_after_target_killed"/Byte,
+    "state"/Byte,
+    "state_position_x"/Float32l,
+    "state_position_y"/Float32l,
+    "time_since_enemy_sighting"/Int32ul,
+    "alert_mode"/Byte,
+    "alert_mode_object_id"/Int32ul,
+    "has_patrol_path"/Int32ul,
+    If(lambda ctx: ctx.has_patrol_path > 0, path),
+    "patrol_current_waypoint"/Int32ul,
+    "num_order_history"/Int32ul,
+    "order_history"/Array(lambda ctx: ctx.num_order_history, order_history),
+    "last_retarget_time"/Int32ul,
+    "randomized_retarget_timer"/Int32ul,
+    "num_retarget_entries"/Int32ul,
+    "retarget_entries"/Array(lambda ctx: ctx.num_retarget_entries, retarget),
+    "best_unit_to_attack"/Int32ul,
+    "formation_type"/Byte
+)
+
+
+combat = "combat"/Struct(
+    Embedded(base_combat),
+    "next_volley"/Byte,
+    "using_special_animation"/Byte,
+    "own_base"/Byte,
+    "base"/If(lambda ctx: ctx.own_base > 0, unit_type),
+    "attribute_amounts"/Array(6, Int16ul),
+    "decay_timer"/Int16ul,
+    "raider_build_countdown"/Int32ul,
+    "locked_down_count"/Int32ul,
+    "inside_garrison_count"/Byte,
+    "has_ai"/Int32ul,
+    "ai"/If(lambda ctx: ctx.has_ai > 0, unit_ai),
+    "town_bell_flag"/Byte,
+    "town_bell_target_id"/Int32sl,
+    "town_bell_target_x"/Float32l,
+    "town_bell_target_y"/Float32l,
+    "town_bell_target_id_2"/Int32sl,
+    "town_bell_target_type"/Int32sl,
+    "town_bell_action"/Int32sl,
+    "berserker_timer"/Float32l,
+    "num_builders"/Byte,
+    "num_healers"/Byte
+)
+
+production_queue = "production_queue"/Struct(
+    "unit_type_id"/Int16ul,
+    "count"/Int16ul
+)
+
+building = "building"/Struct(
+    Embedded(combat),
+    "built"/Byte,
+    "build_points"/Float32l,
+    "unique_build_id"/Int32ul,
+    "culture"/Byte,
+    "burning"/Byte,
+    "last_burn_time"/Int32ul,
+    "last_garrison_time"/Int32ul,
+    "relic_count"/Int32ul,
+    "specific_relic_count"/Int32ul,
+    "gather_point"/gatherpoint,
+    "desolid_flag"/Byte,
+    "pending_order"/Int32ul,
+    "linked_owner"/Int32sl,
+    "linked_children"/Array(4, Int32sl),
+    "captured_unit_count"/Byte,
+    "extra_actions"/action_list,
+    "research_actions"/action_list,
+    "capacity"/Int16ul,
+    "production_queue"/Array(lambda ctx: ctx.capacity, production_queue),
+    "size"/Int16ul,
+    "production_queue_total_units"/Int16ul,
+    "production_queue_enabled"/Byte,
+    "production_queue_actions"/action_list,
+    "endpoint"/vector,
+    "endpoint_2"/vector,
+    "gate_locked"/Int32ul,
+    "first_update"/Int32ul,
+    "close_timer"/Int32ul,
+    "terrain_type"/Byte,
+    "semi_asleep"/Byte,
+    "snow_flag"/Byte,
 )
 
 # Objects that exist on the map at the start of the recorded game
 existing_object = "objects"/Struct(
-    ObjectTypeEnum("type"/Byte),
+    "type"/Byte,
     "player_id"/Byte,
     Embedded("properties"/Switch(lambda ctx: ctx.type, {
-        "static": static,
-        "animated": animated,
-        "doppelganger": animated,
-        "moving": moving,
-        "action": action,
-        "base": base,
-        "missile": missile,
-        "combat": combat,
-        "building": building,
-        "tree": static
+        10: static,
+        20: animated,
+        25: animated,
+        30: moving,
+        40: action,
+        50: base_combat,
+        60: missile,
+        70: combat,
+        80: building,
+        90: static
     }, default=Pass)),
-    # These boundary bytes can occur in the middle of a set of objects, and at the end
-    # There is probably a better way to check these
-    Peek("extension1"/Int16ub),
-    Peek("extension2"/Int32ub),
-    If(lambda ctx: ctx.extension1 == 11 and ctx.extension2 > 720898, Padding(
-        10
-    ))
 )
 
 # Default values for objects, nothing of real interest

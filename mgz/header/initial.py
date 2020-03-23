@@ -3,7 +3,7 @@
 # pylint: disable=invalid-name,no-name-in-module
 
 from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32sl,
-                       Int32ul, Padding, Struct, Tell, this, Bytes)
+                       Int32ul, Padding, Struct, Tell, this, Bytes, Const, IfThenElse)
 
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
 from mgz.header.objects import existing_object
@@ -47,7 +47,7 @@ attributes = "attributes"/Struct(
     "resigned"/Flag,
     Padding(1),
     "player_color"/Byte,
-    Padding(1)
+    Padding(1),
 )
 
 
@@ -58,33 +58,37 @@ player = "players"/Struct(
     attributes,
     "end_of_attr"/Tell,
     "start_of_objects"/Find(b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00', None),
-    Embedded("x"/Struct(
-        "end_of_objects"/GotoObjectsEnd(),
-        Array(0, existing_object)
-    ))
+    Embedded(IfThenElse(this._._.version == Version.USERPATCH15,
+        Struct(
+            "objects"/RepeatUpTo(b'\x00', existing_object),
+            Const(b'\x00\x0b'),
+            # Skip Gaia trees for performance reasons
+            Embedded(IfThenElse(this._.type != 2,
+                Struct(
+                    "s_size"/Int32ul,
+                    "s_grow"/Int32ul,
+                    "sleeping_objects"/RepeatUpTo(b'\x00', existing_object),
+                    Const(b'\x00\x0b'),
+                    "d_size"/Int32ul,
+                    "d_grow"/Int32ul,
+                    "doppleganger_objects"/RepeatUpTo(b'\x00', existing_object),
+                    Const(b'\x00\x0b')
+                ),
+                Struct(
+                    "sleeping_objects"/Array(0, existing_object),
+                    "doppleganger_objects"/Array(0, existing_object)
+                )
+            ))
+        ),
+        Struct(
+            "objects"/Array(0, existing_object),
+            "sleeping_objects"/Array(0, existing_object),
+            "doppleganger_objects"/Array(0, existing_object)
+        )
+    )),
+    "end_of_objects"/GotoObjectsEnd()
 )
-x = Struct(
-    "start_of_objects"/Find(b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00', None),
-    # If this isn't a restored game, we can read all the existing objects
-    Embedded("not_restored"/If(this._.restore_time == 0 and this._._.version != Version.DE, Struct(
-        RepeatUpTo(b'\x00', existing_object),
-        Padding(14),
-        "eoo"/Tell,
-        "end_of_objects"/GotoObjectsEnd() # Find the objects end just in case
-    ))),
-    # Can't parse existing objects in a restored game, skip the whole structure
-    Embedded("is_restored"/If(this._.restore_time > 0 and this._._.version != Version.DE, Struct(
-        "end_of_objects"/GotoObjectsEnd(),
-        # Just an empty array for now
-        Array(0, existing_object)
-    ))),
-    # Can't parse DE objects yet
-    Embedded("is_de"/If(this._._.version == Version.DE, Struct(
-        "end_of_objects"/GotoObjectsEnd(),
-        # Just an empty array for now
-        Array(0, existing_object)
-    )))
-)
+
 
 # Initial state.
 initial = "initial"/Struct(

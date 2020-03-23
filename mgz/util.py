@@ -200,9 +200,9 @@ class GotoObjectsEnd(Construct):
     # pylint: disable=chained-comparison, too-many-locals
     def _parse(self, stream, context, path):
         """Parse until the end of objects data."""
-        num_players = context._._._.replay.num_players
-        marker_num = context._.attributes.num_header_data
-        save_version = context._._._.save_version
+        num_players = context._._.replay.num_players
+        marker_num = context.attributes.num_header_data
+        save_version = context._._.save_version
         start = stream.tell()
         # Have to read everything to be able to use find()
         read_bytes = stream.read()

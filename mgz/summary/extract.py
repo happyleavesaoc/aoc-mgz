@@ -209,12 +209,33 @@ def enrich_actions(actions, objects, states):
             last = action
 
 
-async def get_extracted_data(start_time, duration, playback, handle, interval):
+def transform_seed_objects(objects):
+    """Map seed objects to state format."""
+    return {obj['instance_id']: {
+        'initial_player_number': obj['player_number'],
+        'initial_object_id': obj['object_id'],
+        'initial_class_id': obj['class_id'],
+        'created': 0,
+        'created_x': obj['x'],
+        'created_y':obj['y'],
+        'destroyed': None,
+        'destroyed_by_instance_id': None,
+        'destroyed_building_percent': None,
+        'deleted': False,
+        'destroyed_x': None,
+        'destroyed_y': None,
+        'building_started': None,
+        'building_completed': None,
+        'total_idle_time': None
+    } for obj in objects}
+
+
+async def get_extracted_data(start_time, duration, playback, handle, interval, seed_objects):
     """Get extracted data."""
     timeseries = []
     research = defaultdict(dict)
     market = []
-    objects = {}
+    objects = transform_seed_objects(seed_objects)
     state = []
     last = {}
     actions = []
