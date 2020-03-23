@@ -103,6 +103,8 @@ class Summary: # pylint: disable=too-many-public-methods
                         self._cache['resigned'].add(payload[1]['player_id'])
                     elif payload[0] == fast.Action.TRIBUTE and payload[1]['player_id_to'] == 0:
                         self._cache['cheaters'].add(payload[1]['player_id'])
+                    elif payload[0] == fast.Action.TRIBUTE and payload[1]['player_id'] == 0:
+                        self._cache['cheaters'].add(payload[1]['player_id_to'])
                     elif payload[0] == fast.Action.CREATE:
                         self._cache['cheaters'].add(payload[1]['player_id'])
                     elif payload[0] == fast.Action.BUILD and payload[1]['building_id'] not in VALID_BUILDINGS:

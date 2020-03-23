@@ -29,6 +29,8 @@ class Version(Enum):
     AOK = 1
     AOC = 5
     AOC10C = 8
+    USERPATCH12 = 12
+    USERPATCH13 = 13
     USERPATCH14 = 11
     USERPATCH15 = 20
     DE = 21
@@ -70,6 +72,10 @@ def get_version(game_version, save_version):
         if save_version > 12.97:
             return Version.DE
         return Version.AOC
+    if game_version == 'VER 9.8':
+        return Version.USERPATCH12
+    if game_version == 'VER 9.9':
+        return Version.USERPATCH13
     if game_version == 'VER 9.A':
         return Version.USERPATCH14RC2
     if game_version in ['VER 9.B', 'VER 9.C', 'VER 9.D']:

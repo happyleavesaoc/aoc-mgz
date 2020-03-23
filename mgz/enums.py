@@ -309,9 +309,9 @@ def FormationEnum(ctx):
     return Enum(
         ctx,
         line=2,
-        staggered=4,
-        box=7,
-        split=8
+        box=4,
+        staggered=7,
+        flank=8
     )
 
 def MyDiplomacyEnum(ctx):

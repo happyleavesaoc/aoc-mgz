@@ -111,8 +111,8 @@ def parse_action(action_type, data):
         object_id, player_id = struct.unpack_from('<3xIh', data)
         return dict(player_id=player_id, object_ids=[object_id])
     if action_type == Action.FORMATION:
-        player_id, (*object_ids) = struct.unpack_from('<xh4x' + str(data[0]) + 'I', data)
-        return dict(player_id=player_id, object_ids=list(object_ids))
+        player_id, formation_id, (*object_ids) = struct.unpack_from('<xhI' + str(data[0]) + 'I', data)
+        return dict(player_id=player_id, object_ids=list(object_ids), formation_id=formation_id)
     if action_type == Action.QUEUE:
         object_id, = struct.unpack_from('<3xI', data)
         return dict(object_ids=[object_id])
