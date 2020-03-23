@@ -16,7 +16,7 @@ import mgz.body
 from mgz import fast
 from mgz.util import Version
 
-from mgz.summary.consts import VALID_BUILDINGS
+from mgz.const import VALID_BUILDINGS
 from mgz.summary.map import get_map_data
 from mgz.summary.settings import get_settings_data
 from mgz.summary.dataset import get_dataset_data
