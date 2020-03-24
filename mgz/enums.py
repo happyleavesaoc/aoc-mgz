@@ -101,7 +101,10 @@ def GameTypeEnum(ctx):
         KingOfTheHill=5,
         WonderRace=6,
         DefendTheWonder=7,
-        TurboRandom=8
+        TurboRandom=8,
+        CaptureTheRelic=10,
+        SuddenDeath=11,
+        Unknown=13
     )
 
 def ObjectTypeEnum(ctx):
