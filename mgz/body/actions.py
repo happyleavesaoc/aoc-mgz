@@ -252,16 +252,13 @@ game = "game"/Struct(
         Padding(9)
     )),
     "farm_queue"/If(this.mode == 'farm_queue', Struct(
-        "count"/Byte,
-        "amount"/Byte,
-        Padding(7)
+        "amount"/Byte, # this seems to be a bit inconsistent between versions, needs more research
+        Padding(8)
     )),
     "farm_unqueue"/If(this.mode == 'farm_unqueue', Struct(
-        "player_id"/Byte,
-        "amount"/Byte,
-        Padding(7)
+        "amount"/Byte, # this seems to be a bit inconsistent between versions, needs more research
+        Padding(8)
     )),
-
     # toggle farm auto seed queue
     "farm_autoqueue"/If(this.mode == 'farm_autoqueue', Struct(
         Padding(9)
@@ -276,7 +273,7 @@ game = "game"/Struct(
         Padding(8)
     )),
 
-    # toggle fish trap auto seed queue
+    # toggle fish trap auto place queue
     "fishtrap_autoqueue"/If(this.mode == 'fishtrap_autoqueue', Struct(
         Padding(9)
     )),
@@ -533,6 +530,6 @@ postgame = "achievements"/Struct(
 )
 
 de_autoscout = "de_autoscout"/Struct(
-    "player_id?"/Byte,
-    "unit_id"/Int32ul
+    "selected"/Byte,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
