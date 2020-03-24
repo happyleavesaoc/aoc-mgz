@@ -29,6 +29,8 @@ class Version(Enum):
     AOK = 1
     AOC = 5
     AOC10C = 8
+    USERPATCH12 = 12
+    USERPATCH13 = 13
     USERPATCH14 = 11
     USERPATCH15 = 20
     DE = 21
@@ -67,9 +69,13 @@ def get_version(game_version, save_version):
     if game_version == 'VER 9.3':
         return Version.AOK
     if game_version == 'VER 9.4':
-        if save_version > 12.97:
+        if save_version >= 12.97:
             return Version.DE
         return Version.AOC
+    if game_version == 'VER 9.8':
+        return Version.USERPATCH12
+    if game_version == 'VER 9.9':
+        return Version.USERPATCH13
     if game_version == 'VER 9.A':
         return Version.USERPATCH14RC2
     if game_version in ['VER 9.B', 'VER 9.C', 'VER 9.D']:
@@ -112,6 +118,14 @@ class BoolAdapter(Adapter):
     def _decode(self, obj, context):
         """Decode bool."""
         return obj == 1
+
+
+class VersionAdapter(Adapter):
+    """Round save version."""
+
+    def _decode(self, obj, context):
+        """Decode by rounding float."""
+        return round(obj, 2)
 
 
 class ModVersionAdapter(Adapter):
@@ -188,6 +202,7 @@ class GotoObjectsEnd(Construct):
         """Parse until the end of objects data."""
         num_players = context._._._.replay.num_players
         marker_num = context._.attributes.num_header_data
+        save_version = context._._._.save_version
         start = stream.tell()
         # Have to read everything to be able to use find()
         read_bytes = stream.read()
@@ -209,7 +224,10 @@ class GotoObjectsEnd(Construct):
             # TODO: make this section more reliable
             marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
-            marker_de = read_bytes.find(b"\x29\x5c\xaf\x3f")
+            if save_version >= 13.07:
+                marker_de = read_bytes.find(b"\x29\x5c\xaf\x3f")
+            else:
+                marker_de = read_bytes.find(b"\x7b\x14\xae\x3f")
             if marker_up > 0 and marker_de < 0: # aok marker can appear in up
                 marker = marker_up
             elif marker_de > 0 and marker_up < 0 and marker_aok < 0:

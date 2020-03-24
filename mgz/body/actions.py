@@ -44,6 +44,16 @@ add_attribute = "add_attribute"/Struct(
     "amount"/Float32l
 )
 
+create = "create"/Struct(
+    Padding(1),
+    "unit_type"/Int16ul,
+    "player_id"/Byte,
+    Padding(1),
+    "x"/Float32l,
+    "y"/Float32l,
+    "z"/Float32l
+)
+
 ai_interact = "ai_interact"/Struct(
     Padding(3),
     "target_id"/Int32ul,

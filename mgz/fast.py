@@ -20,6 +20,7 @@ class Action(Enum):
     ORDER = 0
     STOP = 1
     WORK = 2
+    CREATE = 4
     MOVE = 3
     ADD_ATTRIBUTE = 5
     GIVE_ATTRIBUTE = 6
@@ -94,12 +95,15 @@ def parse_action(action_type, data):
     if action_type == Action.MOVE:
         player_id, x, y = struct.unpack_from('<b10x2f', data)
         return dict(player_id=player_id, x=x, y=y)
+    if action_type == Action.CREATE:
+        player_id, x, y = struct.unpack_from('<3xhx2f', data)
+        return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.ORDER:
         player_id, x, y = struct.unpack_from('<b10x2f', data)
         return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.BUILD:
-        player_id, x, y = struct.unpack_from('<xh2f', data)
-        return dict(player_id=player_id, x=x, y=y)
+        player_id, x, y, building_id = struct.unpack_from('<xh2fI', data)
+        return dict(player_id=player_id, x=x, y=y, building_id=building_id)
     if action_type == Action.STANCE:
         object_ids = struct.unpack_from('<xx' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids))
@@ -107,8 +111,8 @@ def parse_action(action_type, data):
         object_id, player_id = struct.unpack_from('<3xIh', data)
         return dict(player_id=player_id, object_ids=[object_id])
     if action_type == Action.FORMATION:
-        player_id, (*object_ids) = struct.unpack_from('<xh4x' + str(data[0]) + 'I', data)
-        return dict(player_id=player_id, object_ids=list(object_ids))
+        player_id, formation_id, (*object_ids) = struct.unpack_from('<xhI' + str(data[0]) + 'I', data)
+        return dict(player_id=player_id, object_ids=list(object_ids), formation_id=formation_id)
     if action_type == Action.QUEUE:
         object_id, = struct.unpack_from('<3xI', data)
         return dict(object_ids=[object_id])

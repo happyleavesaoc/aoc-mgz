@@ -27,7 +27,7 @@ class TestFiles(unittest.TestCase):
 
     def test_files_full(self):
         parse_file_full('tests/recs/small.mgz')
-        parse_file_full('tests/recs/fcc-2020-02-de.aoe2record')
+        parse_file_full('tests/recs/de-13.07.aoe2record')
 
     def test_files_fast(self):
         for path in glob.glob('tests/recs/*'):

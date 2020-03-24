@@ -1,7 +1,7 @@
 """Map info."""
 
 from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
-                       Int32ul, Padding, Struct, Int16sl)
+                       Int32ul, Padding, Struct, Int16sl, If)
 
 from mgz.util import Version
 
@@ -17,7 +17,7 @@ tile = "tile"/Struct(
             "elevation"/Byte,
             "unk0"/Int16sl,
             "unk1"/Int16sl,
-            "unk2"/Int16sl
+            If(lambda ctx: ctx._._._.save_version >= 13.03, "unk2"/Int16sl)
         )),
         Embedded(IfThenElse(lambda ctx: ctx.terrain_type == 255, Struct(
             "terrain_type"/Byte,

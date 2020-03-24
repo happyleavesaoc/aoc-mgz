@@ -101,7 +101,10 @@ def GameTypeEnum(ctx):
         KingOfTheHill=5,
         WonderRace=6,
         DefendTheWonder=7,
-        TurboRandom=8
+        TurboRandom=8,
+        CaptureTheRelic=10,
+        SuddenDeath=11,
+        Unknown=13
     )
 
 def ObjectTypeEnum(ctx):
@@ -309,9 +312,9 @@ def FormationEnum(ctx):
     return Enum(
         ctx,
         line=2,
-        staggered=4,
-        box=7,
-        split=8
+        box=4,
+        staggered=7,
+        flank=8
     )
 
 def MyDiplomacyEnum(ctx):
@@ -334,6 +337,7 @@ def ActionEnum(ctx):
         stop=1,
         ai_interact=2,
         move=3,
+        create=4,
         add_attribute=5,
         give_attribute=6,
         ai_move=10,

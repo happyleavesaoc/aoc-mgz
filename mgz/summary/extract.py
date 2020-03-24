@@ -220,6 +220,7 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
     actions = []
     tribute = []
     transactions = []
+    formations = []
     version = None
     start = time.time()
     client = await Client.create(playback, handle.name, start_time, duration, interval)
@@ -250,6 +251,8 @@ async def get_extracted_data(start_time, duration, playback, handle, interval):
                     tribute.append((tick, message[1][1]))
                 elif message[1][0] in [fast.Action.BUY, fast.Action.SELL]:
                     transactions.append((tick, *message[1]))
+                elif message[1][0] == fast.Action.FORMATION:
+                    formations.append((tick, *message[1]))
 
     handle.close()
 
