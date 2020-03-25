@@ -272,6 +272,7 @@ def GameActionModeEnum(ctx):
         fishtrap_queue=17,
         fishtrap_unqueue=18,
         fishtrap_autoqueue=19,
+        fishtrap_autoqueue=20,
         default=Pass
     )
 
@@ -353,7 +354,7 @@ def ActionEnum(ctx):
         ai_waypoint=31,
         chapter=32,
         de_attackmove=33,
-        de_unknown=38,
+        de_autoscout=38,
         ai_command=53,
         ai_queue=100,
         research=101,

@@ -23,8 +23,8 @@ interact = "interact"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    "next"/Peek(Bytes(4)),
-    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
+    "next"/Peek(Bytes(8)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(8)),
     "unit_ids"/If(lambda ctx: ctx.selected < 0xff, Array(
         lambda ctx: ctx.selected, "unit_ids"/Int32ul
     ))
@@ -73,8 +73,8 @@ move = "move"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    "next"/Peek(Bytes(4)),
-    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(4)),
+    "next"/Peek(Bytes(8)),
+    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(8)),
     "unit_ids"/If(lambda ctx: ctx.selected < 0xff, Array(
         lambda ctx: ctx.selected, Int32ul
     ))
@@ -136,17 +136,10 @@ research = "research"/Struct(
     Padding(3),
     "building_id"/Int32ul,
     "player_id"/Int16ul,
-    "next"/Peek(Int16ul),
-    IfThenElse(lambda ctx: ctx.next == 0,
-        Embedded(Struct(
-            Padding(2),
-            "technology_type"/Int32ul,
-        )),
-        Embedded(Struct(
-            "technology_type"/Int16ul
-        ))
-    ),
-    Padding(4)
+    "selected"/Int16ul,
+    "technology_type"/Int32ul,
+    Padding(4),
+    Array(lambda ctx: ctx.selected, "selected_ids"/Int32ul)
 )
 
 sell = "sell"/Struct(
@@ -259,16 +252,13 @@ game = "game"/Struct(
         Padding(9)
     )),
     "farm_queue"/If(this.mode == 'farm_queue', Struct(
-        "player_id"/Byte,
-        "amount"/Byte,
-        Padding(7)
+        "amount"/Byte, # this seems to be a bit inconsistent between versions, needs more research
+        Padding(8)
     )),
     "farm_unqueue"/If(this.mode == 'farm_unqueue', Struct(
-        "player_id"/Byte,
-        "amount"/Byte,
-        Padding(7)
+        "amount"/Byte, # this seems to be a bit inconsistent between versions, needs more research
+        Padding(8)
     )),
-
     # toggle farm auto seed queue
     "farm_autoqueue"/If(this.mode == 'farm_autoqueue', Struct(
         Padding(9)
@@ -283,15 +273,23 @@ game = "game"/Struct(
         Padding(8)
     )),
 
-    # toggle fish trap auto seed queue
+    # toggle fish trap auto place queue
     "fishtrap_autoqueue"/If(this.mode == 'fishtrap_autoqueue', Struct(
+        Padding(9)
+    )),
+
+    # toggles the default stance when units are created. All players start on aggressive by default, if the player
+    # (initially) has defensive enabled it is called right before the first unit is queued, and again every time
+    # the player toggles it in the game options menu
+    "default_stance" / If(this.mode == 'default_stance', Struct(
         Padding(9)
     )),
     Padding(3)
 )
 
 droprelic = "droprelic"/Struct(
-    Padding(lambda ctx: ctx._._.length - 1)
+    Const(b"\x00\x00\x00"),
+    'unit_id'/Int32ul
 )
 
 wall = "wall"/Struct(
@@ -529,4 +527,9 @@ postgame = "achievements"/Struct(
     Array(lambda ctx: ctx.player_num, achievements),
     Padding(4),
     Array(lambda ctx: (8 - ctx.player_num) * 63, Padding(4)),
+)
+
+de_autoscout = "de_autoscout"/Struct(
+    "selected"/Byte,
+    Array(lambda ctx: ctx.selected, "unit_ids"/Int32ul)
 )
