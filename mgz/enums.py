@@ -272,7 +272,7 @@ def GameActionModeEnum(ctx):
         fishtrap_queue=17,
         fishtrap_unqueue=18,
         fishtrap_autoqueue=19,
-        fishtrap_autoqueue_2=20,
+        default_stance=20,
         default=Pass
     )
 
