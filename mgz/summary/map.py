@@ -46,6 +46,12 @@ LANGUAGE_MARKERS = [
     ['Mozno', 'ISO-8859-2', 'sk'],
     ['Dobývací', 'ISO-8859-2', 'cs']
 ]
+WATER_TERRAIN = {
+    0: [1, 4, 15, 22, 23],
+    1: [1, 4, 11, 15, 22, 23],
+    7: [1, 4, 15, 22, 23],
+    100: [1, 4, 15, 22, 23, 26, 54, 57, 58, 59, 93, 94, 95, 96, 97, 98, 99]
+}
 
 
 def extract_from_instructions(instructions):
@@ -134,7 +140,18 @@ def get_tiles(tiles, dimension):
         tile_x += 1
 
 
-def get_map_data(map_id, instructions, dimension, version, tiles):
+def get_water_percent(tiles, dataset_id):
+    """Get percent of map that is passable by ships."""
+    if dataset_id not in WATER_TERRAIN:
+        return None
+    count = 0
+    for tile in tiles:
+        if tile.terrain_type in WATER_TERRAIN[dataset_id]:
+            count +=1
+    return count/len(tiles)
+
+
+def get_map_data(map_id, instructions, dimension, version, dataset_id, tiles):
     """Get the map metadata."""
     if instructions == b'\x00':
         raise ValueError('empty instructions')
@@ -153,5 +170,6 @@ def get_map_data(map_id, instructions, dimension, version, tiles):
         'modes': modes,
         'custom': custom,
         'zr': name.startswith('ZR@'),
-        'tiles': list(get_tiles(tiles, dimension))
+        'tiles': list(get_tiles(tiles, dimension)),
+        'water': get_water_percent(tiles, dataset_id)
     }, encoding, language
