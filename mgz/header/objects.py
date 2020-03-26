@@ -139,6 +139,32 @@ moving = "moving"/Struct(
     "consecutive_subsitute_count"/Int32ul
 )
 
+move_to = "move_to"/Struct(
+    "range"/Float32l
+)
+
+enter = "enter"/Struct(
+    "first_time"/Int32ul
+)
+
+make = "make"/Struct(
+    "work_timer"/Float32l
+)
+
+attack = "attack"/Struct(
+    "range"/Float32l,
+    "min_range"/Float32l,
+    "missile_id"/Int16ul,
+    "frame_delay"/Int16ul,
+    "need_to_attack"/Int16ul,
+    "was_same_owner"/Int16ul,
+    "indirect_fire_flag"/Byte,
+    "move_sprite_id"/Int16ul,
+    "fight_sprite_id"/Int16ul,
+    "wait_sprite_id"/Int16ul,
+    "last_target_position"/vector
+)
+
 unit_action = Struct(
     "type"/Int16ul,
     "data"/If(lambda ctx: ctx.type > 0, Struct(
@@ -154,15 +180,12 @@ unit_action = Struct(
         "sub_action_value"/Byte,
         "sub_actions"/LazyBound(lambda x: action_list),
         "sprite_id"/Int16sl,
-        If(lambda ctx: ctx._.type == 1, Struct(
-            "range"/Float32l
-        )),
-         If(lambda ctx: ctx._.type == 3, Struct(
-            "first_time"/Int32ul
-        )),
-        If(lambda ctx: ctx._.type == 21, Struct(
-            "work_timer"/Float32l
-        ))
+        Embedded("additional"/Switch(lambda ctx: ctx._.type, {
+            1: move_to,
+            3: enter,
+            9: attack,
+            21: make
+        }, default=Pass))
     ))
 )
 
