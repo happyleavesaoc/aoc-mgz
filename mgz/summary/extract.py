@@ -75,11 +75,11 @@ def update_research(player_number, tech, research):
     """Update research structure."""
     if tech.State() == TECH_STATE_RESEARCHING and tech.IdIndex() not in research[player_number]:
         research[player_number][tech.IdIndex()] = {
-            'started': tech.LastStateChange(),
+            'started': tech.Time(),
             'finished': None
         }
     elif tech.State() == TECH_STATE_DONE and tech.IdIndex() in research[player_number]:
-        research[player_number][tech.IdIndex()]['finished'] = tech.LastStateChange()
+        research[player_number][tech.IdIndex()]['finished'] = tech.Time()
     elif tech.State() == TECH_STATE_AVAILABLE and tech.IdIndex() in research[player_number]:
         del research[player_number][tech.IdIndex()]
 
@@ -188,7 +188,8 @@ def enrich_actions(actions, objects, states):
     owners = defaultdict(list)
     for state in states:
         owners[state['instance_id']].append((state['timestamp'], state['player_number']))
-    last = None
+    last_tick = None
+    last_seen = []
     for (tick, action_type, payload) in actions:
         if 'player_id' not in payload and 'object_ids' in payload:
             for object_id in payload['object_ids']:
@@ -204,9 +205,12 @@ def enrich_actions(actions, objects, states):
                     payload['player_id'] = objects[object_id]['initial_player_number']
                     break
         action = (tick, action_type, payload)
-        if action != last and 'player_id' in payload and payload['player_id'] is not None:
+        if tick != last_tick:
+            last_seen = []
+            last_tick = tick
+        if action not in last_seen and 'player_id' in payload and payload['player_id'] is not None:
             yield action
-            last = action
+            last_seen.append(action)
 
 
 def transform_seed_objects(objects):
@@ -268,12 +272,6 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
         elif source == Source.MGZ:
             if message[0] == fast.Operation.ACTION:
                 actions.append((tick, *message[1]))
-                if message[1][0] == fast.Action.TRIBUTE:
-                    tribute.append((tick, message[1][1]))
-                elif message[1][0] in [fast.Action.BUY, fast.Action.SELL]:
-                    transactions.append((tick, *message[1]))
-                elif message[1][0] == fast.Action.FORMATION:
-                    formations.append((tick, *message[1]))
 
     handle.close()
 
@@ -285,7 +283,5 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
         'market': market,
         'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
         'state': state,
-        'actions': list(enrich_actions(actions, objects, state)),
-        'tribute': tribute,
-        'transactions': transactions
+        'actions': list(enrich_actions(actions, objects, state))
     }
