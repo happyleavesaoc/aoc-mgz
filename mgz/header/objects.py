@@ -119,7 +119,7 @@ movement_data = "movement"/Struct(
     "acceleration"/vector
 )
 
-moving = "moving"/Struct(
+base_moving = "base_moving"/Struct(
     Embedded(animated),
     "trail_remainder"/Int32ul,
     "velocity"/vector,
@@ -148,6 +148,11 @@ moving = "moving"/Struct(
     "has_substitute_position"/Int32ul,
     "substitute_position"/vector,
     "consecutive_subsitute_count"/Int32ul
+)
+
+moving = "moving"/Struct(
+    Embedded(base_moving),
+    "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17))
 )
 
 move_to = "move_to"/Struct(
@@ -205,7 +210,7 @@ action_list = "action_list"/Struct(
 )
 
 action = "action"/Struct(
-    Embedded(moving),
+    Embedded(base_moving),
     "waiting"/Byte,
     "command_flag"/Byte,
     "selected_group_info"/Int16ul,
