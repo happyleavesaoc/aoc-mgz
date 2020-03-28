@@ -23,8 +23,6 @@ compressed_header = Struct(
     replay,
     map_info,
     initial,
-)
-x = (
     achievements,
     scenario,
     lobby,

@@ -5,7 +5,7 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16
                        Switch, Pass, RepeatUntil, Bytes, LazyBound)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
-from mgz.util import Find
+from mgz.util import Find, Version, find_version
 from mgz.header.unit_type import unit_type
 
 # pylint: disable=invalid-name
@@ -41,7 +41,6 @@ sprite_list = "sprite_list"/Struct(
     )))
 )
 
-
 static = "static"/Struct(
     "object_type"/Int16ul,
     "sprite"/Int16ul,
@@ -68,11 +67,22 @@ static = "static"/Struct(
     "under_attack"/Byte,
     "pathing_group_len"/Int32ul,
     "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul),
-    "debug"/Bytes(24),
-    #"group_id"/Int32sl,
-    #"roo_already_called"/Byte,
+    "group_id"/Int32sl,
+    "roo_already_called"/Byte,
+    "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(19)),
     "has_sprite_list"/Byte,
-    "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list))
+    "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list)),
+    "de_effect_block"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
+        Padding(4),
+        "has_effect"/Byte,
+        "effect"/If(lambda ctx: ctx.has_effect == 1, Struct(
+            Padding(3),
+            "length"/Int16ul,
+            "name"/Bytes(lambda ctx: ctx.length),
+            Padding(33)
+        )),
+        Padding(5)
+    ))
 )
 
 
@@ -80,7 +90,6 @@ animated = "animated"/Struct(
     Embedded(static),
     "turn_speed"/Float32l
 )
-
 
 path_data = "path_data"/Struct(
     "id"/Int32ul,
@@ -112,9 +121,6 @@ movement_data = "movement"/Struct(
 
 moving = "moving"/Struct(
     Embedded(animated),
-    "has_effect"/Byte,
-    "effect"/If(lambda ctx: ctx.has_effect == 1, Bytes(48)),
-    "more"/Bytes(9),
     "trail_remainder"/Int32ul,
     "velocity"/vector,
     "angle"/Float32l,
@@ -132,7 +138,7 @@ moving = "moving"/Struct(
     "future_path_data"/If(lambda ctx: ctx.has_future_path_data > 0, path_data),
     "has_movement_data"/Int32ul,
     "movement_data"/If(lambda ctx: ctx.has_movement_data > 0, movement_data),
-    "unk"/Bytes(2),
+    "de_moving_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Int16ul),
     "position"/vector,
     "orientation_forward"/vector,
     "orientation_right"/vector,
@@ -321,13 +327,14 @@ unit_ai = "ai"/Struct(
     "num_retarget_entries"/Int32ul,
     "retarget_entries"/Array(lambda ctx: ctx.num_retarget_entries, retarget),
     "best_unit_to_attack"/Int32ul,
-    "formation_type"/Byte
+    "formation_type"/Byte,
+    "de_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(4))
 )
 
 
 combat = "combat"/Struct(
     Embedded(base_combat),
-    "de"/Bytes(18),
+    "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(18)),
     "next_volley"/Byte,
     "using_special_animation"/Byte,
     "own_base"/Byte,
@@ -339,7 +346,11 @@ combat = "combat"/Struct(
     "inside_garrison_count"/Byte,
     "has_ai"/Int32ul,
     "ai"/If(lambda ctx: ctx.has_ai > 0, unit_ai),
-    "dz"/Bytes(4),
+    "peek"/Peek(Bytes(5)), # TODO: figure out the right way to do this part
+    "de_position"/If(lambda ctx: ctx.peek != b'\x00\xff\xff\xff\xff', Struct(
+        "position"/vector,
+        "flag"/Byte,
+    )),
     "town_bell_flag"/Byte,
     "town_bell_target_id"/Int32sl,
     "town_bell_target_x"/Float32l,
@@ -372,10 +383,10 @@ building = "building"/Struct(
     "desolid_flag"/Byte,
     "pending_order"/Int32ul,
     "linked_owner"/Int32sl,
-    "linked_children"/Array(4, Int32sl),
+    "linked_children"/Array(lambda ctx: 3 if find_version(ctx) == Version.DE else 4, Int32sl),
     "captured_unit_count"/Byte,
     "extra_actions"/action_list,
-    "research_actions"/action_list,
+    "research_actions"/If(lambda ctx: find_version(ctx) != Version.DE, action_list),
     "capacity"/Int16ul,
     "production_queue"/Array(lambda ctx: ctx.capacity, production_queue),
     "size"/Int16ul,
@@ -390,6 +401,7 @@ building = "building"/Struct(
     "terrain_type"/Byte,
     "semi_asleep"/Byte,
     "snow_flag"/Byte,
+    "de_flag_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Byte)
 )
 
 # Objects that exist on the map at the start of the recorded game
@@ -409,14 +421,6 @@ existing_object = "objects"/Struct(
         90: static
     }, default=Pass)),
 )
-
-existing_object = "objects"/Struct(
-    "type"/Byte,
-    "player_id"/Byte,
-    "properties"/building
-)
-
-
 
 # Default values for objects, nothing of real interest
 default_object = "default_object"/Struct(

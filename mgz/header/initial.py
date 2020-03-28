@@ -51,6 +51,17 @@ attributes = "attributes"/Struct(
 )
 
 
+def can_parse_objects(ctx):
+    """Objects cannot be parsed for all version."""
+    if ctx._.restore_time != 0:
+        return False
+    if ctx._._.version in [Version.USERPATCH14, Version.USERPATCH14RC2, Version.USERPATCH15]:
+        return True
+    if ctx._._.version == Version.DE and ctx._._.save_version >= 13.06:
+        return True
+    return False
+
+
 # Initial state of players, including Gaia.
 player = "players"/Struct(
     "type"/Byte,
@@ -58,7 +69,7 @@ player = "players"/Struct(
     attributes,
     "end_of_attr"/Tell,
     "start_of_objects"/Find(b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00', None),
-    Embedded(IfThenElse(lambda ctx: ctx._.restore_time == 0 and ctx._._.version == Version.USERPATCH15,
+    Embedded(IfThenElse(lambda ctx: can_parse_objects(ctx),
         Struct(
             "objects"/RepeatUpTo(b'\x00', existing_object),
             Const(b'\x00\x0b'),
@@ -89,16 +100,6 @@ player = "players"/Struct(
     "end_of_objects"/GotoObjectsEnd()
 )
 
-player = "players"/Struct(
-    "type"/Byte,
-    "unk"/Byte,
-    attributes,
-    "end_of_attr"/Tell,
-    "start_of_objects"/Find(b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00', None),
-    "objects"/Array(1, existing_object),
-    "end_of_objects"/GotoObjectsEnd()
-)
-
 
 # Initial state.
 initial = "initial"/Struct(
@@ -106,7 +107,6 @@ initial = "initial"/Struct(
     "num_particles"/Int32ul,
     "particles"/Bytes(lambda ctx: ctx.num_particles * 27),
     "identifier"/Int32ul,
-    #Array(lambda ctx: ctx._.replay.num_players, player),
-    Array(2, player),
+    Array(lambda ctx: ctx._.replay.num_players, player),
     Padding(21),
 )
