@@ -32,8 +32,8 @@ animated_sprite = "animated_sprite"/Struct(
 
 sprite_list = "sprite_list"/Struct(
     "type"/Byte,
-    If(lambda ctx: ctx.type != 0, active_sprite),
-    If(lambda ctx: ctx.type == 2, animated_sprite),
+    "active"/If(lambda ctx: ctx.type != 0, active_sprite),
+    "animated"/If(lambda ctx: ctx.type == 2, animated_sprite),
     Embedded(If(lambda ctx: ctx.type != 0, Struct(
         "order"/Byte,
         "flag"/Byte,
