@@ -85,6 +85,13 @@ def get_version(game_version, save_version):
     raise ValueError('unsupported version: {}, {}'.format(game_version, save_version))
 
 
+def find_version(ctx):
+    """Test version."""
+    if 'version' not in ctx:
+        return find_version(ctx._)
+    return ctx.version
+
+
 def check_flags(peek):
     """Check byte sequence for only flag bytes."""
     for i in peek:
