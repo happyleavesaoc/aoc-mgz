@@ -32,8 +32,8 @@ animated_sprite = "animated_sprite"/Struct(
 
 sprite_list = "sprite_list"/Struct(
     "type"/Byte,
-    If(lambda ctx: ctx.type != 0, active_sprite),
-    If(lambda ctx: ctx.type == 2, animated_sprite),
+    "active"/If(lambda ctx: ctx.type != 0, active_sprite),
+    "animated"/If(lambda ctx: ctx.type == 2, animated_sprite),
     Embedded(If(lambda ctx: ctx.type != 0, Struct(
         "order"/Byte,
         "flag"/Byte,
@@ -68,8 +68,9 @@ static = "static"/Struct(
     "under_attack"/Byte,
     "pathing_group_len"/Int32ul,
     "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul),
-    "group_id"/Int32sl,
-    "roo_already_called"/Byte,
+    "debug"/Bytes(24),
+    #"group_id"/Int32sl,
+    #"roo_already_called"/Byte,
     "has_sprite_list"/Byte,
     "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list))
 )
@@ -111,6 +112,9 @@ movement_data = "movement"/Struct(
 
 moving = "moving"/Struct(
     Embedded(animated),
+    "has_effect"/Byte,
+    "effect"/If(lambda ctx: ctx.has_effect == 1, Bytes(48)),
+    "more"/Bytes(9),
     "trail_remainder"/Int32ul,
     "velocity"/vector,
     "angle"/Float32l,
@@ -128,6 +132,7 @@ moving = "moving"/Struct(
     "future_path_data"/If(lambda ctx: ctx.has_future_path_data > 0, path_data),
     "has_movement_data"/Int32ul,
     "movement_data"/If(lambda ctx: ctx.has_movement_data > 0, movement_data),
+    "unk"/Bytes(2),
     "position"/vector,
     "orientation_forward"/vector,
     "orientation_right"/vector,
@@ -322,6 +327,7 @@ unit_ai = "ai"/Struct(
 
 combat = "combat"/Struct(
     Embedded(base_combat),
+    "de"/Bytes(18),
     "next_volley"/Byte,
     "using_special_animation"/Byte,
     "own_base"/Byte,
@@ -333,6 +339,7 @@ combat = "combat"/Struct(
     "inside_garrison_count"/Byte,
     "has_ai"/Int32ul,
     "ai"/If(lambda ctx: ctx.has_ai > 0, unit_ai),
+    "dz"/Bytes(4),
     "town_bell_flag"/Byte,
     "town_bell_target_id"/Int32sl,
     "town_bell_target_x"/Float32l,
@@ -402,6 +409,14 @@ existing_object = "objects"/Struct(
         90: static
     }, default=Pass)),
 )
+
+existing_object = "objects"/Struct(
+    "type"/Byte,
+    "player_id"/Byte,
+    "properties"/building
+)
+
+
 
 # Default values for objects, nothing of real interest
 default_object = "default_object"/Struct(

@@ -89,6 +89,16 @@ player = "players"/Struct(
     "end_of_objects"/GotoObjectsEnd()
 )
 
+player = "players"/Struct(
+    "type"/Byte,
+    "unk"/Byte,
+    attributes,
+    "end_of_attr"/Tell,
+    "start_of_objects"/Find(b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00', None),
+    "objects"/Array(1, existing_object),
+    "end_of_objects"/GotoObjectsEnd()
+)
+
 
 # Initial state.
 initial = "initial"/Struct(
@@ -96,6 +106,7 @@ initial = "initial"/Struct(
     "num_particles"/Int32ul,
     "particles"/Bytes(lambda ctx: ctx.num_particles * 27),
     "identifier"/Int32ul,
-    Array(lambda ctx: ctx._.replay.num_players, player),
+    #Array(lambda ctx: ctx._.replay.num_players, player),
+    Array(2, player),
     Padding(21),
 )
