@@ -1,23 +1,23 @@
 """Map info."""
 
 from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
-                       Int32ul, Padding, Struct, Int16sl, If)
+                       Int32ul, Padding, Struct, Int16sl, If, Peek)
 
 from mgz.util import Version
 
 # pylint: disable=invalid-name, bad-continuation
 
 
-# Represents a single map type, defined by terrain type and elevation.
+# Represents a single map tile, defined by terrain type and elevation.
 tile = "tile"/Struct(
     "terrain_type"/Byte,
     Embedded(IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         Embedded(Struct(
-            "terrain_type"/Byte,
+            Padding(1), # copy of previous byte
             "elevation"/Byte,
             "unk0"/Int16sl,
             "unk1"/Int16sl,
-            If(lambda ctx: ctx._._._.save_version >= 13.03, "unk2"/Int16sl)
+            If(lambda ctx: ctx._._._.save_version >= 13.03 or ctx._._.check.val > 1000, "unk2"/Int16sl)
         )),
         Embedded(IfThenElse(lambda ctx: ctx.terrain_type == 255, Struct(
             "terrain_type"/Byte,
@@ -47,6 +47,7 @@ map_info = "map_info"/Struct(
     )),
     "all_visible"/Flag,
     "fog_of_war"/Flag,
+    "check"/Peek(Struct(Padding(lambda ctx: ctx._.tile_num * 7), "val"/Int32ul)), # DE 12.97 fix
     Array(lambda ctx: ctx.tile_num, tile),
     "num_data"/Int32ul,
     Padding(4),

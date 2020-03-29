@@ -55,9 +55,7 @@ def can_parse_objects(ctx):
     """Objects cannot be parsed for all version."""
     if ctx._.restore_time != 0:
         return False
-    if ctx._._.version in [Version.USERPATCH14, Version.USERPATCH14RC2, Version.USERPATCH15]:
-        return True
-    if ctx._._.version == Version.DE and ctx._._.save_version >= 13.06:
+    if ctx._._.version in [Version.USERPATCH14, Version.USERPATCH14RC2, Version.USERPATCH15, Version.DE]:
         return True
     return False
 
