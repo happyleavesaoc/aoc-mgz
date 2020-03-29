@@ -195,7 +195,7 @@ class Summary: # pylint: disable=too-many-public-methods
             return {
                 p.color_id: p.profile_id
                 for p in self._header.de.players
-                if p.color_id >= 0
+                if p.color_id >= 0 and p.profile_id > 0
             }
         return {}
 
