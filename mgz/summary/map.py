@@ -152,7 +152,7 @@ def get_water_percent(tiles, dataset_id):
     return count/len(tiles)
 
 
-def get_map_data(map_id, instructions, dimension, version, dataset_id, tiles):
+def get_map_data(map_id, instructions, dimension, version, dataset_id, tiles, de_seed=None):
     """Get the map metadata."""
     if instructions == b'\x00':
         raise ValueError('empty instructions')
@@ -167,7 +167,7 @@ def get_map_data(map_id, instructions, dimension, version, dataset_id, tiles):
         'name': name.strip(),
         'size': mgz.const.MAP_SIZES.get(dimension),
         'dimension': dimension,
-        'seed': seed,
+        'seed': de_seed if de_seed else seed,
         'modes': modes,
         'custom': custom,
         'zr': name.startswith('ZR@'),

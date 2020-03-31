@@ -1,6 +1,6 @@
 """Lobby."""
 
-from construct import Array, Byte, Bytes, Flag, Int32ul, Padding, Peek, Struct, If, Computed, Embedded
+from construct import Array, Byte, Bytes, Flag, Int32ul, Padding, Peek, Struct, If, Computed, Embedded, Int32sl
 
 from mgz.enums import GameTypeEnum, RevealMapEnum
 from mgz.util import Version
@@ -43,7 +43,10 @@ lobby = "lobby"/Struct(
             )
         )
     )),
-    If(lambda ctx: ctx._.version == Version.DE,
-        Padding(10)
+    "de"/If(lambda ctx: ctx._.version == Version.DE,
+        Struct(
+            "map_seed"/If(lambda ctx: ctx._._.save_version >= 13.08, Int32sl),
+            Bytes(10)
+        )
     )
 )

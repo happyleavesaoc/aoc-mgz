@@ -145,7 +145,9 @@ def DifficultyEnum(ctx):
         hard=1,
         moderate=2,
         standard=3,
-        easiest=4
+        easiest=4,
+        extreme=5,
+        unknown=6
     )
 
 def OperationEnum(ctx):
@@ -208,7 +210,8 @@ def ResourceLevelEnum(ctx):
         standard=0,
         low=1,
         medium=2,
-        high=3
+        high=3,
+        unknown=5
     )
 
 def RevealMapEnum(ctx):

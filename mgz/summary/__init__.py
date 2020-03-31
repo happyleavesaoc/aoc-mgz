@@ -227,7 +227,7 @@ class Summary: # pylint: disable=too-many-public-methods
         lobby_name = None
         guid_formatted = None
         if self._header.version == Version.DE:
-            lobby_name = self._header.de.lobby_name.decode(self.get_encoding()).strip()
+            lobby_name = self._header.de.lobby_name.value.decode(self.get_encoding()).strip()
             guid = self._header.de.guid.hex()
             guid_formatted = '{}-{}-{}-{}-{}'.format(
                 guid[0:8], guid[8:12], guid[12:16], guid[16:20], guid[20:]
@@ -274,7 +274,8 @@ class Summary: # pylint: disable=too-many-public-methods
                 self._header.map_info.size_x,
                 self._header.version,
                 self.get_dataset()['id'],
-                self._header.map_info.tile
+                self._header.map_info.tile,
+                de_seed=self._header.lobby.de.map_seed if self._header.lobby.de else None
             )
         return self._cache['map']
 

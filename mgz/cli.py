@@ -88,7 +88,7 @@ def print_info(path):
             ['Hash', summary.get_hash().hexdigest()],
             ['Encoding', summary.get_encoding()],
             ['Language', summary.get_language()],
-            ['Map', summary.get_map()['name']] # pylint: disable=unsubscriptable-object
+            ['Map', '{} ({})'.format(summary.get_map()['name'], summary.get_map()['seed'])] # pylint: disable=unsubscriptable-object
         ], tablefmt='plain'))
 
 
