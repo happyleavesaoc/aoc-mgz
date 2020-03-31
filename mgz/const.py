@@ -67,6 +67,8 @@ DE_MAP_NAMES = {
     112: 'Bog Islands',
     122: 'Alpine Lakes',
     125: 'Ravines',
+    139: 'Golden Swamp',
+    140: 'Four Lakes'
 }
 
 MAP_NAMES = {
