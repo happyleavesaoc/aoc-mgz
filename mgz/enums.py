@@ -358,6 +358,7 @@ def ActionEnum(ctx):
         chapter=32,
         de_attackmove=33,
         de_autoscout=38,
+        de_unknown=39,
         ai_command=53,
         ai_queue=100,
         research=101,
