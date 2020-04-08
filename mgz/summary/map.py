@@ -145,8 +145,8 @@ def get_tiles(tiles, dimension):
         yield {
             'x': tile_x,
             'y': tile_y,
-            'terrain_id': tile.terrain_type,
-            'elevation': tile.elevation
+            'terrain_id': tile[0],
+            'elevation': tile[1]
         }
         tile_x += 1
 
@@ -157,7 +157,7 @@ def get_water_percent(tiles, dataset_id):
         return None
     count = 0
     for tile in tiles:
-        if tile.terrain_type in WATER_TERRAIN[dataset_id]:
+        if tile[0] in WATER_TERRAIN[dataset_id]:
             count +=1
     return count/len(tiles)
 
