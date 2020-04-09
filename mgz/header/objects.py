@@ -79,9 +79,10 @@ static = "static"/Struct(
             Padding(3),
             "length"/Int16ul,
             "name"/Bytes(lambda ctx: ctx.length),
-            Padding(33)
+            If(lambda ctx: ctx.length > 0, Padding(33))
         )),
-        Padding(5)
+        If(lambda ctx: ctx.effect is None or (ctx.effect and ctx.effect.length > 0), Byte),
+        Padding(4)
     ))
 )
 
