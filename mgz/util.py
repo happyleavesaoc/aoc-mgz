@@ -158,6 +158,8 @@ class Find(Construct):
     def __init__(self, find, max_length):
         """Initiallize."""
         Construct.__init__(self)
+        if not isinstance(find, list):
+            find = [find]
         self.find = find
         self.max_length = max_length
 
@@ -169,9 +171,14 @@ class Find(Construct):
             read_bytes = stream.read(self.max_length)
         else:
             read_bytes = stream.read()
-        skip = read_bytes.find(self.find) + len(self.find)
-        stream.seek(start + skip)
-        return skip
+        for f in self.find:
+            pos = read_bytes.find(f)
+            if pos == -1:
+                continue
+            skip = pos + len(f)
+            stream.seek(start + skip)
+            return skip
+        raise RuntimeError('could not find bytes')
 
 
 class RepeatUpTo(Subconstruct):
