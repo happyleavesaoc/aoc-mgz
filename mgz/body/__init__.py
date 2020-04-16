@@ -4,14 +4,15 @@ An mgz body is a stream of Operations
 
 An Operation can be:
  - Action: Player input that materially affects the game
- - Message: Either a start-of-game indicator, or chat
- - Synchronization: Time increment and view coordinates of recording player
+ - Chat: Player chat message
+ - Synchronization: Time increment
+ - Viewlock: View coordinates of recording player
  - Embedded: A variety of embedded structures
 """
 
 from construct import (Struct, Byte, Switch, Embedded, Padding,
                        Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
-                       GreedyBytes, Computed, IfThenElse, Int16ul, Int64ul)
+                       GreedyBytes, Computed, IfThenElse, Int16ul, Int64ul, Seek)
 from mgz.enums import ActionEnum, OperationEnum, MessageEnum
 from mgz.body import actions, embedded
 from mgz.util import BoolAdapter
@@ -110,7 +111,7 @@ viewlock = "viewlock"/Struct(
 )
 
 
-# Chat variation of Message.
+# Chat.
 chat = "chat"/Struct(
     Padding(4),
     "length"/Int32ul,
@@ -119,45 +120,21 @@ chat = "chat"/Struct(
 )
 
 
-# Start
+# Start.
 start = "start"/Struct(
+    Seek(-4, whence=1),
     "checksum_interval"/Int32ul,
     BoolAdapter("multiplayer"/Int32ul),
     "rec_owner"/Int32ul,
     BoolAdapter("reveal_map"/Int32ul),
     "use_sequence_numbers"/Int32ul,
-)
-
-
-# AOK start.
-aok_start = "aok_start"/Struct(
-    Embedded(start),
-    "empires2_exe_size"/Int64ul,
-    Padding(4)
-)
-
-
-# AOC start.
-aoc_start = "aoc_start"/Struct(
-    Embedded(start),
-    "number_of_chapters"/Int32ul
-)
-
-
-# DE start.
-de_start = "de_start"/Struct(
-    Padding(4),
-    Embedded(aoc_start)
-)
-
-
-# Message.
-message = "message"/Struct(
-    MessageEnum("subtype"/Peek(Int32ul)),
-    "data"/Switch(lambda ctx: ctx.subtype, {
-        "start": aoc_start,
-        "chat": chat
-    })
+    "number_of_chapters"/Int32ul,
+    "aok_or_de"/Peek(Int32ul),
+    If(lambda ctx: ctx.aok_or_de == 0, Struct(
+        Int32ul,
+        "aok"/Peek(Int32ul),
+        If(lambda ctx: ctx.aok != 2, Int32ul)
+    ))
 )
 
 
@@ -170,9 +147,8 @@ operation = "operation"/Struct(
         "action": action,
         "sync": sync,
         "viewlock": viewlock,
-        "message": message,
-        "de_start": de_start,
-        "aok_start": aok_start,
+        "chat": chat,
+        "start": start,
         "embedded": embedded.embedded
     })),
     "end"/Tell

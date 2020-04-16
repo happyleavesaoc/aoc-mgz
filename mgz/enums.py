@@ -157,9 +157,8 @@ def OperationEnum(ctx):
         action=1,
         sync=2,
         viewlock=3,
-        message=4,
-        de_start=5,
-        aok_start=500,
+        chat=4,
+        start=500,
         default="embedded"
     )
 

@@ -29,8 +29,15 @@ def get_dataset_data(header):
             'name': 'Age of Kings',
             'version': '2.0a'
         }
-    return {
-        'id': 0,
-        'name': 'The Conquerors',
-        'version': '1.0c'
-    }
+    if header.version == Version.AOC10C:
+        return {
+            'id': 0,
+            'name': 'The Conquerors',
+            'version': '1.0c'
+        }
+    if header.version == Version.AOC10:
+        return {
+            'id': 300,
+            'name': 'The Conquerors',
+            'version': '1.0'
+        }

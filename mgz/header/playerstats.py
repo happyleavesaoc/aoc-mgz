@@ -200,7 +200,7 @@ player_stats = "player_stats"/Struct(
     "wood_score"/Float32l,
     "stone_score"/Float32l,
     "gold_score"/Float32l,
-    Embedded(If(this._._._._.version in [Version.AOC, Version.USERPATCH14, Version.USERPATCH15, Version.DE], Struct(
+    Embedded(If(this._._._._.save_version >= 11.76, Struct(
         "wood_bonus0"/Float32l,
         "food_bonus0"/Float32l,
         "relic_rate"/Float32l,

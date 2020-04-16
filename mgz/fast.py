@@ -13,8 +13,6 @@ class Operation(Enum):
     START = 5
     SAVE = 6
 
-START_WRAPPERS = [Operation.VIEWLOCK, Operation.CHAT]
-
 class Action(Enum):
     """Action types."""
     ORDER = 0
@@ -219,7 +217,12 @@ def chat(data):
 
 def start(data):
     """Handle start."""
-    data.read(28)
+    data.read(20)
+    a, b, _ = struct.unpack('<III', data.read(12))
+    if a != 0: # AOC 1.0x
+        data.seek(-12, 1)
+    if b == 2: # DE
+        data.seek(-8, 1)
 
 
 def save(data):
@@ -233,17 +236,13 @@ def save(data):
 def operation(data):
     """Handle body operations."""
     try:
-        op_id, check = struct.unpack('<II', data.read(8))
-        data.seek(-4, 1)
-        if op_id == CHECKSUM_INTERVAL: # AOK
-            return Operation.START, data.read(32)
+        op_id, = struct.unpack('<I', data.read(4))
+        if op_id == CHECKSUM_INTERVAL:
+            return Operation.START, start(data)
         try:
             op_type = Operation(op_id)
         except ValueError:
             return Operation.SAVE, save(data)
-        if op_type in START_WRAPPERS and check == CHECKSUM_INTERVAL: # AOC
-            data.seek(-4, 1)
-            return Operation.START, start(data)
         if op_type == Operation.ACTION:
             return op_type, action(data)
         if op_type == Operation.SYNC:
@@ -252,8 +251,6 @@ def operation(data):
             return op_type, viewlock(data)
         if op_type == Operation.CHAT:
             return op_type, chat(data)
-        if op_type == Operation.START:
-            return op_type, start(data)
     except struct.error:
         raise EOFError
     raise RuntimeError("unknown data received")

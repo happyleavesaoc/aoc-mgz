@@ -17,7 +17,7 @@ from mgz.header.de import de
 compressed_header = Struct(
     "game_version"/CString(encoding='latin1'),
     "save_version"/VersionAdapter(Float32l),
-    "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version)),
+    "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, None)),
     "de"/If(lambda ctx: ctx.version == Version.DE, de),
     ai,
     replay,
@@ -38,5 +38,7 @@ subheader = Struct(
 """Header is compressed"""
 header = Struct(
     "header_length"/Int32ul,
-    Embedded(subheader)
+    Embedded(subheader),
+    "patch"/If(lambda ctx: ctx.save_version >= 11.76, Int32ul),
+    "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, ctx.patch))
 )

@@ -27,7 +27,7 @@ class Version(Enum):
     for consistency.
     """
     AOK = 1
-    AOC = 5
+    AOC10 = 5
     AOC10C = 8
     USERPATCH12 = 12
     USERPATCH13 = 13
@@ -64,14 +64,17 @@ class ZlibCompressed(Tunnel):
         return zlib.decompress(data, wbits=-15)
 
 
-def get_version(game_version, save_version):
+def get_version(game_version, save_version, patch_version):
     """Get version based on version fields."""
     if game_version == 'VER 9.3':
         return Version.AOK
     if game_version == 'VER 9.4':
-        if save_version >= 12.97:
+        if patch_version == 3:
+            return Version.AOC10
+        if patch_version == 4:
+            return Version.AOC10C
+        if patch_version == 5 or save_version >= 12.97:
             return Version.DE
-        return Version.AOC
     if game_version == 'VER 9.8':
         return Version.USERPATCH12
     if game_version == 'VER 9.9':
@@ -82,7 +85,8 @@ def get_version(game_version, save_version):
         return Version.USERPATCH14
     if game_version in ['VER 9.E', 'VER 9.F']:
         return Version.USERPATCH15
-    raise ValueError('unsupported version: {}, {}'.format(game_version, save_version))
+    if patch_version is not None or game_version != 'VER 9.4':
+        raise ValueError('unsupported version: {}, {}, {}'.format(game_version, save_version, patch_version))
 
 
 def find_version(ctx):
