@@ -4,7 +4,6 @@ from enum import Enum
 
 CHECKSUM_INTERVAL = 500
 
-
 class Operation(Enum):
     """Operation types."""
     ACTION = 1
@@ -14,6 +13,7 @@ class Operation(Enum):
     START = 5
     SAVE = 6
 
+START_WRAPPERS = [Operation.VIEWLOCK, Operation.CHAT]
 
 class Action(Enum):
     """Action types."""
@@ -212,18 +212,14 @@ def action(data):
 
 def chat(data):
     """Handle chat."""
-    check, length = struct.unpack('<II', data.read(8))
-    if check == CHECKSUM_INTERVAL:
-        data.seek(-4, 1)
-        start(data)
-        return None
+    _, length = struct.unpack('<II', data.read(8))
     msg = data.read(length)
     return msg
 
 
 def start(data):
     """Handle start."""
-    return data.read(28)
+    data.read(28)
 
 
 def save(data):
@@ -237,13 +233,17 @@ def save(data):
 def operation(data):
     """Handle body operations."""
     try:
-        op_id, = struct.unpack('<I', data.read(4))
+        op_id, check = struct.unpack('<II', data.read(8))
+        data.seek(-4, 1)
         if op_id == CHECKSUM_INTERVAL: # AOK
             return Operation.START, data.read(32)
         try:
             op_type = Operation(op_id)
         except ValueError:
             return Operation.SAVE, save(data)
+        if op_type in START_WRAPPERS and check == CHECKSUM_INTERVAL: # AOC
+            data.seek(-4, 1)
+            return Operation.START, start(data)
         if op_type == Operation.ACTION:
             return op_type, action(data)
         if op_type == Operation.SYNC:
