@@ -39,6 +39,6 @@ subheader = Struct(
 header = Struct(
     "header_length"/Int32ul,
     Embedded(subheader),
-    "patch"/If(lambda ctx: ctx.save_version >= 11.76, Int32ul),
-    "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, ctx.patch))
+    "log_version"/If(lambda ctx: ctx.save_version >= 11.76, Peek(Int32ul)),
+    "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, ctx.log_version))
 )

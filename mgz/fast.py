@@ -233,12 +233,22 @@ def save(data):
     data.read(length - pos - 8)
 
 
+def meta(data):
+    first, = struct.unpack('<I', data.read(4))
+    if first != 500: # Not AOK
+        data.read(4)
+    data.read(20)
+    a, b, _ = struct.unpack('<III', data.read(12))
+    if a != 0: # AOC 1.0x
+        data.seek(-12, 1)
+    if b == 2: # DE
+        data.seek(-8, 1)
+
+
 def operation(data):
     """Handle body operations."""
     try:
         op_id, = struct.unpack('<I', data.read(4))
-        if op_id == CHECKSUM_INTERVAL:
-            return Operation.START, start(data)
         try:
             op_type = Operation(op_id)
         except ValueError:

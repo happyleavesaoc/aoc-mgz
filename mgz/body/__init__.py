@@ -13,7 +13,7 @@ An Operation can be:
 from construct import (Struct, Byte, Switch, Embedded, Padding,
                        Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
                        GreedyBytes, Computed, IfThenElse, Int16ul, Int64ul, Seek)
-from mgz.enums import ActionEnum, OperationEnum, MessageEnum
+from mgz.enums import ActionEnum, OperationEnum
 from mgz.body import actions, embedded
 from mgz.util import BoolAdapter
 
@@ -137,6 +137,24 @@ start = "start"/Struct(
     ))
 )
 
+# Meta.
+meta = "meta"/Struct(
+    "next"/Peek(Int32ul),
+    "log_version"/If(lambda ctx: ctx.next != 500, Int32ul),
+    "checksum_interval"/Int32ul,
+    BoolAdapter("multiplayer"/Int32ul),
+    "rec_owner"/Int32ul,
+    BoolAdapter("reveal_map"/Int32ul),
+    "use_sequence_numbers"/Int32ul,
+    "number_of_chapters"/Int32ul,
+    "aok_or_de"/Peek(Int32ul),
+    "m"/If(lambda ctx: ctx.aok_or_de == 0, Struct(
+        "v"/Int32ul,
+        "aok"/Peek(Int32ul),
+        "z"/If(lambda ctx: ctx.aok != 2, Int64ul)
+    ))
+)
+
 
 # Operation.
 operation = "operation"/Struct(
@@ -148,7 +166,6 @@ operation = "operation"/Struct(
         "sync": sync,
         "viewlock": viewlock,
         "chat": chat,
-        "start": start,
         "embedded": embedded.embedded
     })),
     "end"/Tell

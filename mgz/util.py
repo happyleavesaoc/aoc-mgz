@@ -65,16 +65,16 @@ class ZlibCompressed(Tunnel):
         return zlib.decompress(data, wbits=-15)
 
 
-def get_version(game_version, save_version, patch_version):
+def get_version(game_version, save_version, log_version):
     """Get version based on version fields."""
     if game_version == 'VER 9.3':
         return Version.AOK
     if game_version == 'VER 9.4':
-        if patch_version == 3:
+        if log_version == 3:
             return Version.AOC10
-        if patch_version == 4:
+        if log_version == 4:
             return Version.AOC10C
-        if patch_version == 5 or save_version >= 12.97:
+        if log_version == 5 or save_version >= 12.97:
             return Version.DE
         return Version.AOC
     if game_version == 'VER 9.8':
@@ -87,8 +87,8 @@ def get_version(game_version, save_version, patch_version):
         return Version.USERPATCH14
     if game_version in ['VER 9.E', 'VER 9.F']:
         return Version.USERPATCH15
-    if patch_version is not None or game_version != 'VER 9.4':
-        raise ValueError('unsupported version: {}, {}, {}'.format(game_version, save_version, patch_version))
+    if log_version is not None or game_version != 'VER 9.4':
+        raise ValueError('unsupported version: {}, {}, {}'.format(game_version, save_version, log_version))
 
 
 def find_version(ctx):

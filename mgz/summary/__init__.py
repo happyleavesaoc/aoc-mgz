@@ -72,8 +72,6 @@ class Summary: # pylint: disable=too-many-public-methods
                 self.get_diplomacy().get('type'), self.get_players()
             )
             body_pos = self._handle.tell()
-            if self.get_version()[0] != Version.AOK:
-                self._handle.seek(-4, 1)
             self._cache['file_hash'] = hashlib.sha1(self._handle.read()).hexdigest()
             self._handle.seek(body_pos)
             self._process_body()
@@ -91,6 +89,7 @@ class Summary: # pylint: disable=too-many-public-methods
         rated = None
         i = 0
         duration = self._header.initial.restore_time
+        fast.meta(self._handle)
         while True:
             try:
                 operation, payload = fast.operation(self._handle)
@@ -175,7 +174,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def get_version(self):
         """Get game version."""
-        return self._header.version, self._header.game_version, self._header.save_version
+        return self._header.version, self._header.game_version, self._header.save_version, self.header.log_version
 
     def get_owner(self):
         """Get rec owner (POV)."""

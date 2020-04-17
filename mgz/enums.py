@@ -158,16 +158,7 @@ def OperationEnum(ctx):
         sync=2,
         viewlock=3,
         chat=4,
-        start=500,
         default="embedded"
-    )
-
-def MessageEnum(ctx):
-    """Message Type Enumeration."""
-    return Enum(
-        ctx,
-        start=500,
-        default="chat"
     )
 
 def ResourceEnum(ctx):
