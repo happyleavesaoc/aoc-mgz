@@ -27,6 +27,7 @@ class Version(Enum):
     for consistency.
     """
     AOK = 1
+    AOC = 4
     AOC10 = 5
     AOC10C = 8
     USERPATCH12 = 12
@@ -75,6 +76,7 @@ def get_version(game_version, save_version, patch_version):
             return Version.AOC10C
         if patch_version == 5 or save_version >= 12.97:
             return Version.DE
+        return Version.AOC
     if game_version == 'VER 9.8':
         return Version.USERPATCH12
     if game_version == 'VER 9.9':

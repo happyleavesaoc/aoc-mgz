@@ -83,6 +83,7 @@ def print_info(path):
             ['Completed', summary.get_completed()],
             ['Restored', header.initial.restore_time > 0],
             ['Postgame', bool(summary.get_postgame())],
+            ['Objects', bool(summary.get_objects()['objects'])],
             ['Version', '{} ({}, {}, {})'.format(header.version.name, header.game_version, header.save_version, header.patch)],
             ['Dataset', '{} {}'.format(dataset['name'], dataset['version'])],
             ['File Hash', summary.get_file_hash()],

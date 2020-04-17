@@ -51,15 +51,6 @@ attributes = "attributes"/Struct(
 )
 
 
-def can_parse_objects(ctx):
-    """Objects cannot be parsed for all version."""
-    if ctx._.restore_time != 0:
-        return False
-    if ctx._._.version in [Version.AOC10C, Version.USERPATCH14, Version.USERPATCH14RC2, Version.USERPATCH15, Version.DE]:
-        return True
-    return False
-
-
 # Initial state of players, including Gaia.
 player = "players"/Struct(
     "type"/Byte,
@@ -67,7 +58,7 @@ player = "players"/Struct(
     attributes,
     "end_of_attr"/Tell,
     "start_of_objects"/Find([b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00', b'\x0b\x00\x0e\x00\x00\x00\x02\x00\x00'], None),
-    Embedded(IfThenElse(lambda ctx: can_parse_objects(ctx),
+    Embedded(IfThenElse(lambda ctx: ctx._.restore_time == 0,
         Struct(
             "objects"/RepeatUpTo(b'\x00', existing_object),
             Const(b'\x00\x0b'),

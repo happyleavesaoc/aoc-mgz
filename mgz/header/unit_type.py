@@ -1,8 +1,9 @@
 """Unit Types."""
 from construct import (
-    Struct, Float32l, Int16ul, Byte, Embedded, Switch,
-    Int32ul, Array, String, Padding, this
+    Struct, Float32l, Int16ul, Byte, Embedded, Switch, If,
+    Int32ul, Array, String, Padding, IfThenElse, this
 )
+from mgz.util import find_version, Version
 
 attribute = "attribute"/Struct(
     "type"/Int16ul,
@@ -80,7 +81,7 @@ base = "base"/Struct(
     "occlusion_mask"/Byte,
     "obstruction_type"/Byte,
     "selection_shape"/Byte,
-    "object_flags"/Int32ul,
+    "object_flags"/If(lambda ctx: find_version(ctx) != Version.AOK, Int32ul),
     "civilization"/Byte,
     "attribute_piece"/Byte,
     "outline_radius"/Struct(
@@ -142,7 +143,7 @@ weapon = "weapon"/Struct(
 
 base_combat = "base_combat"/Struct(
     action,
-    "base_armour"/Int16ul,
+    "base_armour"/IfThenElse(lambda ctx: find_version(ctx) != Version.AOK, Int16ul, Byte),
     "num_weapons"/Int16ul,
     "weapons"/Array(this.num_weapons, weapon),
     "num_armours"/Int16ul,
@@ -219,7 +220,7 @@ linked_building = "link"/Struct(
 
 building = "building"/Struct(
     "construction_sprite"/Int16ul,
-    "snow_sprite"/Int16ul,
+    "snow_sprite"/If(lambda ctx: find_version(ctx) != Version.AOK, Int16ul),
     "connect_flag"/Byte,
     "facet"/Int16ul,
     "destroy_on_build"/Byte,

@@ -2,14 +2,13 @@
 
 from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16ub,
                        Int16ul, Int32ub, Int32ul, Padding, Peek, Struct, Int32sl,
-                       Switch, Pass, RepeatUntil, Bytes, LazyBound)
+                       Switch, Pass, RepeatUntil, Bytes, LazyBound, IfThenElse)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
 from mgz.util import Find, Version, find_version
 from mgz.header.unit_type import unit_type
 
 # pylint: disable=invalid-name
-
 
 
 active_sprite = "active_sprite"/Struct(
@@ -59,6 +58,7 @@ static = "static"/Struct(
     "screen_offset_y"/Int16ul,
     "shadow_offset_x"/Int16ul,
     "shadow_offset_y"/Int16ul,
+    "selected_group"/If(lambda ctx: find_version(ctx) == Version.AOK, Byte),
     ResourceEnum("resource_type"/Int16sl),
     "amount"/Float32l,
     "worker_count"/Byte,
@@ -98,8 +98,6 @@ path_data = "path_data"/Struct(
     "waypoint_level"/Int32ul,
     "path_id"/Int32ul,
     "waypoint"/Int32ul,
-    #"disable_flags"/Int32sl,
-    #"enable_flags"/Int32sl,
     "state"/Int32sl,
     "range"/Float32l,
     "target_id"/Int32ul,
@@ -185,7 +183,7 @@ attack = "attack"/Struct(
 unit_action = Struct(
     "type"/Int16ul,
     "data"/If(lambda ctx: ctx.type > 0, Struct(
-        "state"/Int32ul,
+        "state"/IfThenElse(lambda ctx: find_version(ctx) in [Version.AOK, Version.AOC], Byte, Int32ul),
         "target_object_pointer"/Int32sl,
         "target_object_pointer2"/Int32sl,
         "target_object_id"/Int32sl,
@@ -214,7 +212,7 @@ action = "action"/Struct(
     Embedded(base_moving),
     "waiting"/Byte,
     "command_flag"/Byte,
-    "selected_group_info"/Int16ul,
+    "selected_group_info"/If(lambda ctx: find_version(ctx) != Version.AOK, Int16ul),
     "actions"/action_list
 )
 
@@ -349,7 +347,7 @@ combat = "combat"/Struct(
     "decay_timer"/Int16ul,
     "raider_build_countdown"/Int32ul,
     "locked_down_count"/Int32ul,
-    "inside_garrison_count"/Byte,
+    "inside_garrison_count"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
     "has_ai"/Int32ul,
     "ai"/If(lambda ctx: ctx.has_ai > 0, unit_ai),
     "peek"/Peek(Bytes(5)), # TODO: figure out the right way to do this part
@@ -361,12 +359,12 @@ combat = "combat"/Struct(
     "town_bell_target_id"/Int32sl,
     "town_bell_target_x"/Float32l,
     "town_bell_target_y"/Float32l,
-    "town_bell_target_id_2"/Int32sl,
-    "town_bell_target_type"/Int32sl,
-    "town_bell_action"/Int32sl,
+    "town_bell_target_id_2"/If(lambda ctx: find_version(ctx) != Version.AOK, Int32sl),
+    "town_bell_target_type"/If(lambda ctx: find_version(ctx) != Version.AOK, Int32sl),
+    "town_bell_action"/If(lambda ctx: find_version(ctx) != Version.AOK, Int32sl),
     "berserker_timer"/Float32l,
     "num_builders"/Byte,
-    "num_healers"/Byte
+    "num_healers"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
 )
 
 production_queue = "production_queue"/Struct(
@@ -406,7 +404,7 @@ building = "building"/Struct(
     "close_timer"/Int32ul,
     "terrain_type"/Byte,
     "semi_asleep"/Byte,
-    "snow_flag"/Byte,
+    "snow_flag"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
     "de_flag_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Byte)
 )
 
