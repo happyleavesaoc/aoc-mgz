@@ -37,7 +37,7 @@ def get_dataset_data(header):
         }
     if header.version == Version.AOC10:
         return {
-            'id': 300,
+            'id': 0,
             'name': 'The Conquerors',
             'version': '1.0'
         }

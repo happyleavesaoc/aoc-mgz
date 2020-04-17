@@ -64,6 +64,7 @@ DE_MAP_NAMES = {
     81: 'CtR Pyramid Descent',
     82: 'CtR Spiral',
     86: 'Serengeti',
+    108: 'Indochina',
     112: 'Bog Islands',
     122: 'Alpine Lakes',
     125: 'Ravines',
