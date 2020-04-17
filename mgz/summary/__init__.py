@@ -72,6 +72,8 @@ class Summary: # pylint: disable=too-many-public-methods
                 self.get_diplomacy().get('type'), self.get_players()
             )
             body_pos = self._handle.tell()
+            if self.get_version()[0] != Version.AOK:
+                self._handle.seek(-4, 1)
             self._cache['file_hash'] = hashlib.sha1(self._handle.read()).hexdigest()
             self._handle.seek(body_pos)
             self._process_body()

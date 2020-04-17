@@ -85,7 +85,8 @@ def print_info(path):
             ['Postgame', bool(summary.get_postgame())],
             ['Version', '{} ({}, {}, {})'.format(header.version.name, header.game_version, header.save_version, header.patch)],
             ['Dataset', '{} {}'.format(dataset['name'], dataset['version'])],
-            ['Hash', summary.get_hash().hexdigest() if summary.get_hash() else None],
+            ['File Hash', summary.get_file_hash()],
+            ['Match Hash', summary.get_hash().hexdigest() if summary.get_hash() else None],
             ['Encoding', summary.get_encoding()],
             ['Language', summary.get_language()],
             ['Map', '{} ({})'.format(summary.get_map()['name'], summary.get_map()['seed'])] # pylint: disable=unsubscriptable-object
