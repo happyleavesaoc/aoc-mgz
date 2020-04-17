@@ -174,7 +174,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def get_version(self):
         """Get game version."""
-        return self._header.version, self._header.game_version, self._header.save_version, self.header.log_version
+        return self._header.version, self._header.game_version, self._header.save_version, self._header.log_version
 
     def get_owner(self):
         """Get rec owner (POV)."""

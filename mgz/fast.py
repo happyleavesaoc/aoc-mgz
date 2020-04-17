@@ -234,15 +234,19 @@ def save(data):
 
 
 def meta(data):
-    first, = struct.unpack('<I', data.read(4))
-    if first != 500: # Not AOK
-        data.read(4)
-    data.read(20)
-    a, b, _ = struct.unpack('<III', data.read(12))
-    if a != 0: # AOC 1.0x
-        data.seek(-12, 1)
-    if b == 2: # DE
-        data.seek(-8, 1)
+    """Handle log meta."""
+    try:
+        first, = struct.unpack('<I', data.read(4))
+        if first != 500: # Not AOK
+            data.read(4)
+        data.read(20)
+        a, b, _ = struct.unpack('<III', data.read(12))
+        if a != 0: # AOC 1.0x
+            data.seek(-12, 1)
+        if b == 2: # DE
+            data.seek(-8, 1)
+    except struct.error:
+        raise ValueError("insufficient meta received")
 
 
 def operation(data):
