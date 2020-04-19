@@ -104,7 +104,7 @@ def GameTypeEnum(ctx):
         TurboRandom=8,
         CaptureTheRelic=10,
         SuddenDeath=11,
-        Unknown=13
+        EmpireWars=13
     )
 
 def ObjectTypeEnum(ctx):

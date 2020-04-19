@@ -66,7 +66,7 @@ def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, r
             'score': ach(achievements, ['total_score']),
             'position': (player.attributes.camera_x, player.attributes.camera_y),
             'rate_snapshot': ratings.get(name),
-            'user_id': profile_ids.get(player.attributes.player_color),
+            'user_id': profile_ids.get(i + 1),
             'cheater': (i + 1) in cheaters,
             'achievements': {
                 'military': {
