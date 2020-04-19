@@ -34,3 +34,7 @@ class TestFiles(unittest.TestCase):
     def test_files_fast(self):
         for path in glob.glob('tests/recs/*'):
             parse_file_fast(path)
+
+
+if __name__ == '__main__':
+    unittest.main()

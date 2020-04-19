@@ -45,6 +45,8 @@ def guess_winner(teams, resigned, i):
 def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, ratings, encoding): # pylint: disable=too-many-arguments, too-many-locals
     """Get basic player info."""
     out = []
+
+    # TODO: DE may not have anything in header.initial.players. Use header.de.players instead.
     for i, player in enumerate(header.initial.players[1:]):
         achievements = get_achievements(postgame, player.attributes.player_name)
         if achievements:

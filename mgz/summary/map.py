@@ -61,7 +61,7 @@ WATER_TERRAIN = {
 def extract_from_instructions(instructions):
     """Extract data from instructions."""
     language = None
-    encoding = 'unknown'
+    encoding = 'utf8'
     name = 'Unknown'
     for pair in ENCODING_MARKERS:
         marker = pair[0]
@@ -77,7 +77,7 @@ def extract_from_instructions(instructions):
 
     # disambiguate certain languages
     if not language:
-        language = 'unknown'
+        language = 'utf8'
         for pair in LANGUAGE_MARKERS:
             if instructions.find(pair[0].encode(pair[1])) > -1:
                 language = pair[2]
@@ -97,7 +97,7 @@ def lookup_name(map_id, name, version):
         elif version == Version.AOK:
             return name, False
         else:
-            raise ValueError('unspecified builtin map: ' + str(map_id))
+            name = 'Unknown Map ' + str(map_id)
         custom = False
     return name, custom
 
@@ -147,6 +147,8 @@ def get_tiles(tiles, dimension):
 def get_water_percent(tiles, dataset_id):
     """Get percent of map that is passable by ships."""
     if dataset_id not in WATER_TERRAIN:
+        return None
+    if len(tiles) == 0:
         return None
     count = 0
     for tile in tiles:

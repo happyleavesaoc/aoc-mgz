@@ -1,6 +1,7 @@
 """Achievements."""
 
 from construct import Array, Float32l, Int32ul, Padding, Struct
+from mgz.util import Version
 
 # pylint: disable=invalid-name
 
@@ -48,5 +49,11 @@ player_achievements = "ach"/Struct(
     Padding(4),
 )
 
+def get_num_players(ctx):
+    if ctx.version == Version.DE:
+        return ctx.de.num_players
+    else:
+        return ctx.replay.num_players - 1
+
 """Achievements exist for all players but Gaia"""
-achievements = Array(lambda ctx: ctx.replay.num_players - 1, player_achievements)
+achievements = Array(get_num_players, player_achievements)

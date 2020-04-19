@@ -15,6 +15,7 @@ class Operation(Enum):
 
 class Action(Enum):
     """Action types."""
+    UNKNOWN = -1
     ORDER = 0
     STOP = 1
     WORK = 2
@@ -200,6 +201,8 @@ def action(data):
     action_id = int.from_bytes(data.read(1), 'little')
     action_bytes = data.read(length - 1)
     data.read(4)
+    if action_id not in Action._value2member_map_:
+        return Action.UNKNOWN, []
     action_type = Action(action_id)
     if action_type == Action.POSTGAME:
         payload = dict(bytes=action_bytes + data.read())
