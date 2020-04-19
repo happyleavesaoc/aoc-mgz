@@ -219,6 +219,7 @@ linked_building = "link"/Struct(
 )
 
 building = "building"/Struct(
+    combat,
     "construction_sprite"/Int16ul,
     "snow_sprite"/If(lambda ctx: find_version(ctx) != Version.AOK, Int16ul),
     "connect_flag"/Byte,
