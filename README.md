@@ -20,6 +20,7 @@ from mgz import header, body
 with open('/path/to/file', 'rb') as data:
     eof = os.fstat(data.fileno()).st_size
     header.parse_stream(data)
+    body.meta.parse_stream(data)
     while data.tell() < eof:
         body.operation.parse_stream(data)
 ```
