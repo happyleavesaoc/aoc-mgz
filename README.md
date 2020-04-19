@@ -25,6 +25,21 @@ with open('/path/to/file', 'rb') as data:
         body.operation.parse_stream(data)
 ```
 
+#### Fast Mode
+
+Skips parsing most body operations for faster speed.
+
+```python
+from mgz import header, fast
+
+with open('/path/to/file', 'rb') as data:
+    eof = os.fstat(data.fileno()).st_size
+    header.parse_stream(data)
+    fast.meta(data)
+    while data.tell() < eof:
+        fast.operation(data)
+```
+
 ### Summary
 
 ```python
@@ -36,6 +51,17 @@ with open('/path/to/file', 'rb') as data:
     s.get_platform()
     # ... etc
 ```
+
+## Frequently Asked Questions
+
+**Q:** Where are the end-of-game achievements/statistics?
+**A:** In the `postgame` action, available only from Userpatch version.
+
+**Q:** How can I tell the number of resources/kills/etc at a certain point?
+**A:** You can't, without replaying the match in-game.
+
+**Q:** How does a recorded game file work?
+**A:** The first portion (the `header`) is a snapshot of the initial game state. The second portion (the `body`) is a list of moves made by players. The game loads the header, then applies each move to mutate the state according to the game rules.
 
 ## Contribution
  - Pull requests & patches welcome

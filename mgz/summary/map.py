@@ -12,6 +12,7 @@ ENCODING_MARKERS = [
     ['Tipo de mapa: ', 'latin-1', 'es'],
     ['Ubicación: ', 'utf-8', 'es'],
     ['Ubicaci: ', 'utf-8', 'es'],
+    ['Local: ', 'utf-8', 'es'],
     ['Kartentyp: ', 'latin-1', 'de'],
     ['Karte: ', 'utf-8', 'de'],
     ['Art der Karte: ', 'latin-1', 'de'],
