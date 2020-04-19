@@ -55,12 +55,17 @@ with open('/path/to/file', 'rb') as data:
 ## Frequently Asked Questions
 
 **Q:** Where are the end-of-game achievements/statistics?
+
 **A:** In the `postgame` action, available only from Userpatch version.
 
+
 **Q:** How can I tell the number of resources/kills/etc at a certain point?
+
 **A:** You can't, without replaying the match in-game.
 
+
 **Q:** How does a recorded game file work?
+
 **A:** The first portion (the `header`) is a snapshot of the initial game state. The second portion (the `body`) is a list of moves made by players. The game loads the header, then applies each move to mutate the state according to the game rules.
 
 ## Contribution
