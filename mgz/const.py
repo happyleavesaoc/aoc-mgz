@@ -46,6 +46,7 @@ DE_MAP_NAMES = {
     31: 'Oasis',
     32: 'Ghost Lake',
     33: 'Random Land Map',
+    51: 'Mideast',
     # 59: Custom
     67: 'Acropolis',
     68: 'Budapest',
