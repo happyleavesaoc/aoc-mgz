@@ -7,6 +7,7 @@ import os
 import struct
 import tempfile
 import time
+import uuid
 import zlib
 
 import construct
@@ -226,16 +227,13 @@ class Summary: # pylint: disable=too-many-public-methods
     def get_platform(self):
         """Get platform data."""
         lobby_name = None
-        guid_formatted = None
+        guid = None
         if self._header.version == Version.DE:
             lobby_name = self._header.de.lobby_name.value.decode(self.get_encoding()).strip()
-            guid = self._header.de.guid.hex()
-            guid_formatted = '{}-{}-{}-{}-{}'.format(
-                guid[0:8], guid[8:12], guid[12:16], guid[16:20], guid[20:]
-            )
+            guid = str(uuid.UUID(bytes=self._header.de.guid))
         return {
             'platform_id': self._cache['platform_id'],
-            'platform_match_id': guid_formatted,
+            'platform_match_id': guid,
             'ladder': self._cache['ladder'],
             'rated': self._cache['rated'],
             'ratings': self._cache['ratings'],
