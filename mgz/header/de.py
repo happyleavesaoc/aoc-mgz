@@ -1,7 +1,7 @@
 """Definitive Edition structure."""
 
 from construct import (
-    Struct, Int32ul, Float32l, Array, Padding, Flag,
+    Struct, Int32ul, Float32l, Array, Padding, Flag, If,
     Byte, Int16ul, Bytes, Int32sl, Peek, Const, RepeatUntil
 )
 
@@ -88,6 +88,7 @@ de = "de"/Struct(
     Bytes(3),
     separator,
     Bytes(12),
+    If(lambda ctx: ctx._.save_version >= 13.13, Bytes(5)),
     "strings"/Array(23,
         Struct(
             "string"/de_string,
@@ -106,8 +107,10 @@ de = "de"/Struct(
     "lobby_name"/de_string,
     de_string,
     Bytes(19),
+    If(lambda ctx: ctx._.save_version >= 13.13, Bytes(5)),
     de_string,
     Bytes(5),
+    If(lambda ctx: ctx._.save_version >= 13.13, Byte),
     de_string,
     Int32ul,
     Bytes(4) # usually zero

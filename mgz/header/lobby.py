@@ -28,7 +28,10 @@ lobby = "lobby"/Struct(
         )
     )),
     If(lambda ctx: ctx._.version == Version.DE,
-        Padding(5)
+        Struct(
+            Padding(5),
+            If(lambda ctx: ctx._._.save_version >= 13.13, Padding(4))
+        )
     ),
     Embedded(If(lambda ctx: ctx._.version != Version.AOK,
         Struct(
