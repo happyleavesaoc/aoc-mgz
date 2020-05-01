@@ -161,7 +161,7 @@ def _parse_chat(data, line, players, diplomacy_type):
     message = line[player_end + 2:]
     number = None
     for player_h in players:
-        if player_h['name'] == player:
+        if player_h['name'] in player:
             number = player_h['number']
     data.update({
         'type': Chat.MESSAGE,
