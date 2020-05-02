@@ -107,8 +107,8 @@ def parse_action(action_type, data):
         object_ids = struct.unpack_from('<xx' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids))
     if action_type == Action.RESEARCH:
-        object_id, player_id = struct.unpack_from('<3xIh', data)
-        return dict(player_id=player_id, object_ids=[object_id])
+        object_id, player_id, technology_id = struct.unpack_from('<3xIh2xI', data)
+        return dict(player_id=player_id, technology_id=technology_id, object_ids=[object_id])
     if action_type == Action.FORMATION:
         player_id, formation_id, (*object_ids) = struct.unpack_from('<xhI' + str(data[0]) + 'I', data)
         return dict(player_id=player_id, object_ids=list(object_ids), formation_id=formation_id)

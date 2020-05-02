@@ -32,6 +32,10 @@ def guess_winner(teams, resigned, i):
 
     Find what team the player was on. If anyone
     on their team resigned, assume the player lost.
+
+    If there were no resignations, the game ended
+    by some other condition (wonder, timelimit, etc),
+    assuming it did complete.
     """
     for team in teams:
         if i not in team:
@@ -39,7 +43,9 @@ def guess_winner(teams, resigned, i):
         for j in team:
             if j in resigned:
                 return False
-    return True
+    if len(resigned) > 0:
+        return True
+    return None
 
 
 def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, ratings, encoding): # pylint: disable=too-many-arguments, too-many-locals
