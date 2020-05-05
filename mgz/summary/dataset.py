@@ -10,7 +10,7 @@ def get_dataset_data(header):
         return {
             'id': 100,
             'name': 'Definitive Edition',
-            'version': header.game_version[4:]
+            'version': None
         }
     sample = header.initial.players[0].attributes.player_stats
     if 'mod' in sample and sample.mod['id'] == 0 and sample.mod['version'] == '2':
