@@ -154,7 +154,7 @@ def parse_action(action_type, data):
         player_id, x, y = struct.unpack_from('<x3b', data)
         return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.GAME:
-        return dict(player_id=data[1])
+        return dict(player_id=data[1], mode_id=data[0])
     if action_type == Action.FLARE:
         x, y, player_id = struct.unpack_from('<19x2fb', data)
         return dict(player_id=player_id, x=x, y=y)

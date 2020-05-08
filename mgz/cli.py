@@ -189,6 +189,7 @@ def print_histogram(path):
         operations = defaultdict(int)
         actions = defaultdict(int)
         labels = {}
+        fast.meta(handle)
         while handle.tell() < size:
             op_type, payload = fast.operation(handle)
             operations[op_type.name] += 1
