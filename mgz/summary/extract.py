@@ -15,6 +15,10 @@ CLASS_BUILDING = 80
 TECH_STATE_AVAILABLE = 2
 TECH_STATE_RESEARCHING = 3
 TECH_STATE_DONE = 4
+DE_TECH_STATE_AVAILABLE = 1
+DE_TECH_STATE_RESEARCHING = 2
+DE_TECH_STATE_DONE = 3
+STATUS_WINNER = 1
 
 
 def has_diff(data, **kwargs):
@@ -34,7 +38,7 @@ def flatten_research(research):
     return flat
 
 
-def build_timeseries_record(tick, player):
+def build_fb_timeseries_record(tick, player):
     """Build a timeseries record."""
     return {
         'timestamp': tick,
@@ -71,26 +75,70 @@ def build_timeseries_record(tick, player):
     }
 
 
-def update_research(player_number, tech, research):
+def build_json_timeseries_record(tick, player):
+    """Build a timeseries record."""
+    return {
+        'timestamp': tick,
+        'player_number': player['id'],
+        'population': player['attributes']['population'],
+        'military': player['attributes']['militaryPopulation'],
+        'percent_explored': player['attributes']['percentMapExplored'],
+        'headroom': int(player['attributes']['populationFreeRoom']),
+        'food': int(player['attributes']['food']),
+        'wood': int(player['attributes']['wood']),
+        'stone': int(player['attributes']['stone']),
+        'gold': int(player['attributes']['gold']),
+        'total_housed_time': int(player['cumulativeHousedTime']),
+        'total_popcapped_time': int(player['cumulativePopCappedTime']),
+        'relics_captured': int(player['attributes']['relicsCaptured']),
+        'relic_gold': int(player['attributes']['relicIncomeSum']),
+        'trade_profit': int(player['attributes']['tradeIncomeSum']),
+        'tribute_received': int(player['attributes']['tributeReceived']),
+        'tribute_sent': int(player['attributes']['tributeSent']),
+        'total_food': int(player['attributes']['foodTotalGathered']),
+        'total_wood': int(player['attributes']['woodTotalGathered']),
+        'total_gold': int(player['attributes']['goldTotalGathered']),
+        'total_stone': int(player['attributes']['stoneTotalGathered']),
+        'value_spent_objects': int(player['attributes']['objectCostSum']),
+        'value_spent_research': int(player['attributes']['techCostSum']),
+        'value_lost_units': int(player['attributes']['unitsLostValue']),
+        'value_lost_buildings': int(player['attributes']['buildingsLostValue']),
+        'value_current_units': int(player['attributes']['valueOfArmy']),
+        'value_current_buildings': int(player['attributes']['valueOfBuildings']),
+        'value_objects_destroyed': int(player['attributes']['killsValue'] + player['attributes']['razingsValue']),
+        'value_units_killed': int(player['attributes']['killsValue']),
+        'value_buildings_razed': int(player['attributes']['razingsValue']),
+        'trained': int(player['attributes']['totalUnitsTrained']),
+        'converted': int(player['attributes']['unitsConverted']),
+        'kills': int(player['attributes']['unitsKilled']),
+        'deaths': int(player['attributes']['unitsLost']),
+        'razes': int(player['attributes']['razings']),
+        'buildings_lost': int(player['attributes']['buildingsLost']),
+        'total_score': int(player['victoryPoints']['total']),
+        'military_score': int(player['victoryPoints']['military']),
+        'economy_score': int(player['victoryPoints']['economy']),
+        'society_score': int(player['victoryPoints']['society']),
+        'technology_score': int(player['victoryPoints']['technology'])
+    }
+
+
+def update_research(player_number, state, index, tick, research, researching_state, done_state, available_state):
     """Update research structure."""
-    if tech.State() == TECH_STATE_RESEARCHING and tech.IdIndex() not in research[player_number]:
-        research[player_number][tech.IdIndex()] = {
-            'started': tech.Time(),
+    if state == researching_state and index not in research[player_number]:
+        research[player_number][index] = {
+            'started': tick,
             'finished': None
         }
-    elif tech.State() == TECH_STATE_DONE and tech.IdIndex() in research[player_number]:
-        research[player_number][tech.IdIndex()]['finished'] = tech.Time()
-    elif tech.State() == TECH_STATE_AVAILABLE and tech.IdIndex() in research[player_number]:
-        del research[player_number][tech.IdIndex()]
+    elif state == done_state and index in research[player_number]:
+        research[player_number][index]['finished'] = tick
+    elif state == available_state and index in research[player_number]:
+        del research[player_number][index]
 
 
-def update_market(tick, coefficients, market):
+def update_market(tick, food, wood, stone, market):
     """Update market coefficients structure."""
     last = None
     change = True
-    food = coefficients.Food()
-    wood = coefficients.Wood()
-    stone = coefficients.Stone()
     if market:
         last = market[-1]
         change = has_diff(last, food=food, wood=wood, stone=stone)
@@ -103,23 +151,23 @@ def update_market(tick, coefficients, market):
         })
 
 
-def add_objects(obj, objects):
+def add_objects(owner_id, instance_id, class_id, object_id, created, pos_x, pos_y, objects):
     """Add objects."""
-    player_number = obj.OwnerId() if obj.OwnerId() > 0 else None
-    if obj.MasterObjectClass() not in [CLASS_UNIT, CLASS_BUILDING]:
+    player_number = owner_id if owner_id > 0 else None
+    if class_id not in [CLASS_UNIT, CLASS_BUILDING]:
         return
-    if obj.Id() not in objects:
-        objects[obj.Id()] = {
+    if instance_id not in objects:
+        objects[instance_id] = {
             'initial_player_number': player_number,
-            'initial_object_id': obj.MasterObjectId(),
-            'initial_class_id': obj.MasterObjectClass(),
-            'created': obj.CreatedTime(),
+            'initial_object_id': object_id,
+            'initial_class_id': class_id,
+            'created': created,
             'destroyed': None,
             'destroyed_by_instance_id': None,
             'destroyed_building_percent': None,
             'deleted': False,
-            'created_x': obj.Position().X(),
-            'created_y': obj.Position().Y(),
+            'created_x': pos_x,
+            'created_y': pos_y,
             'destroyed_x': None,
             'destroyed_y': None,
             'building_started': None,
@@ -128,59 +176,57 @@ def add_objects(obj, objects):
         }
 
 
-def update_objects(tick, obj, objects, state, last):
+def update_objects(tick, owner_id, instance_id, class_id, object_id, killed, deleted, pos_x, pos_y, percent, killed_by, start, complete, idle, tech_id, objects, state, last):
     """Update object/state structures."""
-    player_number = obj.OwnerId() if obj.OwnerId() > 0 else None
-    if obj.MasterObjectClass() not in [CLASS_UNIT, CLASS_BUILDING]:
-        return
-    if obj.KilledTime() > 0 and obj.Id() in objects:
+    player_number = owner_id if owner_id and owner_id > 0 else None
+    if killed and killed > 0 and instance_id in objects:
         data = {
-            'destroyed': obj.KilledTime(),
-            'deleted': obj.DeletedByOwner()
+            'destroyed': killed,
+            'deleted': deleted
         }
-        if obj.MasterObjectClass() == CLASS_UNIT:
+        if class_id == CLASS_UNIT:
             data.update({
-                'destroyed_x': obj.Position().X(),
-                'destroyed_y': obj.Position().Y()
+                'destroyed_x': pos_x,
+                'destroyed_y': pos_y
             })
-        elif obj.MasterObjectClass() == CLASS_BUILDING:
-            data['destroyed_building_percent'] = obj.BuildingPercentComplete()
-        if obj.KilledByUnitId() in objects:
+        elif class_id == CLASS_BUILDING:
+            data['destroyed_building_percent'] = percent
+        if killed in objects:
             data.update({
-                'destroyed_by_instance_id': obj.KilledByUnitId()
+                'destroyed_by_instance_id': killed_by
             })
-        objects[obj.Id()].update(data)
+        objects[instance_id].update(data)
 
-    if obj.MasterObjectClass() == CLASS_BUILDING and obj.Id() in objects:
-        if obj.BuildingStartTime() > 0 and objects[obj.Id()]['building_started'] is None:
-            objects[obj.Id()]['building_started'] = obj.BuildingStartTime()
-        if obj.BuildingCompleteTime() > 0 and objects[obj.Id()]['building_completed'] is None:
-            objects[obj.Id()]['building_completed'] = obj.BuildingCompleteTime()
+    if class_id == CLASS_BUILDING and instance_id in objects:
+        if start and start > 0 and objects[instance_id]['building_started'] is None:
+            objects[instance_id]['building_started'] = start
+        if complete and complete > 0 and objects[instance_id]['building_completed'] is None:
+            objects[instance_id]['building_completed'] = complete
 
-    if obj.Id() in objects:
-        objects[obj.Id()]['total_idle_time'] = int(obj.CumulativeIdleTime())
+    if instance_id in objects and idle:
+        objects[instance_id]['total_idle_time'] = int(idle)
 
-    researching_technology_id = obj.CurrentlyResearchingTechId() if obj.CurrentlyResearchingTechId() > 0 else None
+    researching_technology_id = tech_id if tech_id and tech_id > 0 else None
     change = (
-        obj.Id() not in last or
+        instance_id not in last or
         has_diff(
-            last[obj.Id()],
+            last[instance_id],
             player_number=player_number,
-            object_id=obj.MasterObjectId(),
+            object_id=class_id,
             researching_technology_id=researching_technology_id
         )
     )
     snapshot = {
         'timestamp': tick,
-        'instance_id': obj.Id(),
+        'instance_id': instance_id,
         'player_number': player_number,
-        'object_id': obj.MasterObjectId(),
-        'class_id': obj.MasterObjectClass(),
+        'object_id': object_id,
+        'class_id': class_id,
         'researching_technology_id': researching_technology_id
     }
     if change:
         state.append(snapshot)
-    last[obj.Id()] = snapshot
+    last[instance_id] = snapshot
 
 
 def enrich_actions(actions, objects, states):
@@ -254,20 +300,31 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
             if not version:
                 version = message.StateReaderVersion().decode('ascii')
 
-            update_market(tick, message.MarketCoefficients(), market)
+            update_market(tick, message.MarketCoefficients().Food(), message.MarketCoefficients().Wood(), message.MarketCoefficients().Stone(), market)
 
             # Add any new objects before updating to ensure fks are present for updates
             for i in range(0, message.ObjectsLength()):
-                add_objects(message.Objects(i), objects)
+                obj = message.Objects(i)
+                add_objects(obj.OwnerId(), obj.Id(), obj.MasterObjectClass(), obj.MasterObjectId(), obj.CreatedTime(), obj.Position().X(), obj.Position().Y(), objects)
 
             for i in range(0, message.ObjectsLength()):
-                update_objects(tick, message.Objects(i), objects, state, last)
+                obj = message.Objects(i)
+                update_objects(
+                    tick, obj.OwnerId(), obj.Id(), obj.MasterObjectClass(), obj.MasterObjectId(), obj.KilledTime(),
+                    obj.Position().X(), obj.Position().Y(), obj.BuildingPercentComplete(), obj.KilledByUnitId(),
+                    obj.BuildingStartTime(), obj.BuildingCompleteTime(), obj.CumulativeIdleTime(),
+                    obj.CurrentlyResearchingTechId(), objects, state, last
+                )
 
             for i in range(0, message.PlayersLength()):
                 player = message.Players(i)
-                timeseries.append(build_timeseries_record(tick, player))
+                timeseries.append(build_fb_timeseries_record(tick, player))
                 for j in range(0, player.TechsLength()):
-                    update_research(player.Id(), player.Techs(j), research)
+                    tech = playerTechs(j)
+                    update_research(
+                        player.Id(), tech.State(), tech.IdIndex(), tech.Time(), research,
+                        TECH_STATE_RESEARCHING, TECH_STATE_DONE, TECH_STATE_AVAILABLE
+                    )
 
         elif source == Source.MGZ:
             if message[0] == fast.Operation.ACTION:
@@ -283,5 +340,59 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
         'market': market,
         'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
         'state': state,
-        'actions': list(enrich_actions(actions, objects, state))
+        'actions': list(enrich_actions(actions, objects, state)),
+        'winners': set()
+    }
+
+
+def external_extracted_data(data, seed_objects, actions):
+    """Merge externally-sourced extracted data."""
+    research = defaultdict(dict)
+    objects = transform_seed_objects(seed_objects)
+    state = []
+    market = []
+    last = {}
+    timeseries = []
+    winners = set()
+    for message in data:
+        update_market(message['time'], message['world']['foodPrice'], message['world']['woodPrice'], message['world']['stonePrice'], market)
+
+        # Add any new objects before updating to ensure fks are present for updates
+        for obj in message['objects']:
+            if 'ownerId' not in obj or 'masterObjectClass' not in obj:
+                continue
+            add_objects(
+                obj['ownerId'], obj['id'], obj['masterObjectClass'], obj['masterObjectId'], obj['createdTime'],
+                obj['position']['x'], obj['position']['y'], objects
+            )
+
+        for obj in message['objects']:
+            update_objects(
+                message['time'], obj.get('ownerId'), obj['id'], obj.get('masterObjectClass'), obj.get('masterObjectId'),
+                obj.get('killedTime'), None, obj.get('position', {}).get('x'), obj.get('position', {}).get('y'), obj.get('buildingPercentComplete'),
+                None, obj.get('buildingStartTime'), obj.get('buildingCompleteTime'), obj.get('cumulativeIdleTime'), None, objects, state, last
+            )
+
+        for player in message['players'][1:]:
+            timeseries.append(build_json_timeseries_record(message['time'], player))
+            if player['status'] == STATUS_WINNER:
+                winners.add(player['id'])
+
+        for event in message['events']:
+            if event['data']['tag'] == 'techStateChange':
+                update_research(
+                    event['data']['playerId'], event['data']['state'], event['data']['index'], event['worldTime'],
+                    research, DE_TECH_STATE_RESEARCHING, DE_TECH_STATE_DONE, DE_TECH_STATE_AVAILABLE
+                )
+
+    return {
+        'version': None,
+        'runtime': None,
+        'timeseries': timeseries,
+        'research': flatten_research(research),
+        'market': market,
+        'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
+        'state': state,
+        'actions': list(enrich_actions(actions, objects, state)),
+        'winners': winners
     }

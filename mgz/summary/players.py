@@ -1,5 +1,79 @@
 """Determine player data."""
 
+from collections import defaultdict
+
+
+def enrich_de_player_data(players, extraction):
+    """Enrich player data with extracted data."""
+    last_records = {}
+    research_count = defaultdict(int)
+    castles = defaultdict(int)
+    wonders = defaultdict(int)
+    age_times = {}
+
+    for player in players:
+        last_records[player['number']] = None
+        age_times[player['number']] = {}
+
+    for record in reversed(extraction['timeseries']):
+        if not last_records[record['player_number']]:
+            last_records[record['player_number']] = record
+        if all(last_records.values()):
+            break
+
+    for obj in extraction['objects']:
+        if obj['initial_object_id'] == 82:
+            castles[obj['initial_player_number']] += 1
+        elif obj['initial_object_id'] == 276:
+            wonders[obj['initial_player_number']] += 1
+
+    for research in extraction['research']:
+        if not research['finished']:
+            continue
+        if research['technology_id'] in [101, 102, 103]:
+            age_times[research['player_number']][research['technology_id']] = research['started']
+        research_count[research['player_number']] += 1
+
+    for player in players:
+        record = last_records[player['number']]
+        player.update(dict(
+            score=record['total_score'],
+            winner=player['number'] in extraction['winners']
+        ))
+        player['achievements']['military'].update(dict(
+            score=record['military_score'],
+            units_killed=record['kills'],
+            units_lost=record['deaths'],
+            buildings_lost=record['buildings_lost'],
+            buildings_razed=record['razes'],
+            units_converted=record['converted']
+        ))
+        player['achievements']['economy'].update(dict(
+            score=record['economy_score'],
+            food_collected=record['total_food'],
+            wood_collected=record['total_wood'],
+            stone_collected=record['total_stone'],
+            gold_collected=record['total_gold'],
+            tribute_sent=record['tribute_sent'],
+            tribute_received=record['tribute_received'],
+            trade_gold=record['trade_profit'],
+            relic_gold=record['relic_gold']
+        ))
+        player['achievements']['society'].update(dict(
+            score=record['society_score'],
+            total_relics=record['relics_captured'],
+            total_castles=castles[player['number']],
+            total_wonders=wonders[player['number']]
+        ))
+        player['achievements']['technology'].update(dict(
+            score=record['technology_score'],
+            explored_percent=record['percent_explored'],
+            research_count=research_count[player['number']],
+            feudal_time=age_times[player['number']].get(101),
+            castle_time=age_times[player['number']].get(102),
+            imperial_time=age_times[player['number']].get(103)
+        ))
+
 
 def ach(structure, fields):
     """Get field from achievements structure."""
