@@ -16,7 +16,7 @@ lobby = "lobby"/Struct(
     ),
     Peek("reveal_map_id"/Int32ul),
     RevealMapEnum("reveal_map"/Int32ul),
-    Padding(4),
+    "fog_of_war"/Int32ul,
     "map_size"/Int32ul,
     "population_limit_encoded"/Int32ul,
     "population_limit"/Computed(lambda ctx: ctx.population_limit_encoded * (25 if ctx._.version in [Version.USERPATCH14, Version.USERPATCH15] else 1)),
@@ -29,7 +29,8 @@ lobby = "lobby"/Struct(
     )),
     If(lambda ctx: ctx._.version == Version.DE,
         Struct(
-            Padding(5),
+            "treaty_length"/Byte,
+            "cheat_codes_used"/Int32ul,
             If(lambda ctx: ctx._._.save_version >= 13.13, Padding(4))
         )
     ),
