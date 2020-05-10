@@ -18,6 +18,7 @@ TECH_STATE_DONE = 4
 DE_TECH_STATE_AVAILABLE = 1
 DE_TECH_STATE_RESEARCHING = 2
 DE_TECH_STATE_DONE = 3
+DE_TECH_STATE_CANT_RESEARCH = -1
 STATUS_WINNER = 1
 
 
@@ -114,6 +115,10 @@ def build_json_timeseries_record(tick, player):
         'deaths': int(player['attributes']['unitsLost']),
         'razes': int(player['attributes']['razings']),
         'buildings_lost': int(player['attributes']['buildingsLost']),
+        'hit_points_razed': int(player['attributes']['hitPointsRazed']),
+        'hit_points_killed': int(player['attributes']['hitPointsKilled']),
+        'villager_high': int(player['victoryPoints']['maxVillagers']),
+        'military_high': int(player['victoryPoints']['maxMilitary']),
         'total_score': int(player['victoryPoints']['total']),
         'military_score': int(player['victoryPoints']['military']),
         'economy_score': int(player['victoryPoints']['economy']),
@@ -179,23 +184,31 @@ def add_objects(owner_id, instance_id, class_id, object_id, created, pos_x, pos_
 def update_objects(tick, owner_id, instance_id, class_id, object_id, killed, deleted, pos_x, pos_y, percent, killed_by, start, complete, idle, tech_id, objects, state, last):
     """Update object/state structures."""
     player_number = owner_id if owner_id and owner_id > 0 else None
+    if instance_id not in objects:
+        return
+    if not class_id:
+        class_id = objects[instance_id]['initial_class_id']
+    if not killed:
+        killed = objects[instance_id].get('killed')
+    data = {}
+    if class_id == CLASS_UNIT and pos_x is not None and pos_y is not None:
+        data.update({
+            'destroyed_x': pos_x,
+            'destroyed_y': pos_y
+        })
+
     if killed and killed > 0 and instance_id in objects:
-        data = {
+        data.update({
             'destroyed': killed,
             'deleted': deleted
-        }
-        if class_id == CLASS_UNIT:
-            data.update({
-                'destroyed_x': pos_x,
-                'destroyed_y': pos_y
-            })
-        elif class_id == CLASS_BUILDING:
+        })
+        if class_id == CLASS_BUILDING:
             data['destroyed_building_percent'] = percent
         if killed in objects:
             data.update({
                 'destroyed_by_instance_id': killed_by
             })
-        objects[instance_id].update(data)
+    objects[instance_id].update(data)
 
     if class_id == CLASS_BUILDING and instance_id in objects:
         if start and start > 0 and objects[instance_id]['building_started'] is None:
@@ -289,9 +302,6 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
     state = []
     last = {}
     actions = []
-    tribute = []
-    transactions = []
-    formations = []
     version = None
     start = time.time()
     client = await Client.create(playback, handle.name, start_time, duration, interval)
@@ -311,8 +321,8 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
                 obj = message.Objects(i)
                 update_objects(
                     tick, obj.OwnerId(), obj.Id(), obj.MasterObjectClass(), obj.MasterObjectId(), obj.KilledTime(),
-                    obj.Position().X(), obj.Position().Y(), obj.BuildingPercentComplete(), obj.KilledByUnitId(),
-                    obj.BuildingStartTime(), obj.BuildingCompleteTime(), obj.CumulativeIdleTime(),
+                    obj.DeletedByOwner(), obj.Position().X(), obj.Position().Y(), obj.BuildingPercentComplete(),
+                    obj.KilledByUnitId(), obj.BuildingStartTime(), obj.BuildingCompleteTime(), obj.CumulativeIdleTime(),
                     obj.CurrentlyResearchingTechId(), objects, state, last
                 )
 
@@ -320,7 +330,7 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
                 player = message.Players(i)
                 timeseries.append(build_fb_timeseries_record(tick, player))
                 for j in range(0, player.TechsLength()):
-                    tech = playerTechs(j)
+                    tech = player.Techs(j)
                     update_research(
                         player.Id(), tech.State(), tech.IdIndex(), tech.Time(), research,
                         TECH_STATE_RESEARCHING, TECH_STATE_DONE, TECH_STATE_AVAILABLE
@@ -354,11 +364,14 @@ def external_extracted_data(data, seed_objects, actions):
     last = {}
     timeseries = []
     winners = set()
-    for message in data:
+    version = data['version']
+    interval = data['messageInterval']
+    for message in data['messages']:
         update_market(message['time'], message['world']['foodPrice'], message['world']['woodPrice'], message['world']['stonePrice'], market)
 
         # Add any new objects before updating to ensure fks are present for updates
         for obj in message['objects']:
+            # Only add objects the first time we see them
             if 'ownerId' not in obj or 'masterObjectClass' not in obj:
                 continue
             add_objects(
@@ -385,8 +398,14 @@ def external_extracted_data(data, seed_objects, actions):
                     research, DE_TECH_STATE_RESEARCHING, DE_TECH_STATE_DONE, DE_TECH_STATE_AVAILABLE
                 )
 
+    for obj in objects.values():
+        if not obj['destroyed']:
+            obj['destroyed_x'] = None
+            obj['destroyed_y'] = None
+
     return {
-        'version': None,
+        'version': version,
+        'interval': interval,
         'runtime': None,
         'timeseries': timeseries,
         'research': flatten_research(research),
@@ -394,5 +413,6 @@ def external_extracted_data(data, seed_objects, actions):
         'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
         'state': state,
         'actions': list(enrich_actions(actions, objects, state)),
-        'winners': winners
+        'winners': winners,
+        'available_techs': available_techs
     }

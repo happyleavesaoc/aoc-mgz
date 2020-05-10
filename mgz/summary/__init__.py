@@ -167,6 +167,10 @@ class Summary: # pylint: disable=too-many-public-methods
         """Get postgame structure."""
         return self._cache['postgame']
 
+    def has_achievements(self):
+        """If match has achievements available."""
+        return self._cache['postgame'] is not None or self._cache['extraction'] is not None
+
     def get_header(self):
         """Get header."""
         return self._header
@@ -343,7 +347,6 @@ class Summary: # pylint: disable=too-many-public-methods
         """Async wrapper around full extraction."""
         if not self._cache['extraction']:
             if isinstance(self._playback, io.TextIOWrapper):
-
                 from mgz.summary.extract import external_extracted_data
 
                 self._cache['extraction'] = external_extracted_data(
