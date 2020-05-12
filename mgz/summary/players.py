@@ -31,7 +31,7 @@ def enrich_de_player_data(players, extraction):
         if not research['finished']:
             continue
         if research['technology_id'] in [101, 102, 103]:
-            age_times[research['player_number']][research['technology_id']] = research['started']
+            age_times[research['player_number']][research['technology_id']] = int(research['started'] / 1000)
         research_count[research['player_number']] += 1
 
     for player in players:
@@ -46,7 +46,9 @@ def enrich_de_player_data(players, extraction):
             units_lost=record['deaths'],
             buildings_lost=record['buildings_lost'],
             buildings_razed=record['razes'],
-            units_converted=record['converted']
+            units_converted=record['converted'],
+            hit_points_killed=record['hit_points_killed'],
+            hit_points_razed=record['hit_points_razed']
         ))
         player['achievements']['economy'].update(dict(
             score=record['economy_score'],
@@ -63,7 +65,8 @@ def enrich_de_player_data(players, extraction):
             score=record['society_score'],
             total_relics=record['relics_captured'],
             total_castles=castles[player['number']],
-            total_wonders=wonders[player['number']]
+            total_wonders=wonders[player['number']],
+            villager_high=record['villager_high']
         ))
         player['achievements']['technology'].update(dict(
             score=record['technology_score'],

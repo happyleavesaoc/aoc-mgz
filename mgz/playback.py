@@ -138,6 +138,7 @@ class Client():
         LOGGER.info("starting synchronization")
         start = time.time()
         keep_reading = True
+        fast.meta(self._handle)
         while not mgz_done or not ws_done:
             if self.total_timeout and time.time() - start > self.total_timeout:
                 LOGGER.warning("playback time exceeded timeout (%d%% completed)", int(mgz_time/self.duration * 100))
