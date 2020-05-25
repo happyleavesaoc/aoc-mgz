@@ -36,6 +36,7 @@ class Version(Enum):
     USERPATCH15 = 20
     DE = 21
     USERPATCH14RC2 = 22
+    MCP = 30
 
 
 class MgzPrefixed(Subconstruct):
@@ -87,6 +88,8 @@ def get_version(game_version, save_version, log_version):
         return Version.USERPATCH14
     if game_version in ['VER 9.E', 'VER 9.F']:
         return Version.USERPATCH15
+    if game_version == 'MCP 9.F':
+        return Version.MCP
     if log_version is not None or game_version != 'VER 9.4':
         raise ValueError('unsupported version: {}, {}, {}'.format(game_version, save_version, log_version))
 

@@ -214,7 +214,7 @@ player_stats = "player_stats"/Struct(
     Embedded(If(this._._._._.version == Version.DE, Struct(
         Array(this._._.num_header_data - 198, Float32l)
     ))),
-    Embedded(If(this._._._._.version == Version.USERPATCH15, Struct(
+    Embedded(If(this._._._._.version in [Version.USERPATCH15, Version.MCP], Struct(
         ModVersionAdapter("mod"/Float32l),
         Array(6, Float32l),
         "trickle_food"/Float32l,
@@ -225,5 +225,8 @@ player_stats = "player_stats"/Struct(
         "reveal_gaia_class_1"/Float32l,
         "reveal_gaia_class_2"/Float32l,
         Array(28, Float32l)
+    ))),
+    Embedded(If(this._._._._.version == Version.MCP, Struct(
+        Array(65, Float32l)
     )))
 )
