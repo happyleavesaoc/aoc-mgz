@@ -36,7 +36,8 @@ class Action(Enum):
     CHAPTER = 32
     DE_ATTACK_MOVE = 33
     DE_AUTOSCOUT = 38
-    DE_UNKNOWN = 39
+    DE_UNKNOWN_39 = 39
+    DE_UNKNOWN_41 = 41
     AI_COMMAND = 53
     MAKE = 100
     RESEARCH = 101

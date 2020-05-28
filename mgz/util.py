@@ -101,6 +101,13 @@ def find_version(ctx):
     return ctx.version
 
 
+def find_save_version(ctx):
+    """Test save version."""
+    if 'save_version' not in ctx:
+        return find_save_version(ctx._)
+    return ctx.save_version
+
+
 def check_flags(peek):
     """Check byte sequence for only flag bytes."""
     for i in peek:

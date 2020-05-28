@@ -26,6 +26,7 @@ ENCODING_MARKERS = [
     ['Harita Türü: ', 'ISO-8859-1', 'tr'],
     ['Harita Sitili', 'ISO-8859-1', 'tr'],
     ['Harita tipi', 'ISO-8859-1', 'tr'],
+    ['Konum: ', 'ISO-8859-1', 'tr'],
     ['??? ?????: ', 'ascii', 'tr'], # corrupt lang dll?
     ['Térkép tipusa', 'ISO-8859-1', 'hu'],
     ['Typ mapy: ', 'ISO-8859-2', None],

@@ -2,7 +2,7 @@
 
 from construct import Embedded, Float32l, If, Struct, this, Array
 
-from mgz.util import ModVersionAdapter, Version
+from mgz.util import ModVersionAdapter, Version, find_version, find_save_version
 
 # pylint: disable=invalid-name
 
@@ -200,7 +200,7 @@ player_stats = "player_stats"/Struct(
     "wood_score"/Float32l,
     "stone_score"/Float32l,
     "gold_score"/Float32l,
-    Embedded(If(this._._._._.save_version >= 11.76, Struct(
+    Embedded(If(lambda ctx: find_save_version(ctx) >= 11.76, Struct(
         "wood_bonus0"/Float32l,
         "food_bonus0"/Float32l,
         "relic_rate"/Float32l,
@@ -211,10 +211,10 @@ player_stats = "player_stats"/Struct(
         "hun_wonder_bonus"/Float32l,
         "spies_discount"/Float32l,
     ))),
-    Embedded(If(this._._._._.version == Version.DE, Struct(
+    Embedded(If(lambda ctx: find_version(ctx) == Version.DE, Struct(
         Array(this._._.num_header_data - 198, Float32l)
     ))),
-    Embedded(If(this._._._._.version in [Version.USERPATCH15, Version.MCP], Struct(
+    Embedded(If(lambda ctx: find_version(ctx) in [Version.USERPATCH15, Version.MCP], Struct(
         ModVersionAdapter("mod"/Float32l),
         Array(6, Float32l),
         "trickle_food"/Float32l,

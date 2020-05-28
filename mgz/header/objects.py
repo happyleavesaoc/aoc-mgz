@@ -5,7 +5,7 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16
                        Switch, Pass, RepeatUntil, Bytes, LazyBound, IfThenElse)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
-from mgz.util import Find, Version, find_version
+from mgz.util import Find, Version, find_version, find_save_version
 from mgz.header.unit_type import unit_type
 
 # pylint: disable=invalid-name
@@ -82,8 +82,9 @@ static = "static"/Struct(
             If(lambda ctx: ctx.length > 0, Padding(33))
         )),
         If(lambda ctx: ctx.effect is None or (ctx.effect and ctx.effect.length > 0), Byte),
-        Padding(4)
-    ))
+        Padding(4),
+        If(lambda ctx: find_save_version(ctx) >= 13.15, Padding(5))
+   ))
 )
 
 
