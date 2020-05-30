@@ -84,6 +84,8 @@ def extract_from_instructions(instructions):
             if instructions.find(pair[0].encode(pair[1])) > -1:
                 language = pair[2]
                 break
+    if encoding == 'unknown':
+        raise ValueError('could not detect encoding')
     return encoding, language, name
 
 
