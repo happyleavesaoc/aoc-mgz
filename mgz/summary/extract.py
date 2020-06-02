@@ -225,7 +225,8 @@ def update_objects(tick, owner_id, instance_id, class_id, object_id, killed, del
         has_diff(
             last[instance_id],
             player_number=player_number,
-            object_id=class_id,
+            class_id=class_id,
+            object_id=object_id,
             researching_technology_id=researching_technology_id
         )
     )
@@ -270,6 +271,18 @@ def enrich_actions(actions, objects, states):
         if action not in last_seen and 'player_id' in payload and payload['player_id'] is not None:
             yield action
             last_seen.append(action)
+
+
+def transform_objects(objects):
+    """Transform objects."""
+    obj_list = []
+    for i, obj in objects.items():
+        data = dict(obj, instance_id=i)
+        if data['destroyed'] is None:
+            data['destroyed_x'] = None
+            data['destroyed_y'] = None
+        obj_list.append(data)
+    return obj_list
 
 
 def transform_seed_objects(objects):
@@ -348,7 +361,7 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
         'timeseries': timeseries,
         'research': flatten_research(research),
         'market': market,
-        'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
+        'objects': transform_objects(objects),
         'state': state,
         'actions': list(enrich_actions(actions, objects, state)),
         'winners': set()
@@ -413,6 +426,5 @@ def external_extracted_data(data, seed_objects, actions):
         'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
         'state': state,
         'actions': list(enrich_actions(actions, objects, state)),
-        'winners': winners,
-        'available_techs': available_techs
+        'winners': winners
     }
