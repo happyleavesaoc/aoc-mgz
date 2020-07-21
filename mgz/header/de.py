@@ -96,7 +96,7 @@ de = "de"/Struct(
     "strings"/Array(23,
         Struct(
             "string"/de_string,
-            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 42], Int32ul)
+            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 42, 44], Int32ul)
         )
     ),
     "strategic_numbers"/Array(59, Int32sl),
@@ -111,10 +111,14 @@ de = "de"/Struct(
     "modded_dataset"/de_string,
     Bytes(19),
     If(lambda ctx: ctx._.save_version >= 13.13, Bytes(5)),
+    If(lambda ctx: ctx._.save_version >= 13.17, Bytes(9)),
     de_string,
     Bytes(5),
     If(lambda ctx: ctx._.save_version >= 13.13, Byte),
-    de_string,
-    Int32ul,
-    Bytes(4) # usually zero
+    If(lambda ctx: ctx._.save_version < 13.17, Struct(
+        de_string,
+        Int32ul,
+        Bytes(4), # usually zero
+    )),
+    If(lambda ctx: ctx._.save_version >= 13.17, Bytes(2))
 )
