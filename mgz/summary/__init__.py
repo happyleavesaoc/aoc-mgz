@@ -340,7 +340,9 @@ class Summary: # pylint: disable=too-many-public-methods
             self.get_duration(),
             self._playback,
             temp, interval,
-            self.get_objects()['objects']
+            self.get_objects()['objects'],
+            self.get_players(),
+            self.get_teams()
         )
 
     def extract(self, interval=1000):
@@ -352,6 +354,8 @@ class Summary: # pylint: disable=too-many-public-methods
                 self._cache['extraction'] = external_extracted_data(
                     json.loads(self._playback.read()),
                     self.get_objects()['objects'],
+                    self.get_players(),
+                    self.get_teams(),
                     self._actions
                 )
             else:

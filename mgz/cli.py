@@ -58,7 +58,7 @@ async def extract_rec(playback, path, select=None):
     """Extract data from a recorded game."""
     with open(path, 'rb') as handle:
         summary = Summary(handle, playback=playback)
-        data = await summary.async_extract()
+        data = await summary.async_extract(30000)
         print('version: {}, runtime: {}'.format(data['version'], data['runtime']))
         for key, records in data.items():
             if select and key != select:

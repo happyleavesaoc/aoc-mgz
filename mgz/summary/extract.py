@@ -1,8 +1,9 @@
 """"Extract data via playback."""
 
+import math
 import logging
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import timedelta
 
 from mgz import fast
@@ -273,6 +274,81 @@ def enrich_actions(actions, objects, states):
             last_seen.append(action)
 
 
+def add_action_count(timeseries, actions):
+    i = iter(actions)
+    tick, _, payload = next(i)
+    last_ts = 0
+    for record in timeseries:
+        if record['timestamp'] > last_ts:
+            count = defaultdict(int)
+        while tick < record['timestamp']:
+            count[payload['player_id']] += 1
+            try:
+                tick, _, payload = next(i)
+            except StopIteration:
+                break
+        record['action_count'] = count[record['player_number']]
+        last_ts = record['timestamp']
+
+def _dist(a, b):
+    return math.sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
+
+def add_map_control(timeseries, action_list, players, teams, duration):
+    #opps[pid] = {pid: xy}
+    coords = {}
+    lookup = {player['number']:player for player in players}
+    opps = defaultdict(list)
+
+    for i, team_a in enumerate(teams):
+        for player_number in team_a:
+            coords[player_number] = lookup[player_number]['position']
+            for j, team_b in enumerate(teams):
+                if i == j:
+                    continue
+                opps[player_number] += team_b
+                #for opponent_number in team_b:
+                #    opps[player_number] += team_b[opponent_number] = lookup[opponent_number]['position']
+
+    percents = defaultdict(list)
+
+    last = {}
+    dk = {}
+    for player in players:
+        last[player['number']] = [] #deque(maxlen=30)
+        dk[player['number']] = deque(maxlen=30)
+
+
+    def next_action(act):
+        tick, _, payload = next(act)
+        if 'x' not in payload or 'y' not in payload or 'player_id' not in payload:
+            return tick, None, None
+        to_me = _dist((payload['x'], payload['y']), coords[payload['player_id']])
+        options = []
+        for opp in opps[payload['player_id']]:
+            to_opp = _dist((payload['x'], payload['y']), coords[opp])
+            between = _dist(coords[payload['player_id']], coords[opp])
+            options.append(round((((to_me - to_opp) + between) / (between * 2)) * 100))
+        return tick, payload['player_id'], max(options)
+
+
+    it = iter(action_list)
+    tick, player_number, control = next_action(it)
+    for record in timeseries:
+        while tick < record['timestamp']:
+            if control:
+                if len(last[player_number]) == 30:
+                    last[player_number] = []
+                last[player_number].append(control)
+                mc = last[record['player_number']]
+                dk[player_number].append(sum(mc)/len(mc) if len(mc) > 0 else 0)
+            try:
+                tick, player_number, control = next_action(it)
+            except StopIteration:
+                break
+        mc = dk[record['player_number']]
+        record['map_control'] = sum(mc)/len(mc) if len(mc) > 0 else 0
+        print(record['timestamp'], record['player_number'], record['map_control'])
+
 def transform_objects(objects):
     """Transform objects."""
     obj_list = []
@@ -306,7 +382,7 @@ def transform_seed_objects(objects):
     } for obj in objects}
 
 
-async def get_extracted_data(start_time, duration, playback, handle, interval, seed_objects):
+async def get_extracted_data(start_time, duration, playback, handle, interval, seed_objects, players, teams):
     """Get extracted data."""
     timeseries = []
     research = defaultdict(dict)
@@ -355,6 +431,10 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
 
     handle.close()
 
+    action_list = list(enrich_actions(actions, objects, state))
+    add_action_count(timeseries, action_list)
+    add_map_control(timeseries, action_list, players, teams, duration)
+
     return {
         'version': version,
         'runtime': timedelta(seconds=int(time.time() - start)),
@@ -363,12 +443,12 @@ async def get_extracted_data(start_time, duration, playback, handle, interval, s
         'market': market,
         'objects': transform_objects(objects),
         'state': state,
-        'actions': list(enrich_actions(actions, objects, state)),
+        'actions': action_list,
         'winners': set()
     }
 
 
-def external_extracted_data(data, seed_objects, actions):
+def external_extracted_data(data, seed_objects, players, teams, actions):
     """Merge externally-sourced extracted data."""
     research = defaultdict(dict)
     objects = transform_seed_objects(seed_objects)
@@ -416,6 +496,9 @@ def external_extracted_data(data, seed_objects, actions):
             obj['destroyed_x'] = None
             obj['destroyed_y'] = None
 
+    action_list = list(enrich_actions(actions, objects, state))
+    add_action_count(timeseries, action_list)
+
     return {
         'version': version,
         'interval': interval,
@@ -425,6 +508,6 @@ def external_extracted_data(data, seed_objects, actions):
         'market': market,
         'objects': [dict(obj, instance_id=i) for i, obj in objects.items()],
         'state': state,
-        'actions': list(enrich_actions(actions, objects, state)),
+        'actions': action_list,
         'winners': winners
     }
