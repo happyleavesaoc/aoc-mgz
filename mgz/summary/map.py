@@ -42,7 +42,8 @@ ENCODING_MARKERS = [
     ['地图类别：', 'cp936', 'zh'],
     ['地图类型：', 'GB2312', 'zh'],
     ['颌玉拙墁：', 'cp936', 'zh'],
-    ['位置：', 'utf-8', 'zh']
+    ['位置：', 'utf-8', 'zh'],
+    ['舞台: ', 'utf-8', 'zh']
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
