@@ -67,6 +67,7 @@ DE_MAP_NAMES = {
     83: 'Kilimanjaro',
     84: 'Mountain Pass',
     86: 'Serengeti',
+    87: 'Socotra',
     108: 'Indochina',
     112: 'Bog Islands',
     122: 'Alpine Lakes',
