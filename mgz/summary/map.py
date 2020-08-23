@@ -44,7 +44,8 @@ ENCODING_MARKERS = [
     ['颌玉拙墁：', 'cp936', 'zh'],
     ['位置：', 'utf-8', 'zh'],
     ['舞台: ', 'utf-8', 'zh'],
-    ['Vị trí: ', 'utf-8', 'vi']
+    ['Vị trí: ', 'utf-8', 'vi'],
+    ['위치: ', 'utf-8', 'kr']
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
@@ -67,7 +68,6 @@ def extract_from_instructions(instructions):
     language = None
     encoding = 'unknown'
     name = 'Unknown'
-    print(instructions.decode('utf-8'))
     for pair in ENCODING_MARKERS:
         marker = pair[0]
         test_encoding = pair[1]
