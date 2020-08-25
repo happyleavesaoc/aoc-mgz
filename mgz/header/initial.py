@@ -57,11 +57,7 @@ player = "players"/Struct(
     "unk"/Byte,
     attributes,
     "end_of_attr"/Tell,
-    "start_of_objects"/Find([
-        b'\x0b\x00\x08\x00\x00\x00\x02\x00\x00',
-        b'\x0b\x00\x0e\x00\x00\x00\x02\x00\x00',
-        b'\x0b\x00\x18\x00\x00\x00\x02\x00\x00'
-    ], None),
+    "start_of_objects"/Find([b'\x0b\x00.\x00\x00\x00\x02\x00\x00'], None),
     Embedded(IfThenElse(lambda ctx: ctx._.restore_time == 0,
         Struct(
             "objects"/RepeatUpTo(b'\x00', existing_object),

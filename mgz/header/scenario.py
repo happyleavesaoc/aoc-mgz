@@ -132,7 +132,7 @@ game_settings = "game_settings"/Struct(
     Padding(4),
     IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None),
-        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f', None)
+        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
     )
 )
 

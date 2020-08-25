@@ -1,6 +1,7 @@
 """MGZ parsing utilities."""
 
 import logging
+import re
 import struct
 import zlib
 from enum import Enum
@@ -189,16 +190,15 @@ class Find(Construct):
             read_bytes = stream.read()
         candidates = []
         for f in self.find:
-            pos = read_bytes.find(f)
-            if pos == -1:
+            match = re.search(f, read_bytes)
+            if not match:
                 continue
-            skip = pos + len(f)
-            candidates.append(skip)
+            candidates.append(match.end())
         if not candidates:
             raise RuntimeError('could not find bytes')
         choice = min(candidates)
         stream.seek(start + choice)
-        return skip
+        return choice
 
 
 class RepeatUpTo(Subconstruct):
