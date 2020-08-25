@@ -187,14 +187,18 @@ class Find(Construct):
             read_bytes = stream.read(self.max_length)
         else:
             read_bytes = stream.read()
+        candidates = []
         for f in self.find:
             pos = read_bytes.find(f)
             if pos == -1:
                 continue
             skip = pos + len(f)
-            stream.seek(start + skip)
-            return skip
-        raise RuntimeError('could not find bytes')
+            candidates.append(skip)
+        if not candidates:
+            raise RuntimeError('could not find bytes')
+        choice = min(candidates)
+        stream.seek(start + choice)
+        return skip
 
 
 class RepeatUpTo(Subconstruct):
