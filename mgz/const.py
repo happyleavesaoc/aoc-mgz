@@ -71,6 +71,7 @@ DE_MAP_NAMES = {
     108: 'Indochina',
     112: 'Bog Islands',
     122: 'Alpine Lakes',
+    124: 'Mountain Ridge',
     125: 'Ravines',
     126: 'Wolf Hill',
     139: 'Golden Swamp',
