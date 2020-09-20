@@ -68,6 +68,10 @@ with open('/path/to/file', 'rb') as data:
 
 **A:** The first portion (the `header`) is a snapshot of the initial game state. The second portion (the `body`) is a list of moves made by players. The game loads the header, then applies each move to mutate the state according to the game rules.
 
+**Q:** How can I install this package?
+
+**A:** `pip install mgz`
+
 ## Contribution
  - Pull requests & patches welcome
 
