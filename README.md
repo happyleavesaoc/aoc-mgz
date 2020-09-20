@@ -15,6 +15,7 @@ Age of Empires II recorded game parsing and summarization in Python 3.
 ### Parser
 
 ```python
+import os
 from mgz import header, body
 
 with open('/path/to/file', 'rb') as data:
@@ -30,6 +31,7 @@ with open('/path/to/file', 'rb') as data:
 Skips parsing most body operations for faster speed.
 
 ```python
+import os
 from mgz import header, fast
 
 with open('/path/to/file', 'rb') as data:
@@ -68,6 +70,10 @@ with open('/path/to/file', 'rb') as data:
 
 **A:** The first portion (the `header`) is a snapshot of the initial game state. The second portion (the `body`) is a list of moves made by players. The game loads the header, then applies each move to mutate the state according to the game rules.
 
+**Q:** How can I install this package?
+
+**A:** `pip install mgz`
+
 ## Contribution
  - Pull requests & patches welcome
 
@@ -75,5 +81,5 @@ with open('/path/to/file', 'rb') as data:
  - aoc-mgx-format: https://github.com/stefan-kolb/aoc-mgx-format
  - recage: https://github.com/goto-bus-stop/recage
  - recanalyst: http://sourceforge.net/p/recanalyst/
- - genie-rs: https://github.com/SiegeEngineers/genie-rs/tree/genie-rec
+ - genie-rs: https://github.com/SiegeEngineers/genie-rs/tree/default/crates/genie-rec
  - bari-mgx-format: https://web.archive.org/web/20090215065209/http://members.at.infoseek.co.jp/aocai/mgx_format.html
