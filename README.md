@@ -15,6 +15,7 @@ Age of Empires II recorded game parsing and summarization in Python 3.
 ### Parser
 
 ```python
+import os
 from mgz import header, body
 
 with open('/path/to/file', 'rb') as data:
@@ -30,6 +31,7 @@ with open('/path/to/file', 'rb') as data:
 Skips parsing most body operations for faster speed.
 
 ```python
+import os
 from mgz import header, fast
 
 with open('/path/to/file', 'rb') as data:
