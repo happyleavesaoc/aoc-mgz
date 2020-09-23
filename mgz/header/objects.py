@@ -139,7 +139,7 @@ base_moving = "base_moving"/Struct(
     "future_path_data"/If(lambda ctx: ctx.has_future_path_data > 0, path_data),
     "has_movement_data"/Int32ul,
     "movement_data"/If(lambda ctx: ctx.has_movement_data > 0, movement_data),
-    "de_moving_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Int16ul),
+    "de_moving_unk"/If(lambda ctx: find_version(ctx) == Version.DE and find_save_version(ctx) < 13.2, Int16ul),
     "position"/vector,
     "orientation_forward"/vector,
     "orientation_right"/vector,
