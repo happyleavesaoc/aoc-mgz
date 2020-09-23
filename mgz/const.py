@@ -75,7 +75,8 @@ DE_MAP_NAMES = {
     125: 'Ravines',
     126: 'Wolf Hill',
     139: 'Golden Swamp',
-    140: 'Four Lakes'
+    140: 'Four Lakes',
+    141: 'Land Nomad'
 }
 
 MAP_NAMES = {
