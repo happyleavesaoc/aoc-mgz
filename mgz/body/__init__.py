@@ -12,7 +12,7 @@ An Operation can be:
 
 from construct import (Struct, Byte, Switch, Embedded, Padding,
                        Int32ul, Peek, Tell, Float32l, String, If, Array, Bytes,
-                       GreedyBytes, Computed, IfThenElse, Int16ul, Int64ul, Seek)
+                       GreedyBytes, Computed, IfThenElse, Int16ul, Int64ul, Seek, Padded)
 from mgz.enums import ActionEnum, OperationEnum
 from mgz.body import actions, embedded
 from mgz.util import BoolAdapter
@@ -82,7 +82,7 @@ action_data = "action"/Struct(
 # Action - length followed by data.
 action = "action"/Struct(
     "length"/Int32ul,
-    action_data
+    Padded(lambda ctx: ctx.length + 4, action_data)
 )
 
 
