@@ -29,21 +29,24 @@ script = "script"/Struct(
 
 ai = "ai"/Struct(
     "has_ai"/Int32ul, # if true, parse AI
-    "yep"/IfThenElse(
-        lambda ctx: ctx._.version == Version.DE,
-        Find(b'\00' * 4096, None),  # The ai structure in DE seems to have changed, for now we simply skip it
-        If(this.has_ai == 1, "ais"/Struct(
-            "max_strings"/Int16ul,
-            "num_strings"/Int16ul,
-            Padding(4),
-            Array(this.num_strings, "strings"/PascalString(lengthfield="name_length"/Int32ul,
-                                                           encoding='latin1')),
-            Padding(6),
-            Array(8, script),
-            Padding(104),
-            Array(80, "timers"/Int32sl),
-            Array(256, "shared_goals"/Int32sl),
-            Padding(4096),
-        ))
+    "yep"/If(
+        this.has_ai == 1,
+        IfThenElse(
+            lambda ctx: ctx._.version == Version.DE,
+            Find(b'\00' * 4096, None),  # The ai structure in DE seems to have changed, for now we simply skip it
+            "ais"/Struct(
+                "max_strings"/Int16ul,
+                "num_strings"/Int16ul,
+                Padding(4),
+                Array(this.num_strings, "strings"/PascalString(lengthfield="name_length"/Int32ul,
+                                                               encoding='latin1')),
+                Padding(6),
+                Array(8, script),
+                Padding(104),
+                Array(80, "timers"/Int32sl),
+                Array(256, "shared_goals"/Int32sl),
+                Padding(4096),
+            )
+        )
     )
 )
