@@ -276,6 +276,7 @@ def OrderTypeEnum(ctx):
         ctx,
         packtreb=1,
         unpacktreb=2,
+        cancel_unit=4,
         garrison=5,
         default=Pass
     )
