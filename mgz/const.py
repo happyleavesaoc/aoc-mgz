@@ -126,7 +126,8 @@ DE_MAP_NAMES = {
     137: 'Custom Map Pool',
     139: 'Golden Swamp',
     140: 'Four Lakes',
-    141: 'Land Nomad'
+    141: 'Land Nomad',
+    145: 'Fall of Rome'
 }
 
 MAP_NAMES = {

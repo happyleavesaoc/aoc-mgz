@@ -195,7 +195,7 @@ class Find(Construct):
                 continue
             candidates.append(match.end())
         if not candidates:
-            raise RuntimeError('could not find bytes')
+            raise RuntimeError('could not find bytes: {}'.format(f))
         choice = min(candidates)
         stream.seek(start + choice)
         return choice
@@ -258,16 +258,22 @@ class GotoObjectsEnd(Construct):
             # TODO: make this section more reliable
             marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
-            if save_version >= 13.07:
+            if save_version >= 13.34:
+                marker_de = read_bytes.find(b"\x33\x33\xb3\x3f")
+            elif save_version >= 13.07:
                 marker_de = read_bytes.find(b"\x29\x5c\xaf\x3f")
             else:
                 marker_de = read_bytes.find(b"\x7b\x14\xae\x3f")
+            new_marker = -1
             if marker_up > 0 and marker_de < 0: # aok marker can appear in up
-                marker = marker_up
+                new_marker = marker_up
             elif marker_de > 0 and marker_up < 0 and marker_aok < 0:
-                marker = marker_de
+                new_marker = marker_de
             elif marker_aok > 0 and marker_up < 0 and marker_de < 0:
-                marker = marker_aok
+                new_marker = marker_aok
+            if new_marker == -1:
+                raise RuntimeError("could not find scenario marker")
+            marker = new_marker
             # Backtrack through the achievements and initial structure footer
             backtrack = ((1817 * (num_players - 1)) + 4 + 19)
         # Seek to the position we found

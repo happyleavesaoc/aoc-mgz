@@ -7,6 +7,7 @@ from construct import (
 )
 
 from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum, PlayerTypeEnum, DifficultyEnum
+from mgz.util import find_save_version
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -62,6 +63,7 @@ de = "de"/Struct(
     "turbo_enabled"/Flag,
     "shared_exploration"/Flag,
     "team_positions"/Flag,
+    If(lambda ctx: find_save_version(ctx) >= 13.34, Bytes(8)),
     separator,
     "players"/Array(8, Struct(
         "dlc_id"/Int32ul,
@@ -96,7 +98,7 @@ de = "de"/Struct(
     "strings"/Array(23,
         Struct(
             "string"/de_string,
-            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44], Int32ul)
+            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45], Int32ul)
         )
     ),
     "strategic_numbers"/Array(59, Int32sl),

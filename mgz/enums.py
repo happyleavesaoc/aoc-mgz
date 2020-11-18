@@ -104,6 +104,7 @@ def GameTypeEnum(ctx):
         TurboRandom=8,
         CaptureTheRelic=10,
         SuddenDeath=11,
+        BattleRoyale=12,
         EmpireWars=13
     )
 

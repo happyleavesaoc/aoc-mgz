@@ -84,7 +84,8 @@ static = "static"/Struct(
         If(lambda ctx: ctx.effect is None or (ctx.effect and ctx.effect.length > 0), Byte),
         Padding(4),
         If(lambda ctx: find_save_version(ctx) >= 13.15, Padding(5)),
-        If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2))
+        If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2)),
+        If(lambda ctx: find_save_version(ctx) >= 13.34, Bytes(12))
     ))
 )
 

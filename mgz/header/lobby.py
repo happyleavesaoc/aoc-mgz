@@ -3,13 +3,14 @@
 from construct import Array, Byte, Bytes, Flag, Int32ul, Padding, Peek, Struct, If, Computed, Embedded, Int32sl
 
 from mgz.enums import GameTypeEnum, RevealMapEnum
-from mgz.util import Version
+from mgz.util import Version, find_save_version
 
 # pylint: disable=invalid-name, bad-continuation
 
 
 # Player inputs in the lobby, and several host settings.
 lobby = "lobby"/Struct(
+    If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(5)),
     Array(8, "teams"/Byte), # team number selected by each player
     If(lambda ctx: ctx._.version != Version.DE,
         Padding(1),

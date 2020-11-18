@@ -4,7 +4,7 @@ from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
                        PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
-from mgz.util import Find, Version
+from mgz.util import Find, Version, find_save_version
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -24,9 +24,10 @@ scenario_header = "scenario_header"/Struct(
     Padding(5),
     "elapsed_time"/Float32l,
     "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),
-    If(lambda ctx: ctx._._.version == Version.DE,
-        Padding(64)
-    )
+    If(lambda ctx: ctx._._.version == Version.DE, Struct(
+        Padding(64),
+        If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(64))
+    ))
 )
 
 # Scenarios have intro text, a bitmap, and cinematics.
@@ -120,7 +121,8 @@ game_settings = "game_settings"/Struct(
     If(lambda ctx: ctx._._.version == Version.DE,
         Struct(
             Padding(29),
-            If(lambda ctx: ctx._._._.save_version >= 13.07, Padding(1))
+            If(lambda ctx: find_save_version(ctx) >= 13.07, Padding(1)),
+            If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(132))
         )
     ),
     Array(9, "player_info"/Struct(
@@ -131,7 +133,10 @@ game_settings = "game_settings"/Struct(
     Padding(36),
     Padding(4),
     IfThenElse(lambda ctx: ctx._._.version == Version.DE,
-        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None),
+        IfThenElse(lambda ctx: find_save_version(ctx) >= 13.34,
+            "end_of_game_settings"/Find(b'\x33\x33\x33\x33\x33\x33\x03\x40', None),
+            "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None)
+        ),
         "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
     )
 )
