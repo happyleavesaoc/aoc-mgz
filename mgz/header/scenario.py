@@ -131,8 +131,12 @@ game_settings = "game_settings"/Struct(
     Padding(36),
     Padding(4),
     IfThenElse(lambda ctx: ctx._._.version == Version.DE,
-        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None),
-        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
+        IfThenElse(
+            lambda ctx: ctx._._.save_version >= 13.34,
+            "end_of_game_settings"/Find(b'\x33\x33\x33\x33\x33\x33\x03\x40', None),  # double: 2.4
+            "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None),  # double: 2.2
+        ),
+        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f', None)  # double: 1.6
     )
 )
 

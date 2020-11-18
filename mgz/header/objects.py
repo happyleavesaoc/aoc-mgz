@@ -5,6 +5,7 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16
                        Switch, Pass, RepeatUntil, Bytes, LazyBound, IfThenElse)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
+from mgz.header.de import de_string
 from mgz.util import Find, Version, find_version, find_save_version
 from mgz.header.unit_type import unit_type
 
@@ -85,7 +86,16 @@ static = "static"/Struct(
         Padding(4),
         If(lambda ctx: find_save_version(ctx) >= 13.15, Padding(5)),
         If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2))
-    ))
+    )),
+    If(
+        lambda ctx: find_save_version(ctx) >= 13.34,
+        Struct(
+            Padding(2),
+            "de_unknown_str1"/de_string,
+            "de_unknown_str1"/de_string,
+            Padding(2),
+        )
+    )
 )
 
 

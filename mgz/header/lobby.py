@@ -10,6 +10,7 @@ from mgz.util import Version
 
 # Player inputs in the lobby, and several host settings.
 lobby = "lobby"/Struct(
+    If(lambda ctx: ctx._.save_version >= 13.34, Padding(5)),
     Array(8, "teams"/Byte), # team number selected by each player
     If(lambda ctx: ctx._.version != Version.DE,
         Padding(1),

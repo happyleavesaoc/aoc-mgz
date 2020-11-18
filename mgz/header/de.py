@@ -11,7 +11,7 @@ from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum, PlayerTypeEnum, D
 # pylint: disable=invalid-name, bad-continuation
 
 de_string = Struct(
-    Const(b"\x60\x0A"),
+    Const(b"\x60\x0A"),  # str: "`\n"
     "length"/Int16ul,
     "value"/Bytes(lambda ctx: ctx.length)
 )
@@ -62,6 +62,14 @@ de = "de"/Struct(
     "turbo_enabled"/Flag,
     "shared_exploration"/Flag,
     "team_positions"/Flag,
+    "de_new_flag_1"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
+    "de_new_flag_2"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
+    "de_new_flag_3"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
+    "de_new_flag_4"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
+    "de_new_flag_5"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
+    "de_new_flag_6"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
+    "de_new_flag_7"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
+    "de_new_flag_8"/If(lambda ctx: ctx._.save_version >= 13.34, Flag),
     separator,
     "players"/Array(8, Struct(
         "dlc_id"/Int32ul,
@@ -96,7 +104,7 @@ de = "de"/Struct(
     "strings"/Array(23,
         Struct(
             "string"/de_string,
-            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44], Int32ul)
+            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45], Int32ul)
         )
     ),
     "strategic_numbers"/Array(59, Int32sl),
