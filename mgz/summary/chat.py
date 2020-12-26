@@ -1,9 +1,18 @@
 """Chat Messages."""
+import json
 import logging
 from enum import Enum
 
 LOGGER = logging.getLogger(__name__)
-AGE_MARKER = 'advanced to the'
+AGE_MARKERS = [
+    'advanced to the',
+    'a progressé vers',
+    '升级至',
+    'avanzó a la',
+    'đã phát triển lên',
+    '시대로 발전했습니다',
+    'vorangeschritten'
+]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',
     'Voto iniciado para guardar y salir del juego',
@@ -25,7 +34,7 @@ class Chat(Enum):
     SAVE = 5
     MESSAGE = 6
     HELP = 7
-
+    DISCARD = 8
 
 def get_lobby_chat(header, encoding, diplomacy_type, players):
     """Get lobby chat."""
@@ -51,9 +60,17 @@ def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, originat
         'timestamp': timestamp,
         'origination': origination
     }
+    # Discard DE bugged chat
+    if timestamp > 0 and timestamp < 1000:
+        data['type'] = Chat.DISCARD
+        return data
     for save_marker in SAVE_MARKERS:
         if line.find(save_marker) > 0:
             data['type'] = Chat.SAVE
+            return data
+    for age_marker in AGE_MARKERS:
+        if line.find(age_marker) > 0:
+            data['type'] = Chat.AGE
             return data
     if line.find('Voobly: Ratings provided') > 0:
         _parse_ladder(data, line)
@@ -63,21 +80,29 @@ def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, originat
         _parse_rating(data, line)
     elif line.find('@#0<') == 0:
         _parse_injected(data, line)
-    elif line.find(AGE_MARKER) > 0:
-        _parse_age_advance(data, line)
     elif line.find('--') == 3:
         _parse_help(data, line)
+    elif line.startswith('{"'):
+        _parse_json(data, line, diplomacy_type)
     else:
         _parse_chat(data, line, players, diplomacy_type)
     return data
 
 
-def _parse_age_advance(data, line):
-    """Parse age advancement message."""
-    start = line.find(AGE_MARKER)
+def _parse_json(data, line, diplomacy_type):
+    """Parse DE JSON chat."""
+    payload = json.loads(line)
+    audience = 'team'
+    if payload['channel'] == 0:
+        if diplomacy_type == '1v1':
+            audience = 'all'
+    elif payload['channel'] == 1:
+        audience = 'all'
     data.update({
-        'type': Chat.AGE,
-        'age': line[start + len(AGE_MARKER) + 1:-1]
+        'type': Chat.MESSAGE,
+        'player_number': payload['player'],
+        'message': payload['message'],
+        'audience': audience
     })
 
 
