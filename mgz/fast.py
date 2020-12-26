@@ -114,14 +114,14 @@ def parse_action(action_type, data):
         player_id, formation_id, (*object_ids) = struct.unpack_from('<xhI' + str(data[0]) + 'I', data)
         return dict(player_id=player_id, object_ids=list(object_ids), formation_id=formation_id)
     if action_type == Action.QUEUE:
-        object_id, = struct.unpack_from('<3xI', data)
-        return dict(object_ids=[object_id])
+        object_id, unit_id, amount = struct.unpack_from('<3xIhh', data)
+        return dict(object_ids=[object_id], unit_id=unit_id, amount=amount)
     if action_type == Action.GATHER_POINT:
         _, x, y, (*object_ids) = struct.unpack_from('<3xI4x2f' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.MULTIQUEUE:
-        object_ids = struct.unpack_from('<7x' + str(data[5]) + 'I', data)
-        return dict(object_ids=list(object_ids))
+        unit_id, amount, (*object_ids) = struct.unpack_from('<3xhxb' + str(data[5]) + 'I', data)
+        return dict(object_ids=object_ids, unit_id=unit_id, amount=amount)
     if action_type == Action.PATROL:
         x, y, (*object_ids) = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
@@ -187,8 +187,8 @@ def parse_action(action_type, data):
             object_ids = struct.unpack_from('<4x' + str(selected) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.DE_QUEUE:
-        player_id, (*object_ids) = struct.unpack_from('<b8x' + str(data[3]) + 'I', data)
-        return dict(player_id=player_id, object_ids=object_ids)
+        player_id, unit_id, amount, (*object_ids) = struct.unpack_from('<b4xhbx' + str(data[3]) + 'I', data)
+        return dict(player_id=player_id, object_ids=object_ids, amount=amount, unit_id=unit_id)
     if action_type == Action.DE_ATTACK_MOVE:
         x, y, (*object_ids) = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
