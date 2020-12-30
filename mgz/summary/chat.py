@@ -83,20 +83,26 @@ def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, originat
     elif line.find('--') == 3:
         _parse_help(data, line)
     elif line.startswith('{"'):
-        _parse_json(data, line, players)
+        _parse_json(data, line, diplomacy_type)
     else:
         _parse_chat(data, line, players, diplomacy_type)
     return data
 
 
-def _parse_json(data, line, players):
+def _parse_json(data, line, diplomacy_type):
     """Parse DE JSON chat."""
     payload = json.loads(line)
+    audience = 'team'
+    if payload['channel'] == 0:
+        if diplomacy_type == '1v1':
+            audience = 'all'
+    elif payload['channel'] == 1:
+        audience = 'all'
     data.update({
         'type': Chat.MESSAGE,
         'player_number': payload['player'],
         'message': payload['message'],
-        'audience': 'all' if payload['channel'] == 1 else 'team'
+        'audience': audience
     })
 
 
