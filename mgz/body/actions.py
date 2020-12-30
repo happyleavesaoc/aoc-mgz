@@ -136,10 +136,23 @@ research = "research"/Struct(
     Padding(3),
     "building_id"/Int32ul,
     "player_id"/Int16ul,
-    "selected"/Int16ul,
-    "technology_type"/Int32ul,
-    Padding(4),
-    Array(lambda ctx: ctx.selected, "selected_ids"/Int32ul)
+    "next"/Peek(
+        Struct(
+            Padding(6),
+            "check"/Int32sl
+        )
+    ),
+    IfThenElse(lambda ctx: ctx.next.check == -1,
+        Embedded(Struct(
+            "selected"/Int16ul,
+            "technology_type"/Int32ul,
+            Array(lambda ctx: ctx.selected, "selected_ids"/Int32sl)
+        )),
+        Embedded(Struct(
+            "technology_type"/Int16ul,
+            Array(1, "selected_ids"/Int32sl)
+        ))
+    )
 )
 
 sell = "sell"/Struct(
