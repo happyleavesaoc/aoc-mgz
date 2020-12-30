@@ -37,6 +37,8 @@ class Action(Enum):
     GROUP_MULTI_WAYPOINTS = 31
     CHAPTER = 32
     DE_ATTACK_MOVE = 33
+    DE_UNKNOWN_35 = 35
+    DE_UNKNOWN_37 = 37
     DE_AUTOSCOUT = 38
     DE_UNKNOWN_39 = 39
     DE_UNKNOWN_41 = 41
@@ -49,6 +51,7 @@ class Action(Enum):
     DELETE = 106
     ATTACK_GROUND = 107
     TRIBUTE = 108
+    DE_UNKNOWN_109 = 109
     REPAIR = 110
     UNGARRISON = 111
     MULTIQUEUE = 112
@@ -63,6 +66,8 @@ class Action(Enum):
     TOWN_BELL = 127
     BACK_TO_WORK = 128
     DE_QUEUE = 129
+    DE_UNKNOWN_130 = 130
+    DE_UNKNOWN_131 = 131
     POSTGAME = 255
 
 
