@@ -308,19 +308,23 @@ droprelic = "droprelic"/Struct(
 wall = "wall"/Struct(
     "selected"/Byte,
     "player_id"/Byte,
-    "start_x"/Byte,
-    "start_y"/Byte,
-    "end_x"/Byte,
-    "end_y"/Byte,
-    Padding(1),
     IfThenElse(lambda ctx: ctx._._.length - 16 - (ctx.selected * 4) == 8,
         Embedded(Struct(
-            "unk"/Bytes(4),
+            Padding(1),
+            "start_x"/Int16ul,
+            "start_y"/Int16ul,
+            "end_x"/Int16ul,
+            "end_y"/Int16ul,
             "building_id"/Int32ul,
             Padding(4),
             "flags"/Bytes(4)
         )),
         Embedded(Struct(
+            "start_x"/Byte,
+            "start_y"/Byte,
+            "end_x"/Byte,
+            "end_y"/Byte,
+            Padding(1),
             "building_id"/Int32ul,
             Padding(4),
         ))
