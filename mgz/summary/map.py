@@ -92,15 +92,16 @@ def extract_from_instructions(instructions):
     return encoding, language, name
 
 
-def lookup_name(map_id, name, version):
+def lookup_name(map_id, name, version, reference):
     """Lookup base game map if applicable."""
     custom = True
     is_de = version == Version.DE
     if (map_id != 44 and not is_de) or (map_id != 59 and is_de):
-        if is_de and map_id in mgz.const.DE_MAP_NAMES:
-            name = mgz.const.DE_MAP_NAMES[map_id]
-        elif not is_de and map_id in mgz.const.MAP_NAMES:
-            name = mgz.const.MAP_NAMES[map_id]
+        map_keys = [int(k) for k in reference['maps'].keys()]
+        if is_de and map_id in map_keys:
+            name = reference['maps'][str(map_id)]
+        elif not is_de and map_id in map_keys:
+            name = reference['maps'][str(map_id)]
         elif version == Version.AOK:
             return name, False
         else:
@@ -162,13 +163,13 @@ def get_water_percent(tiles, dataset_id):
     return count/len(tiles)
 
 
-def get_map_data(map_id, instructions, dimension, version, dataset_id, tiles, de_seed=None):
+def get_map_data(map_id, instructions, dimension, version, dataset_id, reference, tiles, de_seed=None):
     """Get the map metadata."""
     if instructions == b'\x00':
         raise ValueError('empty instructions')
-
+    
     encoding, language, name = extract_from_instructions(instructions)
-    name, custom = lookup_name(map_id, name, version)
+    name, custom = lookup_name(map_id, name, version, reference)
     seed = get_map_seed(instructions)
     name, modes = get_modes(name)
 

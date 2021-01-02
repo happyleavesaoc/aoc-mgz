@@ -1,6 +1,18 @@
 """Determine diplomacy type."""
 
 
+def get_diplomacy_type(teams, players):
+    """Get type of diplomacy."""
+    if len(teams) == 2 and len(players) > 2:
+        return 'TG'
+    elif len(teams) == len(players) and len(players) > 2:
+        return 'FFA'
+    elif len(players) == 2:
+        return '1v1'
+    else:
+        return 'Other'
+
+
 def get_diplomacy_data(header, teams):
     """Compute diplomacy."""
     player_num = 0
@@ -12,20 +24,10 @@ def get_diplomacy_data(header, teams):
             computer_num += 1
     total_num = player_num + computer_num
 
-    diplomacy = {
-        'FFA': (len(teams) == total_num) and total_num > 2,
-        'TG':  len(teams) == 2 and total_num > 2,
-        '1v1': total_num == 2,
-    }
-
-    diplomacy['type'] = 'Other'
+    diplomacy = {}
+    diplomacy['type'] = get_diplomacy_type(teams, header.scenario.game_settings.player_info[1:])
     team_sizes = sorted([len(team) for team in teams])
     diplomacy['team_size'] = 'v'.join([str(size) for size in team_sizes])
-    if diplomacy['FFA']:
-        diplomacy['type'] = 'FFA'
+    if diplomacy['type'] == 'FFA':
         diplomacy['team_size'] = 'FFA'
-    elif diplomacy['TG']:
-        diplomacy['type'] = 'TG'
-    elif diplomacy['1v1']:
-        diplomacy['type'] = '1v1'
     return diplomacy

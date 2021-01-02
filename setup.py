@@ -3,9 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mgz',
-
-    version='1.4.13',
-
+    version='1.5.0',
     description='Parse Age of Empires 2 recorded games.',
     url='https://github.com/happyleavesaoc/aoc-mgz/',
     license='MIT',
@@ -14,6 +12,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'aiohttp>=3.6.2',
+        'aocref>=1.0.0',
         'construct==2.8.16',
         'flatbuffers>=1.10',
         'tabulate>=0.8.2',

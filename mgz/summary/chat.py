@@ -24,6 +24,7 @@ SAVE_MARKERS = [
     'Choisir pour continuer la partie au lieu d\'enregistrer et quitter.'
 ]
 
+
 class Chat(Enum):
     """Chat types."""
     LADDER = 0
@@ -35,6 +36,7 @@ class Chat(Enum):
     MESSAGE = 6
     HELP = 7
     DISCARD = 8
+
 
 def get_lobby_chat(header, encoding, diplomacy_type, players):
     """Get lobby chat."""
@@ -109,7 +111,7 @@ def _parse_json(data, line, diplomacy_type):
     data.update({
         'type': Chat.MESSAGE,
         'player_number': payload['player'],
-        'message': payload['message'],
+        'message': payload['message'].strip(),
         'audience': audience
     })
 
