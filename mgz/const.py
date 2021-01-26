@@ -127,7 +127,16 @@ DE_MAP_NAMES = {
     139: 'Golden Swamp',
     140: 'Four Lakes',
     141: 'Land Nomad',
-    145: 'Fall of Rome'
+    142: 'Battle on Ice',
+    143: 'El Dorado',
+    144: 'Fall of Axum',
+    145: 'Fall of Rome',
+    146: 'Majapahit Empire',
+    147: 'Amazon Tunnel',
+    148: 'Coastal Forest',
+    149: 'African Clearing',
+    150: 'Atacama',
+    151: 'Seize the Mountain'
 }
 
 MAP_NAMES = {
