@@ -21,7 +21,7 @@ class TestFastUserPatch15(unittest.TestCase):
 
 
     def test_map(self):
-        self.assertEqual(self.data['map_id'], 44)
+        self.assertEqual(self.data['scenario']['map_id'], 44)
 
 
 class TestFastDE(unittest.TestCase):
@@ -39,5 +39,5 @@ class TestFastDE(unittest.TestCase):
         self.assertEqual(len(players), 3)
 
     def test_map(self):
-        self.assertEqual(self.data['map_id'], 9)
-        self.assertEqual(self.data['seed'], -1970180596)
+        self.assertEqual(self.data['scenario']['map_id'], 9)
+        self.assertEqual(self.data['lobby']['seed'], -1970180596)
