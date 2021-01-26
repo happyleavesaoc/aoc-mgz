@@ -1,5 +1,6 @@
 """Determine player data."""
 
+from mgz.summary.objects import TC_IDS
 from collections import defaultdict
 
 
@@ -125,6 +126,30 @@ def guess_winner(teams, resigned, i):
     return None
 
 
+def get_civilization(header, index):
+    """Get civilization ID."""
+    if header.save_version >= 20.06:
+        return header.de.players[index].civ_id
+    return header.initial.players[index + 1].attributes.civilization
+
+
+def get_color(header, index):
+    """Get color ID."""
+    if header.save_version >= 20.06:
+        return header.de.players[index].color_id
+    return header.initial.players[index + 1].attributes.player_color
+
+
+def get_position(header, index):
+    """Get position."""
+    if header.save_version >= 20.06:
+        for obj in header.initial.players[index + 1].objects:
+            if obj.object_type in TC_IDS:
+                return (obj.x, obj.y)
+    attr = header.initial.players[index + 1].attributes
+    return (attr.camera_x, attr.camera_y)
+
+
 def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, ratings, encoding): # pylint: disable=too-many-arguments, too-many-locals
     """Get basic player info."""
     out = []
@@ -140,14 +165,14 @@ def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, r
         name = player.attributes.player_name.decode(encoding)
         out.append({
             'name': name,
-            'civilization': player.attributes.civilization,
+            'civilization': get_civilization(header, i),
             'human': header.scenario.game_settings.player_info[i + 1].type == 'human',
             'number': i + 1,
-            'color_id': player.attributes.player_color,
+            'color_id': get_color(header, i),
             'winner': winner,
             'mvp': ach(achievements, ['mvp']),
             'score': ach(achievements, ['total_score']),
-            'position': (player.attributes.camera_x, player.attributes.camera_y),
+            'position': get_position(header, i),
             'rate_snapshot': ratings.get(name),
             'user_id': profile_ids.get(i + 1),
             'cheater': (i + 1) in cheaters,

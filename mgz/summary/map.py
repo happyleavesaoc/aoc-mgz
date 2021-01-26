@@ -105,7 +105,7 @@ def lookup_name(map_id, name, version, reference):
         elif version == Version.AOK:
             return name, False
         else:
-            raise ValueError('unspecified builtin map: ' + str(map_id))
+            raise ValueError('unspecified builtin map: {} aka {}'.format(map_id, name))
         custom = False
     return name, custom
 

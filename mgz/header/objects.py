@@ -311,6 +311,10 @@ unit_ai = "ai"/Struct(
     "defend_target"/Int32ul,
     "defense_buffer"/Float32l,
     "last_world_position"/waypoint,
+    "de_2006_unk"/If(lambda ctx: find_save_version(ctx) >= 20.06, Struct(
+        "unk_float"/Float32l,
+        "unk"/Int32ul
+    )),
     "num_orders"/Int32ul,
     "orders"/Array(lambda ctx: ctx.num_orders, order),
     "num_notifications"/Int32ul,
@@ -368,6 +372,7 @@ combat = "combat"/Struct(
     "berserker_timer"/Float32l,
     "num_builders"/Byte,
     "num_healers"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
+    "de_unknown"/If(lambda ctx: find_save_version(ctx) >= 20.06, Int32ul)
 )
 
 production_queue = "production_queue"/Struct(
