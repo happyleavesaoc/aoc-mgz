@@ -89,7 +89,8 @@ def sync(data):
 
 def viewlock(data):
     """Handle viewlocks."""
-    data.read(12)
+    x, y, _ = struct.unpack('<ffI', data.read(12))
+    return x, y
 
 
 def parse_action(action_type, data):

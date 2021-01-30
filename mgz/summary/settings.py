@@ -58,6 +58,15 @@ def _get_starting_age(postgame, de_data):
     return (None, None)
 
 
+def _get_cheats(header):
+    """Get cheat mode."""
+    if header.de is not None:
+        return header.de.cheats
+    if hasattr(header.replay, 'cheats_enabled'):
+        return header.replay.cheats_enabled
+    return False
+
+
 def get_settings_data(postgame, header):
     """Get settings."""
     population_limit = header.lobby.population_limit
@@ -88,7 +97,7 @@ def get_settings_data(postgame, header):
         ) if header.de else (None, None),
         'victory_condition': _get_victory_type(postgame, header.de),
         'treaty_length': header.de.treaty_length if header.de else None,
-        'cheats': header.replay.cheats_enabled if hasattr(header.replay, 'cheats_enabled') else False,
+        'cheats': _get_cheats(header),
         'team_together': _get_team_together(postgame, header.de),
         'all_technologies': _get_all_techs(postgame, header.de),
         'lock_speed': _get_lock_speed(postgame, header.de),
