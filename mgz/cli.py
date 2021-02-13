@@ -72,10 +72,9 @@ async def extract_rec(playback, path, select=None):
 def print_info(path):
     """Print basic info."""
     with open(path, 'rb') as handle:
-        header = mgz.header.parse_stream(handle)
-        handle.seek(0)
         summary = Summary(handle)
         dataset = summary.get_dataset()
+        header = summary.get_header()
         print('-------------')
         print(tabulate([
             ['Path', path],
