@@ -108,8 +108,14 @@ def parse_action(action_type, data):
         player_id, x, y = struct.unpack_from('<3xhx2f', data)
         return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.ORDER:
-        player_id, x, y = struct.unpack_from('<b10x2f', data)
-        return dict(player_id=player_id, x=x, y=y)
+        player_id, target_id, selected, x, y = struct.unpack_from('<b2xIh2x2f', data)
+        object_ids = []
+        if selected != 255:
+            offset = 0
+            if check_flags(struct.unpack_from('<4b', data[19:])):
+                offset = 4
+            object_ids = struct.unpack_from('<' + str(selected) + 'I', data[19 + offset:])
+        return dict(player_id=player_id, target_id=target_id, x=x, y=y, object_ids=object_ids)
     if action_type == Action.BUILD:
         player_id, x, y, building_id = struct.unpack_from('<xh2fI', data)
         return dict(player_id=player_id, x=x, y=y, building_id=building_id)
