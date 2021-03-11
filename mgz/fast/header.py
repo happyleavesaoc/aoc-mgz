@@ -136,10 +136,12 @@ def parse_player(header, player_number, num_players):
     )
 
 
-def parse_lobby(data, version):
+def parse_lobby(data, version, save):
     """Parse lobby data."""
     if version is Version.DE:
         data.read(5)
+        if save >= 20.06:
+            data.read(9)
     data.read(8)
     if version is not Version.DE:
         data.read(1)
@@ -239,14 +241,18 @@ def parse_scenario(data, num_players, version):
     )
 
 
-def parse_de(data, version):
+def parse_de(data, version, save):
     """Parse DE-specific header."""
     if version is not Version.DE:
         return None
-    data.read(143)
+    data.read(12)
+    dlc_count = unpack('<I', data)
+    data.read(dlc_count * 4)
+    data.read(103)
     players = []
     for _ in range(8):
-        data.read(24)
+        data.read(20)
+        civilization_id = unpack('<I', data)
         de_string(data)
         data.read(1)
         de_string(data)
@@ -258,7 +264,8 @@ def parse_de(data, version):
             players.append(dict(
                 number=number,
                 name=name,
-                profile_id=profile_id
+                profile_id=profile_id,
+                civilization_id=civilization_id
             ))
     data.read(33)
     for _ in range(23):
@@ -275,6 +282,8 @@ def parse_de(data, version):
     lobby = de_string(data)
     mod = de_string(data)
     data.read(33)
+    if save >= 20.06:
+        data.read(1)
     de_string(data)
     data.read(8)
     return dict(
@@ -300,7 +309,7 @@ def parse_version(header, data):
     version = get_version(game.decode('ascii'), round(save, 2), log)
     if version not in (Version.USERPATCH15, Version.DE):
         raise UnsupportedError(f"{version} not supported")
-    return version
+    return version, round(save, 2)
 
 
 def parse_players(header, num_players, version):
@@ -335,13 +344,13 @@ def parse_metadata(header):
 def parse(data):
     """Parse recorded game header."""
     header = decompress(data)
-    version = parse_version(header, data)
-    de = parse_de(header, version)
+    version, save = parse_version(header, data)
+    de = parse_de(header, version, save)
     metadata, num_players = parse_metadata(header)
     map_ = parse_map(header, version)
     players, mod = parse_players(header, num_players, version)
     scenario = parse_scenario(header, num_players, version)
-    lobby = parse_lobby(header, version)
+    lobby = parse_lobby(header, version, save)
     return dict(
         version=version,
         players=players,
