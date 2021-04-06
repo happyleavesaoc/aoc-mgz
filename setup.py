@@ -12,8 +12,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         'aiohttp>=3.6.2',
-        'aocref>=1.0.0',
+        'aocref>=1.0.1',
         'construct==2.8.16',
+        'dataclasses==0.8',
         'flatbuffers>=1.10',
         'tabulate>=0.8.2',
         'tqdm>=4.28.1',

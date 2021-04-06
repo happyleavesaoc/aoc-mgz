@@ -57,11 +57,15 @@ def get_lobby_chat(header, encoding, diplomacy_type, players):
 
 def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, origination='game'):
     """Initalize."""
-    line = line.strip(b'\x00').decode(encoding)
     data = {
         'timestamp': timestamp,
         'origination': origination
     }
+    try:
+        line = line.strip(b'\x00').decode(encoding)
+    except UnicodeDecodeError:
+        data['type'] = Chat.DISCARD
+        return data
     for save_marker in SAVE_MARKERS:
         if line.find(save_marker) > 0:
             data['type'] = Chat.SAVE

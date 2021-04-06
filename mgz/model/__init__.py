@@ -10,6 +10,7 @@ from mgz.model.definitions import *
 from mgz.summary.chat import parse_chat, Chat as ChatEnum
 from mgz.summary.diplomacy import get_diplomacy_type
 from mgz.summary.map import get_map_data
+from mgz.summary.objects import TC_IDS
 
 
 def parse_match(handle):
@@ -44,6 +45,16 @@ def parse_match(handle):
         lobby = None
         guid = None
 
+    # Parse gaia objects
+    gaia = [
+        Object(
+            dataset['objects'].get(str(obj['object_id'])),
+            obj['instance_id'],
+            Position(obj['position']['x'], obj['position']['y'])
+        )
+        for obj in data['players'][0]['objects']
+    ]
+
     # Parse players
     players = dict()
     allies = dict()
@@ -55,17 +66,23 @@ def parse_match(handle):
         de_player = de_players.get(player['number'])
         if de_player:
             player.update(de_player)
+        pos_x = None
+        pos_y = None
+        for obj in player['objects']:
+            if obj['object_id'] in TC_IDS:
+                pos_x = obj['position']['x']
+                pos_y = obj['position']['y']
         players[player['number']] = Player(
             player['color_id'] + 1,
             player['name'].decode(encoding),
             consts['player_colors'][str(player['color_id'])],
             dataset['civilizations'][str(player['civilization_id'])]['name'],
+            Position(pos_x, pos_y),
             [
                 Object(
                     dataset['objects'].get(str(obj['object_id'])),
                     obj['instance_id'],
-                    obj['position']['x'],
-                    obj['position']['y']
+                    Position(obj['position']['x'], obj['position']['y'])
                 )
                 for obj in player['objects']
             ],
@@ -89,6 +106,8 @@ def parse_match(handle):
     chats = []
     for c in data['lobby']['chat']:
         chat = parse_chat(c, encoding, 0, pd, diplomacy_type, 'lobby')
+        if chat['player_number'] not in players:
+            continue
         chats.append(Chat(
             timedelta(milliseconds=chat['timestamp']),
             chat['message'],
@@ -99,23 +118,45 @@ def parse_match(handle):
     fast.meta(handle)
     timestamp = 0
     resigned = []
+    actions = []
+    viewlocks = []
+    last_viewlock = None
     while True:
         try:
-            operation = fast.operation(handle)
-            if operation[0] is fast.Operation.SYNC:
-                timestamp += operation[1][0]
-            elif operation[0] is fast.Operation.CHAT:
-                chat = parse_chat(operation[1], encoding, timestamp, pd, diplomacy_type, 'game')
+            op_type, op_data = fast.operation(handle)
+            if op_type is fast.Operation.SYNC:
+                timestamp += op_data[0]
+            elif op_type is fast.Operation.VIEWLOCK:
+                if op_data == last_viewlock:
+                    continue
+                viewlocks.append(Viewlock(timedelta(milliseconds=timestamp), Position(*op_data)))
+                last_viewlock = op_data
+            elif op_type is fast.Operation.CHAT:
+                chat = parse_chat(op_data, encoding, timestamp, pd, diplomacy_type, 'game')
                 if chat['type'] == ChatEnum.MESSAGE:
                     chats.append(Chat(
                         timedelta(milliseconds=chat['timestamp']),
                         chat['message'],
                         players[chat['player_number']]
                     ))
-            elif operation[0] is fast.Operation.ACTION:
-                if operation[1][0] is fast.Action.RESIGN:
-                    action = operation[1][1]
-                    resigned.append(players[action['player_id']])
+            elif op_type is fast.Operation.ACTION:
+                action_type, action_data = op_data
+                action = Action(timedelta(milliseconds=timestamp), action_type)
+                for key, value in action_data.items():
+                    setattr(action, key, value)
+                if 'player_id' in action_data:
+                    action.player = players[action_data['player_id']]
+                if 'technology_id' in action_data:
+                    action.technology = dataset['technologies'][str(action_data['technology_id'])]
+                if 'formation_id' in action_data:
+                    action.formation = consts['formations'][str(action_data['formation_id'])]
+                if 'building_id' in action_data:
+                    action.building = dataset['objects'][str(action_data['building_id'])]
+                if 'x' in action_data and 'y' in action_data:
+                    action.position = Position(action_data['x'], action_data['y'])
+                if action_type is fast.Action.RESIGN:
+                    resigned.append(players[action_data['player_id']])
+                actions.append(action)
         except EOFError:
             break
 
@@ -128,6 +169,7 @@ def parse_match(handle):
     return Match(
         list(players.values()),
         teams,
+        gaia,
         Map(
             map_data['name'],
             map_data['dimension'],
@@ -138,15 +180,15 @@ def parse_match(handle):
                 Tile(
                     tile['terrain_id'],
                     tile['elevation'],
-                    tile['x'],
-                    tile['y']
+                    Position(tile['x'], tile['y'])
                 ) for tile in map_data['tiles']
             ]
         ),
         File(
             codecs.lookup(encoding),
             language,
-            players[data['metadata']['owner_id']]
+            players[data['metadata']['owner_id']],
+            viewlocks
         ),
         consts['speeds'][str(int(round(data['metadata']['speed'], 2) * 100))],
         data['metadata']['cheats'],
@@ -160,5 +202,6 @@ def parse_match(handle):
         consts['map_reveal_choices'][str(data['lobby']['reveal_map_id'])],
         timedelta(milliseconds=timestamp),
         diplomacy_type,
-        data['version']
+        data['version'],
+        actions
     )

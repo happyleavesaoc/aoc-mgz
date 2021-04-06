@@ -21,15 +21,11 @@ def _compile_object_search():
     """Compile regular expressions for object searching."""
     class_or = b'(' + b'|'.join(CLASSES) + b')'
     for i in range(9):
-        expr = class_or + struct.pack('b', i) + b'[^\x00].{3}\xff\xff\xff\xff[^\xff]'
+        expr = class_or + struct.pack('b', i) + b'[^\x00][\x00-\xff]{3}\xff\xff\xff\xff[^\xff]'
         REGEXES[i] = re.compile(expr)
 
 
 _compile_object_search()
-
-
-class UnsupportedError(Exception):
-    """Raised for known lack of support."""
 
 
 def unpack(fmt, data):
@@ -78,6 +74,8 @@ def object_block(data, pos, player_number):
             if match is None:
                 break
             offset = match.start()
+            while end + 8 < offset:
+                end += data[pos + end:].find(BLOCK_END) + len(BLOCK_END)
         if end + 8 == offset:
             break
         pos += offset
@@ -195,7 +193,7 @@ def parse_map(data, version):
     data.read(x2 * y2 * 4)
     restore_time = unpack('<I', data)
     if restore_time > 0:
-        raise UnsupportedError("restored matches can't be parsed yet")
+        raise RuntimeError("restored matches can't be parsed yet")
     return dict(
         all_visible=all_visible == 1,
         restore_time=restore_time,
@@ -251,7 +249,9 @@ def parse_de(data, version, save):
     data.read(103)
     players = []
     for _ in range(8):
-        data.read(20)
+        data.read(4)
+        color_id = unpack('<i', data)
+        data.read(12)
         civilization_id = unpack('<I', data)
         de_string(data)
         data.read(1)
@@ -263,6 +263,7 @@ def parse_de(data, version, save):
         if name:
             players.append(dict(
                 number=number,
+                color_id=color_id,
                 name=name,
                 profile_id=profile_id,
                 civilization_id=civilization_id
@@ -308,7 +309,7 @@ def parse_version(header, data):
     game, save = unpack('<7sxf', header)
     version = get_version(game.decode('ascii'), round(save, 2), log)
     if version not in (Version.USERPATCH15, Version.DE):
-        raise UnsupportedError(f"{version} not supported")
+        raise RuntimeError(f"{version} not supported")
     return version, round(save, 2)
 
 
@@ -333,7 +334,7 @@ def parse_metadata(header):
     """Parse recorded game metadata."""
     ai, game_speed, owner_id, num_players, cheats = unpack('<I24xf17xhbxb', header)
     if ai > 0:
-        raise UnsupportedError("don't know how to parse ai")
+        raise RuntimeError("don't know how to parse ai")
     return dict(
         speed=game_speed,
         owner_id=owner_id,
@@ -343,14 +344,17 @@ def parse_metadata(header):
 
 def parse(data):
     """Parse recorded game header."""
-    header = decompress(data)
-    version, save = parse_version(header, data)
-    de = parse_de(header, version, save)
-    metadata, num_players = parse_metadata(header)
-    map_ = parse_map(header, version)
-    players, mod = parse_players(header, num_players, version)
-    scenario = parse_scenario(header, num_players, version)
-    lobby = parse_lobby(header, version, save)
+    try:
+        header = decompress(data)
+        version, save = parse_version(header, data)
+        de = parse_de(header, version, save)
+        metadata, num_players = parse_metadata(header)
+        map_ = parse_map(header, version)
+        players, mod = parse_players(header, num_players, version)
+        scenario = parse_scenario(header, num_players, version)
+        lobby = parse_lobby(header, version, save)
+    except (struct.error, zlib.error, AssertionError, MemoryError):
+        raise RuntimeError("could not parse")
     return dict(
         version=version,
         players=players,

@@ -2,7 +2,16 @@
 
 from dataclasses import dataclass
 from datetime import timedelta
+from mgz.fast import Action as ActionEnum
 from mgz.util import Version
+
+
+@dataclass
+class Position:
+    """Represents a coordinate."""
+
+    x: float
+    y: float
 
 
 @dataclass
@@ -11,8 +20,7 @@ class Object:
 
     name: str
     instance_id: int
-    x: float
-    y: float
+    position: Position
 
 
 @dataclass
@@ -23,6 +31,7 @@ class Player:
     name: str
     color: str
     civilization: str
+    position: Position
     objects: list
     profile_id: int
     team: list = None
@@ -31,14 +40,31 @@ class Player:
     def __repr__(self):
         return self.name
 
+
+@dataclass
+class Action:
+    """Represents an abstract action."""
+
+    timestamp: timedelta
+    type: ActionEnum
+    player: Player = None
+
+
+@dataclass
+class Viewlock:
+    """Represents player view."""
+
+    timestamp: timedelta
+    position: Position
+
+
 @dataclass
 class Tile:
     """Represents a map tile."""
 
     terrain: int
     elevation: int
-    x: int
-    y: int
+    position: Position
 
 
 @dataclass
@@ -62,6 +88,7 @@ class File:
     encoding: str
     language: str
     perspective: Player
+    viewlocks: list
 
 
 @dataclass
@@ -82,6 +109,7 @@ class Match:
 
     players: list
     teams: list
+    gaia: list
     map: Map
     file: File
     speed: str
@@ -97,3 +125,4 @@ class Match:
     duration: timedelta
     diplomacy_type: str
     version: Version
+    actions: list
