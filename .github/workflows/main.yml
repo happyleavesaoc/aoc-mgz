@@ -17,4 +17,4 @@ jobs:
       - name: Install mgz
         run: pip install -e .
       - name: Run tests
-        run: py.test tests
+        run: py.test -v tests
