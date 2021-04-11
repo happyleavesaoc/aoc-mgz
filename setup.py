@@ -14,7 +14,7 @@ setup(
         'aiohttp>=3.6.2',
         'aocref>=1.0.1',
         'construct==2.8.16',
-        'dataclasses==0.8',
+        'dataclasses==0.8; python_version < "3.7"',
         'flatbuffers>=1.10',
         'tabulate>=0.8.2',
         'tqdm>=4.28.1',
