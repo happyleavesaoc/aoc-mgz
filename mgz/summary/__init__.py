@@ -48,6 +48,7 @@ class Summary: # pylint: disable=too-many-public-methods
         self._handle = handle
         self._playback = playback
         self._cache = {
+            'dataset': None,
             'teams': None,
             'resigned': set(),
             'cheaters': set(),
@@ -283,6 +284,7 @@ class Summary: # pylint: disable=too-many-public-methods
 
     def get_map(self):
         """Get map."""
+        tiles = tiles = [(tile.terrain_type, tile.elevation) for tile in self._header.map_info.tile]
         if not self._cache['map']:
             self._cache['map'], self._cache['encoding'], self._cache['language'] = get_map_data(
                 self._header.scenario.game_settings.map_id,
@@ -290,14 +292,18 @@ class Summary: # pylint: disable=too-many-public-methods
                 self._header.map_info.size_x,
                 self._header.version,
                 self.get_dataset()['id'],
-                self._header.map_info.tile,
+                self.reference,
+                tiles,
                 de_seed=self._header.lobby.de.map_seed if self._header.lobby.de else None
             )
         return self._cache['map']
 
     def get_dataset(self):
         """Get dataset."""
-        return get_dataset_data(self._header)
+        if not self._cache['dataset']:
+            self._cache['dataset'] = get_dataset_data(self._header)
+        self.reference = self._cache['dataset'][1]
+        return self._cache['dataset'][0]
 
     def get_completed(self):
         """Determine if the game was completed.
