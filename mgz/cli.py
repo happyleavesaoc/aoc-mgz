@@ -44,6 +44,8 @@ class TqdmStream: # pylint: disable=too-few-public-methods
 
 async def play_rec(playback, path):
     """Play a recorded game."""
+    if not playback:
+        raise RuntimeError('playback not supported')
     from mgz.playback import Client, progress_bar
     with open(path, 'rb') as handle:
         summary = Summary(handle)
@@ -245,7 +247,7 @@ def get_args():
     """Get arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--playback',
-                        default=os.environ.get('AOC_PLAYBACK', 'localhost:8080:/tmp'))
+                        default=os.environ.get('AOC_PLAYBACK', ''))
     subparsers = parser.add_subparsers(dest='cmd')
     subparsers.required = True
     info = subparsers.add_parser(CMD_INFO)
