@@ -120,7 +120,7 @@ def parse_action(action_type, data):
         player_id, x, y, building_id = struct.unpack_from('<xh2fI', data)
         return dict(player_id=player_id, x=x, y=y, building_id=building_id)
     if action_type == Action.STANCE:
-        stance_id, (*object_ids) = struct.unpack_from('<xb' + str(data[0]) + 'I', data)
+        stance_id, *object_ids = struct.unpack_from('<xb' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), stance_id=stance_id)
     if action_type == Action.RESEARCH:
         object_id, player_id = struct.unpack_from('<3xIh', data)
