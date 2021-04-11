@@ -139,13 +139,13 @@ def parse_action(action_type, data):
         _, x, y, *object_ids = struct.unpack_from('<3xI4x2f' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.MULTIQUEUE:
-        unit_id, amount, (*object_ids) = struct.unpack_from('<3xhxb' + str(data[5]) + 'I', data)
+        unit_id, amount, *object_ids = struct.unpack_from('<3xhxb' + str(data[5]) + 'I', data)
         return dict(object_ids=object_ids, unit_id=unit_id, amount=amount)
     if action_type == Action.PATROL:
         x, y, *object_ids = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.SPECIAL:
-        target_id, order_type, x, y, (*flags) = struct.unpack_from('<3xib3x2f4x4b', data)
+        target_id, order_type, x, y, *flags = struct.unpack_from('<3xib3x2f4x4b', data)
         offset = 0
         if check_flags(flags):
             offset = 4
@@ -190,7 +190,7 @@ def parse_action(action_type, data):
         offset = 0
         if check_flags(flags):
             offset = 4
-        (*object_ids), = struct.unpack_from('<' + str(data[0]) + 'I', data[7 + offset:])
+        object_ids = struct.unpack_from('<' + str(data[0]) + 'I', data[7 + offset:])
         return dict(target_id=target_id, object_ids=list(object_ids))
     if action_type == Action.STOP:
         object_ids = struct.unpack_from('<x' + str(data[0]) + 'I', data)
@@ -220,10 +220,10 @@ def parse_action(action_type, data):
             object_ids = struct.unpack_from('<4x' + str(selected) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.DE_QUEUE:
-        player_id, unit_id, amount, (*object_ids) = struct.unpack_from('<b4xhbx' + str(data[3]) + 'I', data)
+        player_id, unit_id, amount, *object_ids = struct.unpack_from('<b4xhbx' + str(data[3]) + 'I', data)
         return dict(player_id=player_id, object_ids=object_ids, amount=amount, unit_id=unit_id)
     if action_type == Action.DE_ATTACK_MOVE:
-        x, y, (*object_ids) = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
+        x, y, *object_ids = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.DE_AUTOSCOUT:
         object_ids = struct.unpack_from('<x' + str(data[0]) + 'I', data)
