@@ -12,7 +12,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'aiohttp>=3.6.2',
-        'aocref>=1.0.1',
+        'aocref>=1.0.2',
         'construct==2.8.16',
         'dataclasses==0.8; python_version < "3.7"',
         'flatbuffers>=1.10',
