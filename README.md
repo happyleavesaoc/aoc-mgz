@@ -28,7 +28,7 @@ Abstractions take parser output as input and return an object with normalized da
 | --- | :-: | :-: | :-: | :-: | :-: | :-: |
 | Age of Kings (`.mgl`) | | ✓ | | ✓ | ✓ | |
 | The Conquerors (`.mgx`) | | ✓ | | ✓ | ✓ | |
-| Userpatch <= 1.4 (`.mgz`) | | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Userpatch <= 1.4 (`.mgz`) | | ✓ | | ✓ | ✓ | ✓ |
 | Userpatch 1.5 (`.mgz`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Definitive Edition <= 13.34 (`.aoe2record`) | | ✓ | | ✓ | ✓ | ✓ |
 | Definitive Edition > 13.34 (`.aoe2record`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
