@@ -98,8 +98,6 @@ def _validate(data, players):
     numbers = [p['number'] for p in players]
     if 'player_number' in data and data['player_number'] not in numbers:
         return False
-    if data['timestamp'] > 0 and data['timestamp'] < 1000:
-        return False
     return True
 
 
@@ -108,9 +106,7 @@ def _parse_json(data, line, diplomacy_type):
     payload = json.loads(line)
     if payload['messageAGP'] == '':
         # Use this condition to tell whether to ignore the chat. It might be from another game for example.
-        data.update({
-            'type': Chat.DISCARD
-        })
+        data['type'] = Chat.DISCARD
         return
 
     audience = 'team'

@@ -319,7 +319,7 @@ class Summary: # pylint: disable=too-many-public-methods
     def get_mirror(self):
         """Determine mirror match."""
         mirror = False
-        if self.get_diplomacy()['1v1']:
+        if self.get_diplomacy()['type'] == '1v1':
             civs = set()
             for data in self.get_players():
                 civs.add(data['civilization'])
