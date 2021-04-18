@@ -106,6 +106,13 @@ def _validate(data, players):
 def _parse_json(data, line, diplomacy_type):
     """Parse DE JSON chat."""
     payload = json.loads(line)
+    if payload['messageAGP'] == '':
+        # Use this condition to tell whether to ignore the chat. It might be from another game for example.
+        data.update({
+            'type': Chat.DISCARD
+        })
+        return
+
     audience = 'team'
     if payload['channel'] == 0:
         if diplomacy_type == '1v1':
