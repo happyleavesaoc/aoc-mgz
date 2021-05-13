@@ -102,8 +102,14 @@ def parse_action(action_type, data):
         player_id, player_id_to, resource_id, amount, fee = struct.unpack_from('<bbbff', data)
         return dict(player_id=player_id, player_id_to=player_id_to, resource_id=resource_id, amount=amount, fee=fee)
     if action_type == Action.MOVE:
-        player_id, x, y = struct.unpack_from('<b10x2f', data)
-        return dict(player_id=player_id, x=x, y=y)
+        player_id, selected, x, y = struct.unpack_from('<b6xI2f', data)
+        object_ids = []
+        if selected != 255:
+            offset = 0
+            if check_flags(struct.unpack_from('<4b', data[19:])):
+                offset = 4
+            object_ids = struct.unpack_from('<' + str(selected) + 'I', data[19 + offset:])
+        return dict(player_id=player_id, x=x, y=y, object_ids=list(object_ids))
     if action_type == Action.CREATE:
         player_id, x, y = struct.unpack_from('<3xhx2f', data)
         return dict(player_id=player_id, x=x, y=y)
