@@ -49,9 +49,9 @@ def de_string(data):
     return unpack(f'<{length}s', data)
 
 
-def parse_object(data):
+def parse_object(data, offset):
     """Parse an object."""
-    class_id, object_id, instance_id, pos_x, pos_y = struct.unpack_from('<bxh14xixff', data)
+    class_id, object_id, instance_id, pos_x, pos_y = struct.unpack_from('<bxh14xixff', data, offset)
     return dict(
         class_id=class_id,
         object_id=object_id,
@@ -69,13 +69,13 @@ def object_block(data, pos, player_number):
     offset = None
     while True:
         if not offset:
-            match = REGEXES[player_number].search(data[pos:])
-            end = data[pos:].find(BLOCK_END) + len(BLOCK_END)
+            match = REGEXES[player_number].search(data, pos)
+            end = data.find(BLOCK_END, pos) - pos + len(BLOCK_END)
             if match is None:
                 break
-            offset = match.start()
+            offset = match.start() - pos
             while end + 8 < offset:
-                end += data[pos + end:].find(BLOCK_END) + len(BLOCK_END)
+                end += data.find(BLOCK_END, pos + end) - (pos + end) + len(BLOCK_END)
         if end + 8 == offset:
             break
         pos += offset
@@ -85,7 +85,7 @@ def object_block(data, pos, player_number):
             if test == fingerprint:
                 break
         else:
-            objects.append(parse_object(data[pos:]))
+            objects.append(parse_object(data, pos))
             offset = None
             pos += 31
     return objects, pos + end
