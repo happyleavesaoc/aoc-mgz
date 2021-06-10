@@ -321,8 +321,6 @@ def operation(data):
             return op_type, viewlock(data)
         if op_type == Operation.CHAT:
             return op_type, chat(data)
-
-        print("HELLO WOLRFD!")
     except struct.error:
         raise EOFError
     raise RuntimeError("unknown data received")

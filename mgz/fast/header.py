@@ -104,10 +104,7 @@ def parse_mod(header, num_players, version):
 
 def parse_player(header, player_number, num_players):
     """Parse a player (and objects)."""
-    unpacked_data = unpack(f'<bx{num_players}x9i5xh', header)
-    type_ = unpacked_data[0]
-    diplomacy = unpacked_data[1:-1]
-    name_length = unpacked_data[-1]
+    type_, (*diplomacy), name_length = unpack(f'<bx{player_number}x9i5xh', header)
     name, resources = unpack(f'<{name_length - 1}s2xIx', header)
     header.read(resources * 4)
     start_x, start_y, civilization_id, color_id = unpack('<xff9xb3xbx', header)
