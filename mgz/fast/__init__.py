@@ -236,7 +236,8 @@ def parse_action(action_type, data):
     if action_type == Action.ADD_WAYPOINT:
         object_ids = []
         selected, x, y = struct.unpack_from('<xb2b', data)
-        object_ids = struct.unpack_from('<4x' + str(selected) + 'I', data)
+        if selected > 0:
+            object_ids = struct.unpack_from('<4x' + str(selected) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.DE_QUEUE:
         player_id, unit_id, amount, *object_ids = struct.unpack_from('<b4xhbx' + str(data[3]) + 'I', data)
