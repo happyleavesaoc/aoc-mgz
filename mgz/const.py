@@ -136,7 +136,12 @@ DE_MAP_NAMES = {
     148: 'Coastal Forest',
     149: 'African Clearing',
     150: 'Atacama',
-    151: 'Seize the Mountain'
+    151: 'Seize the Mountain',
+    152: 'Crater',
+    153: 'Crossroads',
+    154: 'Michi',
+    155: 'Team Moats',
+    156: 'Volcanic Island'
 }
 
 MAP_NAMES = {
