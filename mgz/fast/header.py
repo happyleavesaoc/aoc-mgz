@@ -7,13 +7,12 @@ import zlib
 
 from mgz.util import get_version, Version
 
-
 ZLIB_WBITS = -15
 CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50']
 BLOCK_END = b'\x00\x0b'
 REGEXES = {}
 SKIP_OBJECTS = [
-    (b'\x1e\x00\x87\x02', 252) # 647: junk DE object, thousands per file
+    (b'\x1e\x00\x87\x02', 252)  # 647: junk DE object, thousands per file
 ]
 
 
@@ -105,10 +104,13 @@ def parse_mod(header, num_players, version):
 
 def parse_player(header, player_number, num_players):
     """Parse a player (and objects)."""
-    type_, (*diplomacy), name_length = unpack(f'<bx{num_players}x9i5xh', header)
+    unpacked_data = unpack(f'<bx{num_players}x9i5xh', header)
+    type_ = unpacked_data[0]
+    diplomacy = unpacked_data[1:-1]
+    name_length = unpacked_data[-1]
     name, resources = unpack(f'<{name_length - 1}s2xIx', header)
     header.read(resources * 4)
-    start_x, start_y, civilization_id, color_id = unpack('<xff9xb3xbx',header)
+    start_x, start_y, civilization_id, color_id = unpack('<xff9xb3xbx', header)
     offset = header.tell()
     data = header.read()
     # Skips thousands of bytes that are not easy to parse.

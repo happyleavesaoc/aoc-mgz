@@ -6,6 +6,7 @@ from mgz.util import check_flags
 
 CHECKSUM_INTERVAL = 500
 
+
 class Operation(Enum):
     """Operation types."""
     ACTION = 1
@@ -14,6 +15,7 @@ class Operation(Enum):
     CHAT = 4
     START = 5
     SAVE = 6
+
 
 class Action(Enum):
     """Action types."""
@@ -184,8 +186,20 @@ def parse_action(action_type, data):
         object_id, = struct.unpack_from('<3xI', data)
         return dict(object_ids=[object_id])
     if action_type == Action.WALL:
-        player_id, x, y = struct.unpack_from('<x3b', data)
-        return dict(player_id=player_id, x=x, y=y)
+        offset = 0
+        selection_count, player_id, x_start, y_start, x_end, y_end, building_id, z1, const, = struct.unpack_from(
+            '<2bx6hl', data)
+        object_ids = []
+        if selection_count > 0:
+            object_ids = struct.unpack_from('<' + str(selection_count) + 'I', data[19 + offset:])
+        return dict(player_id=player_id,
+                    x=x_start,
+                    y=y_start,
+                    x_end=x_end,
+                    y_end=y_end,
+                    building_id=building_id,
+                    object_ids=object_ids)
+
     if action_type == Action.GAME:
         return dict(player_id=data[1], mode_id=data[0])
     if action_type == Action.FLARE:
@@ -222,8 +236,7 @@ def parse_action(action_type, data):
     if action_type == Action.ADD_WAYPOINT:
         object_ids = []
         selected, x, y = struct.unpack_from('<xb2b', data)
-        if selected > 0:
-            object_ids = struct.unpack_from('<4x' + str(selected) + 'I', data)
+        object_ids = struct.unpack_from('<4x' + str(selected) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.DE_QUEUE:
         player_id, unit_id, amount, *object_ids = struct.unpack_from('<b4xhbx' + str(data[3]) + 'I', data)
@@ -262,9 +275,9 @@ def start(data):
     """Handle start."""
     data.read(20)
     a, b, _ = struct.unpack('<III', data.read(12))
-    if a != 0: # AOC 1.0x
+    if a != 0:  # AOC 1.0x
         data.seek(-12, 1)
-    if b == 2: # DE
+    if b == 2:  # DE
         data.seek(-8, 1)
 
 
@@ -280,13 +293,13 @@ def meta(data):
     """Handle log meta."""
     try:
         first, = struct.unpack('<I', data.read(4))
-        if first != 500: # Not AOK
+        if first != 500:  # Not AOK
             data.read(4)
         data.read(20)
         a, b, _ = struct.unpack('<III', data.read(12))
-        if a != 0: # AOC 1.0x
+        if a != 0:  # AOC 1.0x
             data.seek(-12, 1)
-        if b == 2: # DE
+        if b == 2:  # DE
             data.seek(-8, 1)
     except struct.error:
         raise ValueError("insufficient meta received")
@@ -308,6 +321,8 @@ def operation(data):
             return op_type, viewlock(data)
         if op_type == Operation.CHAT:
             return op_type, chat(data)
+
+        print("HELLO WOLRFD!")
     except struct.error:
         raise EOFError
     raise RuntimeError("unknown data received")
