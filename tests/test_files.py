@@ -35,4 +35,3 @@ class TestFiles(unittest.TestCase):
         parse_file_fast("tests/recs/small.mgz")
         for path in glob.glob('tests/recs/*'):
             parse_file_fast(path)
-            print(path)
