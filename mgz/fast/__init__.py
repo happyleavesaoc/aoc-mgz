@@ -186,12 +186,13 @@ def parse_action(action_type, data):
         object_id, = struct.unpack_from('<3xI', data)
         return dict(object_ids=[object_id])
     if action_type == Action.WALL:
-        offset = 0
-        selection_count, player_id, x_start, y_start, x_end, y_end, building_id, z1, const, = struct.unpack_from(
-            '<2bx6hl', data)
+        selection_count, player_id, x_start, y_start, x_end, y_end, z0, building_id, z1, const = struct.unpack_from(
+            '<7b2h1i', data)
+        
         object_ids = []
-        if selection_count > 0:
-            object_ids = struct.unpack_from('<' + str(selection_count) + 'I', data[19 + offset:])
+        if selection_count > 0 and len(data) >= 15 + (selection_count * 4):
+            object_ids = struct.unpack_from('<' + str(selection_count) + 'I', data[15:])
+
         return dict(player_id=player_id,
                     x=x_start,
                     y=y_start,
