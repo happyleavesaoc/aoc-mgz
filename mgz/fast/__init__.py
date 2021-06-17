@@ -104,14 +104,8 @@ def parse_action(action_type, data):
         player_id, player_id_to, resource_id, amount, fee = struct.unpack_from('<bbbff', data)
         return dict(player_id=player_id, player_id_to=player_id_to, resource_id=resource_id, amount=amount, fee=fee)
     if action_type == Action.MOVE:
-        player_id, selected, x, y = struct.unpack_from('<b6xI2f', data)
-        object_ids = []
-        if selected != 255:
-            offset = 0
-            if check_flags(struct.unpack_from('<4b', data[19:])):
-                offset = 4
-            object_ids = struct.unpack_from('<' + str(selected) + 'I', data[19 + offset:])
-        return dict(player_id=player_id, x=x, y=y, object_ids=list(object_ids))
+        player_id, x, y = struct.unpack_from('<b10x2f', data)
+        return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.CREATE:
         player_id, x, y = struct.unpack_from('<3xhx2f', data)
         return dict(player_id=player_id, x=x, y=y)
@@ -188,7 +182,7 @@ def parse_action(action_type, data):
     if action_type == Action.WALL:
         selection_count, player_id, x_start, y_start, x_end, y_end, z0, building_id, z1, const = struct.unpack_from(
             '<7b2h1i', data)
-        
+
         object_ids = []
         if selection_count > 0 and len(data) >= 15 + (selection_count * 4):
             object_ids = struct.unpack_from('<' + str(selection_count) + 'I', data[15:])
