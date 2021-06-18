@@ -180,7 +180,6 @@ def parse_action(action_type, data):
         object_id, = struct.unpack_from('<3xI', data)
         return dict(object_ids=[object_id])
     if action_type == Action.WALL:
-
         selection_count, = struct.unpack_from('b', data)
         offset = len(data) - selection_count * 4
 
