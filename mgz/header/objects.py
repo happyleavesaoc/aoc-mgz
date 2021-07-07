@@ -85,7 +85,8 @@ static = "static"/Struct(
         Padding(4),
         If(lambda ctx: find_save_version(ctx) >= 13.15, Padding(5)),
         If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2)),
-        If(lambda ctx: find_save_version(ctx) >= 13.34, Bytes(12))
+        If(lambda ctx: find_save_version(ctx) >= 13.34, Bytes(12)),
+        If(lambda ctx: ctx._.has_sprite_list == 0 and find_save_version(ctx) >= 20.16, Bytes(1)) # sprite list condition questionable
     ))
 )
 
@@ -125,6 +126,7 @@ base_moving = "base_moving"/Struct(
     Embedded(animated),
     "trail_remainder"/Int32ul,
     "velocity"/vector,
+    "de_move_byte"/If(lambda ctx: find_save_version(ctx) >= 20.16, Byte),
     "angle"/Float32l,
     "turn_towards_time"/Int32ul,
     "turn_timer"/Int32ul,

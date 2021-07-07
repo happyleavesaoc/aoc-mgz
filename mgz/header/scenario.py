@@ -123,7 +123,8 @@ game_settings = "game_settings"/Struct(
             Padding(29),
             If(lambda ctx: find_save_version(ctx) >= 13.07, Padding(1)),
             If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(132)),
-            If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(1))
+            If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(1)),
+            If(lambda ctx: find_save_version(ctx) >= 20.16, Padding(4))
         )
     ),
     Array(9, "player_info"/Struct(

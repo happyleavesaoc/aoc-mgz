@@ -116,6 +116,7 @@ de = "de"/Struct(
     If(lambda ctx: ctx._.save_version >= 13.13, Bytes(5)),
     If(lambda ctx: ctx._.save_version >= 13.17, Bytes(9)),
     If(lambda ctx: ctx._.save_version >= 20.06, Bytes(1)),
+    If(lambda ctx: ctx._.save_version >= 20.16, Bytes(8)),
     de_string,
     Bytes(5),
     If(lambda ctx: ctx._.save_version >= 13.13, Byte),

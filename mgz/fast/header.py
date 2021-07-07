@@ -285,6 +285,8 @@ def parse_de(data, version, save):
     data.read(33)
     if save >= 20.06:
         data.read(1)
+    if save >= 20.16:
+        data.read(8)
     de_string(data)
     data.read(8)
     return dict(
