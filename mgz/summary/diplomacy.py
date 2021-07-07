@@ -25,7 +25,7 @@ def get_diplomacy_data(header, teams):
     total_num = player_num + computer_num
 
     diplomacy = {}
-    diplomacy['type'] = get_diplomacy_type(teams, header.scenario.game_settings.player_info[1:])
+    diplomacy['type'] = get_diplomacy_type(teams, header.initial.players[1:])
     team_sizes = sorted([len(team) for team in teams])
     diplomacy['team_size'] = 'v'.join([str(size) for size in team_sizes])
     if diplomacy['type'] == 'FFA':
