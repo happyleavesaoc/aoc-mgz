@@ -1,7 +1,10 @@
 """Convert parsed data into object-oriented model."""
 
 import codecs
+import collections
 from datetime import timedelta
+
+import dataclasses
 
 from mgz import fast
 from mgz.reference import get_consts, get_dataset
@@ -205,3 +208,27 @@ def parse_match(handle):
         data['version'],
         actions
     )
+
+
+def serialize(obj):
+    """Serialize model.
+
+    Returns a nested datastructure with no circular references,
+    appropriate for dumping to JSON, YAML, etc.
+    """
+    seen = set()
+
+    def impl(obj):
+        """Recursive serialization implementation."""
+        if dataclasses.is_dataclass(obj) and isinstance(obj, collections.Hashable):
+            if obj in seen:
+                return hash(obj)
+            seen.add(obj)
+        if type(obj) is list:
+            return [impl(o) for o in obj]
+        elif dataclasses.is_dataclass(obj):
+            return {f.name:impl(getattr(obj, f.name)) for f in dataclasses.fields(obj)}
+        else:
+            return obj
+
+    return impl(obj)

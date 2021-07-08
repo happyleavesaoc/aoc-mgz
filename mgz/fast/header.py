@@ -292,7 +292,7 @@ def parse_de(data, version, save):
     return dict(
         players=players,
         guid=str(uuid.UUID(bytes=guid)),
-        lobby=lobby,
+        lobby=lobby.decode('utf-8'),
         mod=mod
     )
 
