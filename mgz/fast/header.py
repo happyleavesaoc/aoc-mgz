@@ -51,7 +51,7 @@ def de_string(data):
 
 def parse_object(data, offset):
     """Parse an object."""
-    class_id, object_id, instance_id, pos_x, pos_y = struct.unpack_from('<bxh14xixff', data, offset)
+    class_id, object_id, instance_id, pos_x, pos_y = struct.unpack_from('<bxH14xIxff', data, offset)
     return dict(
         class_id=class_id,
         object_id=object_id,
@@ -86,8 +86,8 @@ def object_block(data, pos, player_number):
                 break
         else:
             objects.append(parse_object(data, pos))
-            offset = None
-            pos += 31
+        offset = None
+        pos += 31
     return objects, pos + end
 
 

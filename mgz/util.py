@@ -96,17 +96,24 @@ def get_version(game_version, save_version, log_version):
 
 
 def find_version(ctx):
-    """Test version."""
+    """Find version."""
     if 'version' not in ctx:
         return find_version(ctx._)
     return ctx.version
 
 
 def find_save_version(ctx):
-    """Test save version."""
+    """Find save version."""
     if 'save_version' not in ctx:
         return find_save_version(ctx._)
     return ctx.save_version
+
+
+def find_type(ctx):
+    """Find object type."""
+    if 'type' not in ctx:
+        return find_type(ctx._)
+    return ctx.type
 
 
 def check_flags(peek):

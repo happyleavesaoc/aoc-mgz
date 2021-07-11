@@ -2,11 +2,12 @@
 
 from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16ub,
                        Int16ul, Int32ub, Int32ul, Padding, Peek, Struct, Int32sl,
-                       Switch, Pass, RepeatUntil, Bytes, LazyBound, IfThenElse)
+                       Switch, Pass, RepeatUntil, Bytes, LazyBound, IfThenElse, Tell, Computed)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
-from mgz.util import Find, Version, find_version, find_save_version
+from mgz.util import Find, Version, find_version, find_save_version, find_type
 from mgz.header.unit_type import unit_type
+from mgz.header.de import de_string
 
 # pylint: disable=invalid-name
 
@@ -39,6 +40,7 @@ sprite_list = "sprite_list"/Struct(
         "count"/Byte
     )))
 )
+
 
 static = "static"/Struct(
     "object_type"/Int16ul,
@@ -81,12 +83,24 @@ static = "static"/Struct(
             "name"/Bytes(lambda ctx: ctx.length),
             If(lambda ctx: ctx.length > 0, Padding(33))
         )),
-        If(lambda ctx: ctx.effect is None or (ctx.effect and ctx.effect.length > 0), Byte),
-        Padding(4),
-        If(lambda ctx: find_save_version(ctx) >= 13.15, Padding(5)),
+        If(lambda ctx: ctx.effect is None or (ctx.effect and ctx.effect.length > 0), Byte)
+    )),
+    "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
+        Bytes(4),
+        If(lambda ctx: find_save_version(ctx) >= 13.15, Bytes(5)),
         If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2)),
-        If(lambda ctx: find_save_version(ctx) >= 13.34, Bytes(12)),
-        If(lambda ctx: ctx._.has_sprite_list == 0 and find_save_version(ctx) >= 20.16, Bytes(1)) # sprite list condition questionable
+        If(lambda ctx: find_save_version(ctx) >= 13.34, Struct(
+            Bytes(2),
+            de_string,
+            de_string,
+            Bytes(2)
+        )),
+        # not the right way to do this, needs improvement
+        If(lambda ctx: find_save_version(ctx) >= 20.16, Struct(
+            "peek"/Peek(Bytes(6)),
+            If(lambda ctx: find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
+            If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
+        ))
     ))
 )
 
@@ -415,7 +429,8 @@ building = "building"/Struct(
     "terrain_type"/Byte,
     "semi_asleep"/Byte,
     "snow_flag"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
-    "de_flag_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Byte)
+    "de_flag_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Byte),
+    "de_unk_2"/If(lambda ctx: find_save_version(ctx) >= 20.16, Int16ul)
 )
 
 # Objects that exist on the map at the start of the recorded game
@@ -433,7 +448,7 @@ existing_object = "objects"/Struct(
         70: combat,
         80: building,
         90: static
-    }, default=Pass)),
+    }, default=Pass))
 )
 
 # Default values for objects, nothing of real interest
