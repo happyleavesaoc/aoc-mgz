@@ -2,7 +2,7 @@
 
 from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16sl, Int16ub,
                        Int16ul, Int32ub, Int32ul, Padding, Peek, Struct, Int32sl,
-                       Switch, Pass, RepeatUntil, Bytes, LazyBound, IfThenElse, Tell, Computed)
+                       Switch, Pass, RepeatUntil, Bytes, LazyBound, IfThenElse)
 
 from mgz.enums import ObjectEnum, ObjectTypeEnum, ResourceEnum
 from mgz.util import Find, Version, find_version, find_save_version, find_type

@@ -3,6 +3,7 @@
 import codecs
 import collections
 from datetime import timedelta
+from enum import Enum
 
 import dataclasses
 
@@ -228,6 +229,10 @@ def serialize(obj):
             return [impl(o) for o in obj]
         elif dataclasses.is_dataclass(obj):
             return {f.name:impl(getattr(obj, f.name)) for f in dataclasses.fields(obj)}
+        elif isinstance(obj, (codecs.CodecInfo, Enum)):
+            return obj.name
+        elif isinstance(obj, timedelta):
+            return str(obj)
         else:
             return obj
 

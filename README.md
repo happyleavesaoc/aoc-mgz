@@ -87,6 +87,18 @@ with open('/path/to/file', 'rb') as data:
     # ... etc
 ```
 
+## To JSON
+
+```python
+import json
+import sys
+from mgz.model import parse_match, serialize
+
+with open('/path/to/file', 'rb') as h:
+    match = parse_match(h)
+    print(json.dumps(serialize(match), indent=2))
+```
+
 ## Frequently Asked Questions
 
 **Q:** Where are the end-of-game achievements/statistics?
