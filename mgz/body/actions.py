@@ -410,7 +410,7 @@ order = "order"/Struct(
     Padding(2),
     "building_id"/Int32sl, # -1 cancels production queue
     OrderTypeEnum("order_type"/Byte),
-    "cancelOrder"/Int8ub, # when cancelling production queue, this indicates which item in the queue is to be cancelled
+    "cancel_order"/Byte, # when cancelling production queue, this indicates which item in the queue is to be cancelled
     Padding(2),
     "x"/Float32l,
     "y"/Float32l,
