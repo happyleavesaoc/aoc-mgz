@@ -91,7 +91,6 @@ with open('/path/to/file', 'rb') as data:
 
 ```python
 import json
-import sys
 from mgz.model import parse_match, serialize
 
 with open('/path/to/file', 'rb') as h:
