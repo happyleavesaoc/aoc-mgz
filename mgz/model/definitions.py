@@ -50,7 +50,9 @@ class Action:
 
     timestamp: timedelta
     type: ActionEnum
+    payload: dict
     player: Player = None
+    position: Position = None
 
 
 @dataclass

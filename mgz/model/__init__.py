@@ -145,21 +145,24 @@ def parse_match(handle):
                     ))
             elif op_type is fast.Operation.ACTION:
                 action_type, action_data = op_data
-                action = Action(timedelta(milliseconds=timestamp), action_type)
-                for key, value in action_data.items():
-                    setattr(action, key, value)
-                if 'player_id' in action_data:
-                    action.player = players[action_data['player_id']]
-                if 'technology_id' in action_data:
-                    action.technology = dataset['technologies'][str(action_data['technology_id'])]
-                if 'formation_id' in action_data:
-                    action.formation = consts['formations'][str(action_data['formation_id'])]
-                if 'building_id' in action_data:
-                    action.building = dataset['objects'][str(action_data['building_id'])]
-                if 'x' in action_data and 'y' in action_data:
-                    action.position = Position(action_data['x'], action_data['y'])
+                action = Action(timedelta(milliseconds=timestamp), action_type, action_data)
                 if action_type is fast.Action.RESIGN:
                     resigned.append(players[action_data['player_id']])
+                if 'player_id' in action_data:
+                    action.player = players[action_data['player_id']]
+                    del action.payload['player_id']
+                if 'x' in action_data and 'y' in action_data:
+                    action.position = Position(action_data['x'], action_data['y'])
+                    del action.payload['x']
+                    del action.payload['y']
+                if 'technology_id' in action_data:
+                    action.payload['technology'] = dataset['technologies'][str(action_data['technology_id'])]
+                if 'formation_id' in action_data:
+                    action.payload['formation'] = consts['formations'][str(action_data['formation_id'])]
+                if 'stance_id' in action_data:
+                    action.payload['stance'] = consts['stances'][str(action_data['stance_id'])]
+                if 'building_id' in action_data:
+                    action.payload['building'] = dataset['objects'][str(action_data['building_id'])]
                 actions.append(action)
         except EOFError:
             break
@@ -226,13 +229,17 @@ def serialize(obj):
                 return hash(obj)
             seen.add(obj)
         if type(obj) is list:
-            return [impl(o) for o in obj]
+            return [v for v in [impl(o) for o in obj] if v]
+        elif type(obj) is dict:
+            return {k:v for k, v in {f:impl(d) for f, d in obj.items()}.items() if v}
         elif dataclasses.is_dataclass(obj):
-            return {f.name:impl(getattr(obj, f.name)) for f in dataclasses.fields(obj)}
+            return {k:v for k, v in {f.name:impl(getattr(obj, f.name)) for f in dataclasses.fields(obj)}.items() if v}
         elif isinstance(obj, (codecs.CodecInfo, Enum)):
             return obj.name
         elif isinstance(obj, timedelta):
             return str(obj)
+        elif isinstance(obj, bytes):
+            return None
         else:
             return obj
 
