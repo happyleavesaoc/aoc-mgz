@@ -163,6 +163,8 @@ def parse_match(handle):
                     action.payload['stance'] = consts['stances'][str(action_data['stance_id'])]
                 if 'building_id' in action_data:
                     action.payload['building'] = dataset['objects'][str(action_data['building_id'])]
+                if 'unit_id' in action_data:
+                    action.payload['unit'] = dataset['objects'][str(action_data['unit_id'])]
                 actions.append(action)
         except EOFError:
             break
