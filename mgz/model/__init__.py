@@ -9,8 +9,10 @@ import dataclasses
 
 from mgz import fast
 from mgz.reference import get_consts, get_dataset
+from mgz.fast import Action as ActionEnum
 from mgz.fast.header import parse
 from mgz.model.definitions import *
+from mgz.model.inputs import InputFactory
 from mgz.summary.chat import parse_chat, Chat as ChatEnum
 from mgz.summary.diplomacy import get_diplomacy_type
 from mgz.summary.map import get_map_data
@@ -59,6 +61,8 @@ def parse_match(handle):
         for obj in data['players'][0]['objects']
     ]
 
+    inpf = InputFactory({o.instance_id:o.name for o in gaia})
+
     # Parse players
     players = dict()
     allies = dict()
@@ -89,10 +93,15 @@ def parse_match(handle):
                     Position(obj['position']['x'], obj['position']['y'])
                 )
                 for obj in player['objects']
+                #if dataset['objects'].get(str(obj['object_id'])) != 'Town Center' or obj['object_id'] in TC_IDS
             ],
             player.get('profile_id')
         )
+        for obj in player['objects']:
 
+            #print(player['name'], obj['position'], obj['class_id'])
+            if obj['class_id'] == 80:
+                inpf.buildings[(obj['position']['x'], obj['position']['y'])] = (obj['object_id'], dataset['objects'].get(str(obj['object_id'])))
     # Assign teams
     team_ids = set([frozenset(s) for s in allies.values()])
     teams = []
@@ -117,6 +126,7 @@ def parse_match(handle):
             chat['message'],
             players[chat['player_number']]
         ))
+        inpf.add_chat(chats[-1])
 
     # Parse player actions
     fast.meta(handle)
@@ -133,7 +143,9 @@ def parse_match(handle):
             elif op_type is fast.Operation.VIEWLOCK:
                 if op_data == last_viewlock:
                     continue
-                viewlocks.append(Viewlock(timedelta(milliseconds=timestamp), Position(*op_data)))
+                viewlock = Viewlock(timedelta(milliseconds=timestamp), Position(*op_data), players[data['metadata']['owner_id']])
+                viewlocks.append(viewlock)
+                inpf.add_viewlock(viewlock)
                 last_viewlock = op_data
             elif op_type is fast.Operation.CHAT:
                 chat = parse_chat(op_data, encoding, timestamp, pd, diplomacy_type, 'game')
@@ -143,6 +155,7 @@ def parse_match(handle):
                         chat['message'],
                         players[chat['player_number']]
                     ))
+                    inpf.add_chat(chats[-1])
             elif op_type is fast.Operation.ACTION:
                 action_type, action_data = op_data
                 action = Action(timedelta(milliseconds=timestamp), action_type, action_data)
@@ -165,7 +178,14 @@ def parse_match(handle):
                     action.payload['building'] = dataset['objects'][str(action_data['building_id'])]
                 if 'unit_id' in action_data:
                     action.payload['unit'] = dataset['objects'].get(str(action_data['unit_id']))
+                if 'command_id' in action_data:
+                    action.payload['command'] = consts['commands'].get(str(action_data['command_id']))
+                if 'order_id' in action_data:
+                    action.payload['order'] = consts['orders'].get(str(action_data['order_id']))
+                if 'resource_id' in action_data:
+                    action.payload['resource'] = consts['resources'][str(action_data['resource_id'])]
                 actions.append(action)
+                inpf.add_action(action)
         except EOFError:
             break
 
@@ -212,7 +232,8 @@ def parse_match(handle):
         timedelta(milliseconds=timestamp),
         diplomacy_type,
         data['version'],
-        actions
+        actions,
+        inpf.inputs
     )
 
 

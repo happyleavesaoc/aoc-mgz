@@ -126,7 +126,7 @@ def parse_player(header, player_number, num_players):
         diplomacy=diplomacy,
         civilization_id=civilization_id,
         color_id=color_id,
-        objects=objects,
+        objects=objects + sleeping + doppel,
         position=dict(
             x=start_x,
             y=start_y

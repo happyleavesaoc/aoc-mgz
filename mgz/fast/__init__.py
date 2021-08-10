@@ -142,8 +142,8 @@ def parse_action(action_type, data):
         object_id, unit_id, amount = struct.unpack_from('<3xIhh', data)
         return dict(object_ids=[object_id], unit_id=unit_id, amount=amount)
     if action_type == Action.GATHER_POINT:
-        _, x, y, *object_ids = struct.unpack_from('<3xI4x2f' + str(data[0]) + 'I', data)
-        return dict(object_ids=list(object_ids), x=x, y=y)
+        target_id, x, y, *object_ids = struct.unpack_from('<3xi4x2f' + str(data[0]) + 'I', data)
+        return dict(object_ids=list(object_ids), x=x, y=y, target_id=target_id)
     if action_type == Action.MULTIQUEUE:
         unit_id, amount, *object_ids = struct.unpack_from('<3xhxb' + str(data[5]) + 'I', data)
         return dict(object_ids=object_ids, unit_id=unit_id, amount=amount)
@@ -151,12 +151,12 @@ def parse_action(action_type, data):
         x, y, *object_ids = struct.unpack_from('<3xf36xf36x' + str(data[0]) + 'I', data)
         return dict(object_ids=list(object_ids), x=x, y=y)
     if action_type == Action.SPECIAL:
-        target_id, order_type, x, y, *flags = struct.unpack_from('<3xib3x2f4x4b', data)
+        target_id, order_id, x, y, *flags = struct.unpack_from('<3xib3x2f4x4b', data)
         offset = 0
         if check_flags(flags):
             offset = 4
         object_ids = struct.unpack_from('<' + str(data[0]) + 'I', data[23 + offset:])
-        values = dict(object_ids=list(object_ids), order_type=order_type)
+        values = dict(object_ids=list(object_ids), order_id=order_id)
         if x > 0 and y > 0:
             values.update(dict(x=x, y=y))
         if target_id > 0:
@@ -187,7 +187,7 @@ def parse_action(action_type, data):
         player_id, x, y = struct.unpack_from('<x3b', data)
         return dict(player_id=player_id, x=x, y=y)
     if action_type == Action.GAME:
-        return dict(player_id=data[1], mode_id=data[0])
+        return dict(player_id=data[1], command_id=data[0])
     if action_type == Action.FLARE:
         x, y, player_id = struct.unpack_from('<19x2fb', data)
         return dict(player_id=player_id, x=x, y=y)

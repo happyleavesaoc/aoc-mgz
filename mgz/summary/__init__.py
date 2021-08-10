@@ -121,7 +121,7 @@ class Summary: # pylint: disable=too-many-public-methods
                         self._cache['cheaters'].add(payload[1]['player_id'])
                     elif payload[0] == fast.Action.BUILD and payload[1]['building_id'] not in VALID_BUILDINGS:
                         self._cache['cheaters'].add(payload[1]['player_id'])
-                    elif payload[0] == fast.Action.GAME and payload[1]['mode_id'] in [2, 4, 6]:
+                    elif payload[0] == fast.Action.GAME and payload[1]['command_id'] in [2, 4, 6]:
                         self._cache['cheaters'].add(payload[1]['player_id'])
                 elif operation == fast.Operation.CHAT:
                     text = payload

@@ -56,11 +56,24 @@ class Action:
 
 
 @dataclass
+class Input:
+    """Represents a player input."""
+
+    timestamp: timedelta
+    type: str
+    modifier: str
+    payload: dict
+    player: Player = None
+    position: Position = None
+
+
+@dataclass
 class Viewlock:
     """Represents player view."""
 
     timestamp: timedelta
     position: Position
+    player: Player
 
 
 @dataclass
@@ -131,3 +144,4 @@ class Match:
     diplomacy_type: str
     version: Version
     actions: list
+    inputs: list
