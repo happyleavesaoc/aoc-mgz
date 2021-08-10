@@ -99,7 +99,7 @@ de = "de"/Struct(
     "strings"/Array(23,
         Struct(
             "string"/de_string,
-            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45], Int32ul)
+            "lst"/RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45, 46], Int32ul)
         )
     ),
     "strategic_numbers"/Array(59, Int32sl),

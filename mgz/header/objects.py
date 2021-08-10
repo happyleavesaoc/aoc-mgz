@@ -388,7 +388,8 @@ combat = "combat"/Struct(
     "berserker_timer"/Float32l,
     "num_builders"/Byte,
     "num_healers"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
-    "de_unknown"/If(lambda ctx: find_save_version(ctx) >= 20.06, Int32ul)
+    "de_unknown"/If(lambda ctx: find_save_version(ctx) >= 20.06, Int32ul),
+    "de_unknown2"/If(lambda ctx: find_save_version(ctx) >= 25.01, Int32ul)
 )
 
 production_queue = "production_queue"/Struct(
