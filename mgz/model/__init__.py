@@ -164,7 +164,7 @@ def parse_match(handle):
                 if 'building_id' in action_data:
                     action.payload['building'] = dataset['objects'][str(action_data['building_id'])]
                 if 'unit_id' in action_data:
-                    action.payload['unit'] = dataset['objects'][str(action_data['unit_id'])]
+                    action.payload['unit'] = dataset['objects'].get(str(action_data['unit_id']))
                 actions.append(action)
         except EOFError:
             break

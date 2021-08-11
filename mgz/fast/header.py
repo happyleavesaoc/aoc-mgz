@@ -272,7 +272,7 @@ def parse_de(data, version, save):
     for _ in range(23):
         de_string(data)
         c = unpack('<I', data)
-        while c in [3, 21, 23, 42, 44, 45]:
+        while c in [3, 21, 23, 42, 44, 45, 46]:
             c = unpack('<I', data)
     data.read(236)
     for _ in range(unpack('<Q', data)):
