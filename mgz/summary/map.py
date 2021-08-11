@@ -29,7 +29,7 @@ ENCODING_MARKERS = [
     ['Konum: ', 'ISO-8859-1', 'tr'],
     ['??? ?????: ', 'ascii', 'tr'], # corrupt lang dll?
     ['Térkép tipusa', 'ISO-8859-1', 'hu'],
-    ['Typ mapy: ', 'ISO-8859-2', None],
+    ['Styl mapy: ', 'ISO-8859-2', 'pl'],
     ['Тип карты: ', 'windows-1251', 'ru'],
     ['Тип Карты: ', 'windows-1251', 'ru'],
     ['Расположение: ', 'utf-8', 'ru'],
