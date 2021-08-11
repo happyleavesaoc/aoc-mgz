@@ -3,7 +3,7 @@
 from construct import (
     Struct, Int32ul, Float32l, Array, Padding, Flag, If,
     Byte, Int16ul, Bytes, Int32sl, Peek, Const, RepeatUntil,
-    Int64ul
+    Int64ul, Computed
 )
 
 from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum, PlayerTypeEnum, DifficultyEnum
@@ -35,10 +35,10 @@ de = "de"/Struct(
     VictoryEnum("victory_type"/Int32ul),
     Peek("starting_resources_id"/Int32ul),
     ResourceLevelEnum("starting_resources"/Int32ul),
-    Peek("starting_age_id"/Int32ul),
-    AgeEnum("starting_age"/Int32ul),
-    Peek("ending_age_id"/Int32ul),
-    AgeEnum("ending_age"/Int32ul),
+    "starting_age_id"/Int32ul,
+    "starting_age"/AgeEnum(Computed(lambda ctx: ctx.starting_age_id - 2)),
+    "ending_age_id"/Int32ul,
+    "ending_age"/AgeEnum(Computed(lambda ctx: ctx.ending_age_id - 2)),
     "game_type"/Int32ul,
     separator,
     separator,

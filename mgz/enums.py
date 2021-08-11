@@ -222,7 +222,7 @@ def AgeEnum(ctx):
         ctx,
         what=-2,
         unset=-1,
-        standard=0,
+        dark=0,
         feudal=1,
         castle=2,
         imperial=3,
