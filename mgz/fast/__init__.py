@@ -20,8 +20,8 @@ class Action(Enum):
     ORDER = 0
     STOP = 1
     WORK = 2
-    CREATE = 4
     MOVE = 3
+    CREATE = 4
     ADD_ATTRIBUTE = 5
     GIVE_ATTRIBUTE = 6
     AI_ORDER = 10

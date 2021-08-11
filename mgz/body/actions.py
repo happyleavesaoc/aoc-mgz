@@ -73,8 +73,10 @@ move = "move"/Struct(
     "selected"/Int32ul,
     "x"/Float32l,
     "y"/Float32l,
-    "next"/Peek(Bytes(8)),
-    "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(8)),
+    If(lambda ctx: ctx.selected < 0xff, Struct(
+        "next"/Peek(Bytes(8)),
+        "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(8))
+    )),
     "unit_ids"/If(lambda ctx: ctx.selected < 0xff, Array(
         lambda ctx: ctx.selected, Int32ul
     ))
