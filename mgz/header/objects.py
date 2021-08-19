@@ -41,6 +41,15 @@ sprite_list = "sprite_list"/Struct(
     )))
 )
 
+particle = "particle"/Struct(
+    "type"/Int16ul,
+    Embedded(If(lambda ctx: ctx.type == 1, Struct(
+        "name"/de_string,
+        "x"/Float32l,
+        "y"/Float32l,
+        Bytes(26)
+    ))),
+)
 
 static = "static"/Struct(
     "object_type"/Int16ul,
@@ -74,19 +83,8 @@ static = "static"/Struct(
     "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(19)),
     "has_sprite_list"/Byte,
     "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list)),
-    "de_effect_block"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
-        Padding(4),
-        "has_effect"/Byte,
-        "effect"/If(lambda ctx: ctx.has_effect == 1, Struct(
-            Padding(3),
-            "length"/Int16ul,
-            "name"/Bytes(lambda ctx: ctx.length),
-            If(lambda ctx: ctx.length > 0, Padding(33))
-        )),
-        If(lambda ctx: ctx.effect is None or (ctx.effect and ctx.effect.length > 0), Byte)
-    )),
     "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
-        Bytes(4),
+        "particles"/Array(5, particle),
         If(lambda ctx: find_save_version(ctx) >= 13.15, Bytes(5)),
         If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2)),
         If(lambda ctx: find_save_version(ctx) >= 13.34, Struct(
