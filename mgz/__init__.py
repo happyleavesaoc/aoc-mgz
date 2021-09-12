@@ -12,12 +12,14 @@ from mgz.header.achievements import achievements
 from mgz.header.scenario import scenario
 from mgz.header.lobby import lobby
 from mgz.header.de import de
+from mgz.header.hd import hd
 
 
 compressed_header = Struct(
     "game_version"/CString(encoding='latin1'),
     "save_version"/VersionAdapter(Float32l),
     "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, None)),
+    "hd"/If(lambda ctx: ctx.version == Version.HD, hd),
     "de"/If(lambda ctx: ctx.version == Version.DE, de),
     ai,
     replay,
@@ -28,6 +30,7 @@ compressed_header = Struct(
     lobby,
     Terminated
 )
+
 
 subheader = Struct(
     "check"/Peek(Int32ul),

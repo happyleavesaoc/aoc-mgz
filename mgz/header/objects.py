@@ -83,6 +83,17 @@ static = "static"/Struct(
     "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(19)),
     "has_sprite_list"/Byte,
     "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list)),
+    "hd_extension"/If(lambda ctx: find_version(ctx) == Version.HD, Struct(
+        "flag"/Flag,
+        Padding(4),
+        "has_array"/Int16ul,
+        "array"/If(lambda ctx: ctx.has_array, Struct(
+            "values"/RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, Struct(
+                "type"/Byte,
+                If(lambda ctx: ctx.type > 0, Bytes(16))
+            ))
+        ))
+    )),
     "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
         "particles"/Array(5, particle),
         If(lambda ctx: find_save_version(ctx) >= 13.15, Bytes(5)),
@@ -168,6 +179,7 @@ base_moving = "base_moving"/Struct(
 
 moving = "moving"/Struct(
     Embedded(base_moving),
+    "hd"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(1)),
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17))
 )
 
@@ -360,6 +372,7 @@ unit_ai = "ai"/Struct(
 combat = "combat"/Struct(
     Embedded(base_combat),
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(18)),
+    "hd"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(3)),
     "next_volley"/Byte,
     "using_special_animation"/Byte,
     "own_base"/Byte,
@@ -372,7 +385,8 @@ combat = "combat"/Struct(
     "has_ai"/Int32ul,
     "ai"/If(lambda ctx: ctx.has_ai > 0, unit_ai),
     "peek"/Peek(Bytes(5)), # TODO: figure out the right way to do this part
-    "de_position"/If(lambda ctx: ctx.peek != b'\x00\xff\xff\xff\xff', Struct(
+    "hd_position"/If(lambda ctx: find_version(ctx) == Version.HD and ctx.peek != b'\x00\xff\xff\xff\xff', Bytes(4)),
+    "de_position"/If(lambda ctx: find_version(ctx) == Version.DE and ctx.peek != b'\x00\xff\xff\xff\xff', Struct(
         "position"/vector,
         "flag"/Byte,
     )),
@@ -410,7 +424,7 @@ building = "building"/Struct(
     "desolid_flag"/Byte,
     "pending_order"/Int32ul,
     "linked_owner"/Int32sl,
-    "linked_children"/Array(lambda ctx: 3 if find_version(ctx) == Version.DE else 4, Int32sl),
+    "linked_children"/Array(lambda ctx: 3 if find_version(ctx) in (Version.DE, Version.HD) else 4, Int32sl),
     "captured_unit_count"/Byte,
     "extra_actions"/action_list,
     "research_actions"/If(lambda ctx: find_version(ctx) != Version.DE, action_list),

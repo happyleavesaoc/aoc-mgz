@@ -211,7 +211,7 @@ player_stats = "player_stats"/Struct(
         "hun_wonder_bonus"/Float32l,
         "spies_discount"/Float32l,
     ))),
-    Embedded(If(lambda ctx: find_version(ctx) == Version.DE, Struct(
+    Embedded(If(lambda ctx: find_version(ctx) in (Version.DE, Version.HD), Struct(
         Array(this._._.num_header_data - 198, Float32l)
     ))),
     Embedded(If(lambda ctx: find_version(ctx) in [Version.USERPATCH15, Version.MCP], Struct(

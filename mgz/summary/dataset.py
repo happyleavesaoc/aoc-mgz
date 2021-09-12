@@ -5,6 +5,18 @@ from mgz.util import Version
 from mgz.reference import get_dataset
 
 
+def resolve_hd_version(version, is_57):
+    """Best guess at HD version."""
+    if version == 1006:
+        if is_57:
+            return '5.7'
+        else:
+            return '5.8'
+    if version == 1005:
+        return '>=5.0,<5.7'
+    return None
+
+
 def get_dataset_data(header):
     """Get dataset."""
     sample = header.initial.players[0].attributes.player_stats
@@ -17,6 +29,12 @@ def get_dataset_data(header):
             'id': 100,
             'name': 'Definitive Edition',
             'version': None
+        }, ref
+    elif header.version == Version.HD:
+        return {
+            'id': 300,
+            'name': 'HD Edition',
+            'version': resolve_hd_version(header.hd.version, header.hd.test_57.is_57)
         }, ref
     if 'mod' in sample and sample.mod['id'] == 0 and sample.mod['version'] == '2':
         raise ValueError("invalid mod version")

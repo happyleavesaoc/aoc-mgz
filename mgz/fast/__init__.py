@@ -37,6 +37,7 @@ class Action(Enum):
     GROUP_MULTI_WAYPOINTS = 31
     CHAPTER = 32
     DE_ATTACK_MOVE = 33
+    HD_UNKNOWN_34 = 34
     DE_UNKNOWN_35 = 35
     DE_UNKNOWN_37 = 37
     DE_AUTOSCOUT = 38
