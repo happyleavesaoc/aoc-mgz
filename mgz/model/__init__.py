@@ -15,6 +15,7 @@ from mgz.summary.chat import parse_chat, Chat as ChatEnum
 from mgz.summary.diplomacy import get_diplomacy_type
 from mgz.summary.map import get_map_data
 from mgz.summary.objects import TC_IDS
+from mgz.util import Version
 
 
 def parse_match(handle):
@@ -28,8 +29,9 @@ def parse_match(handle):
     consts = get_consts()
 
     dataset_id, dataset = get_dataset(data['version'], data['mod'])
+    # self._header.hd.selected_map_id if self._header.hd else self._header.scenario.game_settings.map_id
     map_data, encoding, language = get_map_data(
-        data['scenario']['map_id'],
+        data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id'],
         data['scenario']['instructions'],
         data['map']['dimension'],
         data['version'],
@@ -231,11 +233,11 @@ def serialize(obj):
                 return hash(obj)
             seen.add(obj)
         if type(obj) is list:
-            return [v for v in [impl(o) for o in obj] if v]
+            return [v for v in [impl(o) for o in obj] if v is not None]
         elif type(obj) is dict:
-            return {k:v for k, v in {f:impl(d) for f, d in obj.items()}.items() if v}
+            return {k:v for k, v in {f:impl(d) for f, d in obj.items()}.items() if v is not None}
         elif dataclasses.is_dataclass(obj):
-            return {k:v for k, v in {f.name:impl(getattr(obj, f.name)) for f in dataclasses.fields(obj)}.items() if v}
+            return {k:v for k, v in {f.name:impl(getattr(obj, f.name)) for f in dataclasses.fields(obj)}.items() if v is not None}
         elif isinstance(obj, (codecs.CodecInfo, Enum)):
             return obj.name
         elif isinstance(obj, timedelta):

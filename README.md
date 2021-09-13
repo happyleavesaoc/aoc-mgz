@@ -32,6 +32,7 @@ Abstractions take parser output as input and return an object with normalized da
 | Userpatch <= 1.4 (`.mgz`) | | ✓ | | ✓ | ✓ | ✓ |
 | Userpatch 1.5 (`.mgz`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | HD Edition >= 4.6 | | ✓ | | ✓ | ✓ | ✓ |
+| HD Edition 5.8 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Definitive Edition <= 13.34 (`.aoe2record`) | | ✓ | | ✓ | ✓ | ✓ |
 | Definitive Edition > 13.34 (`.aoe2record`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
