@@ -147,7 +147,7 @@ class Summary: # pylint: disable=too-many-public-methods
             rated = len(ratings) > 0 and set(ratings.values()) != {1600}
         if self._header.version == Version.DE:
             self._cache['hash'] = hashlib.sha1(self._header.de.guid)
-        elif self._header.version == Version.HD:
+        elif self._header.version == Version.HD and self._header.save_version >= 12.49:
             self._cache['hash'] = hashlib.sha1(self._header.hd.guid)
         else:
             self._cache['hash'] = hashlib.sha1(b''.join(checksums)) \
@@ -211,11 +211,11 @@ class Summary: # pylint: disable=too-many-public-methods
         return get_diplomacy_data(self.get_header(), self.get_teams())
 
     def get_profile_ids(self):
-        """Get map of player color to profile IDs (DE only)."""
+        """Get map of player color to profile IDs (DE/HD only)."""
         if self._header.version == Version.DE:
             key = 'de'
             field = 'profile_id'
-        elif self._header.version == Version.HD:
+        elif self._header.version == Version.HD and self._header.save_version >= 12.49:
             key = 'hd'
             field = 'steam_id'
         else:
@@ -259,7 +259,7 @@ class Summary: # pylint: disable=too-many-public-methods
         if self._header.version == Version.DE:
             lobby_name = self._header.de.lobby_name.value.decode(self.get_encoding()).strip()
             guid = str(uuid.UUID(bytes=self._header.de.guid))
-        elif self._header.version == Version.HD:
+        elif self._header.version == Version.HD and self._header.save_version >= 12.49:
             lobby_name = self._header.hd.lobby_name.value.decode(self.get_encoding()).strip()
             guid = str(uuid.UUID(bytes=self._header.hd.guid))
             rating_key = "hd_{}_rating".format(self._header.lobby.game_type.lower())

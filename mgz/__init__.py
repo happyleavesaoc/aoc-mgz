@@ -19,7 +19,7 @@ compressed_header = Struct(
     "game_version"/CString(encoding='latin1'),
     "save_version"/VersionAdapter(Float32l),
     "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, None)),
-    "hd"/If(lambda ctx: ctx.version == Version.HD, hd),
+    "hd"/If(lambda ctx: ctx.version == Version.HD and ctx.save_version > 12.34, hd),
     "de"/If(lambda ctx: ctx.version == Version.DE, de),
     ai,
     replay,

@@ -5,15 +5,19 @@ from mgz.util import Version
 from mgz.reference import get_dataset
 
 
-def resolve_hd_version(version, is_57):
+def resolve_hd_version(hd, save_version):
     """Best guess at HD version."""
-    if version == 1006:
-        if is_57:
+    if hd.version == 1006:
+        if 'test_57' in hd and hd.test_57.is_57:
             return '5.7'
         else:
             return '5.8'
-    if version == 1005:
+    if hd.version == 1005:
         return '>=5.0,<5.7'
+    if hd.version == 1004:
+        return '4.8'
+    if save_version >= 12.36:
+        return '>=4.6,<4.8'
     return None
 
 
@@ -34,7 +38,7 @@ def get_dataset_data(header):
         return {
             'id': 300,
             'name': 'HD Edition',
-            'version': resolve_hd_version(header.hd.version, header.hd.test_57.is_57)
+            'version': resolve_hd_version(header.hd, header.save_version)
         }, ref
     if 'mod' in sample and sample.mod['id'] == 0 and sample.mod['version'] == '2':
         raise ValueError("invalid mod version")

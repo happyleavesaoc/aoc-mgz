@@ -1,7 +1,7 @@
 from construct import (
     Struct, Int32ul, Float32l, Array, Padding, Flag, If,
     Byte, Int16ul, Bytes, Int32sl, Peek, Const, RepeatUntil,
-    Int64ul, Computed, Embedded
+    Int64ul, Computed, Embedded, IfThenElse
 )
 
 from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum, PlayerTypeEnum, DifficultyEnum
@@ -18,11 +18,11 @@ hd_string = Struct(
 test_57 = "test_57"/Struct(
     "check"/Int32ul,
     Padding(4),
-    If(lambda ctx: ctx._.version >= 1006, Bytes(1)),
+    If(lambda ctx: ctx._._.version >= 1006, Bytes(1)),
     Padding(15),
     hd_string,
     Padding(1),
-    hd_string,
+    If(lambda ctx: ctx._._.version >= 1005, hd_string),
     hd_string,
     Padding(16),
     "test"/Int32ul,
@@ -32,7 +32,7 @@ test_57 = "test_57"/Struct(
 player = Struct(
     "dlc_id"/Int32ul,
     "color_id"/Int32ul,
-    "unk1_1006"/If(lambda ctx: ctx._.version >= 1006, Bytes(1)),
+    "unk1_1006"/If(lambda ctx: ctx._._.version >= 1006, Bytes(1)),
     "unk"/Bytes(2),
     "dat_crc"/Bytes(4),
     "mp_game_version"/Byte,
@@ -41,12 +41,12 @@ player = Struct(
     Const(b"\x00\x00\x00"),
     "ai_type"/hd_string,
     "ai_civ_name_index"/Byte,
-    "ai_name"/hd_string,
+    "ai_name"/If(lambda ctx: ctx._._.version >= 1005, hd_string),
     "name"/hd_string,
     "type"/PlayerTypeEnum(Int32ul),
     "steam_id"/Int64ul,
     "player_number"/Int32sl,
-    Embedded(If(lambda ctx: ctx._.version >= 1006 and not ctx._.test_57.is_57, Struct(
+    Embedded(If(lambda ctx: ctx._._.version >= 1006 and not ctx._.test_57.is_57, Struct(
         "hd_rm_rating"/Int32ul,
         "hd_dm_rating"/Int32ul,
     )))
@@ -74,6 +74,10 @@ hd = "hd"/Struct(
     "ending_age"/AgeEnum(Computed(lambda ctx: ctx.ending_age_id)),
     "game_type"/If(lambda ctx: ctx.version >= 1006, Int32ul),
     separator,
+    "ver1000"/If(lambda ctx: ctx.version == 1000, Struct(
+        "map_name"/hd_string,
+        "unk"/hd_string
+    )),
     separator,
     "speed"/Float32l,
     "treaty_length"/Int32ul,
@@ -98,27 +102,45 @@ hd = "hd"/Struct(
     "shared_exploration"/Flag,
     "team_positions"/Flag,
     "unk"/Bytes(1),
-    Peek(test_57),
-    "players"/Array(8, player),
-    "fog_of_war"/Flag,
-    "cheat_notifications"/Flag,
-    "colored_chat"/Flag,
-    Bytes(9),
-    separator,
-    "is_ranked"/Flag,
-    "allow_specs"/Flag,
-    "lobby_visibility"/Int32ul,
-    "custom_random_map_file_crc"/Int32ul,
-    "custom_scenario_or_campaign_file"/hd_string,
-    Bytes(8),
-    "custom_random_map_file"/hd_string,
-    Bytes(8),
-    "custom_random_map_scenarion_file"/hd_string,
-    Bytes(8),
-    "guid"/Bytes(16),
-    "lobby_name"/hd_string,
-    "modded_dataset"/hd_string,
-    "modded_dataset_workshop_id"/Bytes(8),
-    "unk_s"/hd_string,
-    Bytes(4),
+    Embedded(IfThenElse(lambda ctx: ctx.version == 1000,
+        Struct(
+            Bytes(40*3),
+            separator,
+            Bytes(40),
+            "strings"/Array(8, hd_string),
+            Bytes(16),
+            separator,
+            Bytes(10),
+        ),
+        Struct(
+            Peek(test_57),
+            "players"/Array(8, player),
+            "fog_of_war"/Flag,
+            "cheat_notifications"/Flag,
+            "colored_chat"/Flag,
+            Bytes(9),
+            separator,
+            "is_ranked"/Flag,
+            "allow_specs"/Flag,
+            "lobby_visibility"/Int32ul,
+            "custom_random_map_file_crc"/Int32ul,
+            "custom_scenario_or_campaign_file"/hd_string,
+            Bytes(8),
+            "custom_random_map_file"/hd_string,
+            Bytes(8),
+            "custom_random_map_scenarion_file"/hd_string,
+            Bytes(8),
+            "guid"/Bytes(16),
+            "lobby_name"/hd_string,
+            "modded_dataset"/hd_string,
+            "modded_dataset_workshop_id"/Bytes(4),
+            If(lambda ctx: ctx._.version >= 1005,
+                Struct(
+                    Bytes(4),
+                    hd_string,
+                    Bytes(4)
+                )
+            )
+        )
+    ))
 )

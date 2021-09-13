@@ -77,7 +77,7 @@ def get_version(game_version, save_version, log_version):
             return Version.AOC10
         if log_version == 5 or save_version >= 12.97:
             return Version.DE
-        if save_version >= 12.5:
+        if save_version >= 12.36:
             return Version.HD
         if log_version == 4:
             return Version.AOC10C

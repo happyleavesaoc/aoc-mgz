@@ -203,7 +203,8 @@ def ResourceLevelEnum(ctx):
         medium=2,
         high=3,
         unknown1=4,
-        unknown2=5
+        unknown2=5,
+        unknown3=6
     )
 
 def RevealMapEnum(ctx):
