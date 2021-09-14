@@ -4,7 +4,7 @@ from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
                        PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
-from mgz.util import Find, Version, find_save_version
+from mgz.util import Find, Version, find_save_version, find_version
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -69,7 +69,7 @@ scenario_players = "players"/Struct(
         "stone"/Int32ul,
         "unk0"/Int32ul,
         "unk1"/Int32ul,
-        If(lambda ctx: ctx._._._.version == Version.DE,
+        If(lambda ctx: ctx._._._.version in (Version.DE, Version.HD),
             "unk2"/Int32ul
         )
     )),
@@ -95,7 +95,7 @@ victory = "victory"/Struct(
 disables = "disables"/Struct(
     Padding(4),
     Padding(64),
-    IfThenElse(lambda ctx: ctx._._.version != Version.DE,
+    If(lambda ctx: ctx._._.version != Version.DE,
         Struct(
             Array(16, "num_disabled_techs"/Int32ul),
             Array(16, Array(30, Padding(4))),
@@ -103,15 +103,17 @@ disables = "disables"/Struct(
             Array(16, Array(30, Padding(4))),
             Array(16, "num_disabled_buildings"/Int32ul),
             Array(16, Array(20, Padding(4))),
-        ),
-        Padding(196)
+        )
     ),
-    Padding(12)
+    If(lambda ctx: ctx._._.version == Version.DE, Bytes(196)),
+    If(lambda ctx: ctx._._.version == Version.HD, Bytes(644)),
+    "padding"/Bytes(12)
 )
 
 # Game settings.
 game_settings = "game_settings"/Struct(
     Array(16, AgeEnum("starting_ages"/Int32sl)),
+    "hd"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(16)),
     Padding(4),
     Padding(8),
     "map_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32ul),

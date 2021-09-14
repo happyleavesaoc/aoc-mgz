@@ -47,7 +47,9 @@ ENCODING_MARKERS = [
     ['位置：', 'utf-8', 'zh'],
     ['舞台: ', 'utf-8', 'zh'],
     ['Vị trí: ', 'utf-8', 'vi'],
-    ['위치: ', 'utf-8', 'kr']
+    ['위치: ', 'utf-8', 'kr'],
+    ['Τύπος Χάρτη: ', 'utf-8', 'gr'],
+    ['Emplacement: ', 'utf-8', 'fr']
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
@@ -98,11 +100,10 @@ def lookup_name(map_id, name, version, reference):
     """Lookup base game map if applicable."""
     custom = True
     is_de = version == Version.DE
-    if (map_id != 44 and not is_de) or (map_id != 59 and is_de):
+    is_hd = version == Version.HD
+    if (map_id != 44 and not (is_de or is_hd)) or (map_id != 59 and (is_de or is_hd)):
         map_keys = [int(k) for k in reference['maps'].keys()]
-        if is_de and map_id in map_keys:
-            name = reference['maps'][str(map_id)]
-        elif not is_de and map_id in map_keys:
+        if map_id in map_keys:
             name = reference['maps'][str(map_id)]
         elif version == Version.AOK:
             return name, False

@@ -38,6 +38,7 @@ class Version(Enum):
     DE = 21
     USERPATCH14RC2 = 22
     MCP = 30
+    HD = 19
 
 
 class MgzPrefixed(Subconstruct):
@@ -74,10 +75,12 @@ def get_version(game_version, save_version, log_version):
     if game_version == 'VER 9.4':
         if log_version == 3:
             return Version.AOC10
-        if log_version == 4:
-            return Version.AOC10C
         if log_version == 5 or save_version >= 12.97:
             return Version.DE
+        if save_version >= 12.36:
+            return Version.HD
+        if log_version == 4:
+            return Version.AOC10C
         return Version.AOC
     if game_version == 'VER 9.8':
         return Version.USERPATCH12
@@ -265,6 +268,7 @@ class GotoObjectsEnd(Construct):
             # TODO: make this section more reliable
             marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
+            marker_hd = read_bytes.find(b"\xae\x47\xa1\x3f")
             if save_version >= 25.01:
                 marker_de = read_bytes.find(b"\x3d\x0a\xb7\x3f")
             elif save_version >= 20.16:
@@ -278,12 +282,14 @@ class GotoObjectsEnd(Construct):
             else:
                 marker_de = read_bytes.find(b"\x7b\x14\xae\x3f")
             new_marker = -1
-            if marker_up > 0 and marker_de < 0: # aok marker can appear in up
+            if marker_up > 0 and marker_de < 0 and marker_hd < 0: # aok marker can appear in up
                 new_marker = marker_up
-            elif marker_de > 0 and marker_up < 0 and marker_aok < 0:
+            elif marker_de > 0 and marker_up < 0 and marker_aok < 0 and marker_hd < 0:
                 new_marker = marker_de
-            elif marker_aok > 0 and marker_up < 0 and marker_de < 0:
+            elif marker_aok > 0 and marker_up < 0 and marker_de < 0 and marker_hd < 0:
                 new_marker = marker_aok
+            elif marker_hd > 0 and marker_up < 0 and marker_de < 0 and marker_aok < 0:
+                new_marker = marker_hd
             if new_marker == -1:
                 raise RuntimeError("could not find scenario marker")
             marker = new_marker

@@ -8,6 +8,7 @@ Age of Empires II recorded game parsing and summarization in Python 3.
 - The Conquerors (`.mgx`)
 - Userpatch 1.4 (`.mgz`)
 - Userpatch 1.5 (`.mgz`)
+- HD Edition >= 4.6 (`.aoe2record`)
 - Definitive Edition (`.aoe2record`)
 
 ## Architecture
@@ -30,6 +31,8 @@ Abstractions take parser output as input and return an object with normalized da
 | The Conquerors (`.mgx`) | | ✓ | | ✓ | ✓ | |
 | Userpatch <= 1.4 (`.mgz`) | | ✓ | | ✓ | ✓ | ✓ |
 | Userpatch 1.5 (`.mgz`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| HD Edition >= 4.6 | | ✓ | | ✓ | ✓ | ✓ |
+| HD Edition 5.8 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Definitive Edition <= 13.34 (`.aoe2record`) | | ✓ | | ✓ | ✓ | ✓ |
 | Definitive Edition > 13.34 (`.aoe2record`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 

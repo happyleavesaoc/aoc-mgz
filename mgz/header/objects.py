@@ -72,7 +72,7 @@ static = "static"/Struct(
     "selected_group"/If(lambda ctx: find_version(ctx) == Version.AOK, Byte),
     ResourceEnum("resource_type"/Int16sl),
     "amount"/Float32l,
-    "worker_count"/Byte,
+    "worker_count"/IfThenElse(lambda ctx: find_save_version(ctx) == 12.36, Int32ul, Byte),
     "current_damage"/Byte,
     "damaged_lately_timer"/Byte,
     "under_attack"/Byte,
@@ -83,6 +83,17 @@ static = "static"/Struct(
     "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(19)),
     "has_sprite_list"/Byte,
     "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list)),
+    "hd_extension"/If(lambda ctx: find_version(ctx) == Version.HD and find_save_version(ctx) > 12.36, Struct(
+        "flag"/Flag,
+        Padding(4),
+        "has_array"/Int16ul,
+        "array"/If(lambda ctx: ctx.has_array, Struct(
+            "values"/RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, Struct(
+                "type"/Byte,
+                If(lambda ctx: ctx.type > 0, Bytes(16))
+            ))
+        ))
+    )),
     "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
         "particles"/Array(5, particle),
         If(lambda ctx: find_save_version(ctx) >= 13.15, Bytes(5)),
@@ -116,10 +127,11 @@ path_data = "path_data"/Struct(
     "waypoint"/Int32ul,
     "state"/Int32sl,
     "range"/Float32l,
-    "target_id"/Int32ul,
+    "target_id"/Int32sl,
     "pause_time"/Float32l,
     "continue_counter"/Int32ul,
-    "flags"/Int32ul
+    "flags"/Int32ul,
+    "hd"/If(lambda ctx: find_version(ctx) == Version.HD, Int32ul)
 )
 
 vector = Struct(
@@ -168,7 +180,8 @@ base_moving = "base_moving"/Struct(
 
 moving = "moving"/Struct(
     Embedded(base_moving),
-    "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17))
+    "hd_moving"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(1)),
+    "de_moving"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17))
 )
 
 move_to = "move_to"/Struct(
@@ -200,7 +213,7 @@ attack = "attack"/Struct(
 unit_action = Struct(
     "type"/Int16ul,
     "data"/If(lambda ctx: ctx.type > 0, Struct(
-        "state"/IfThenElse(lambda ctx: find_version(ctx) in [Version.AOK, Version.AOC], Byte, Int32ul),
+        "state"/IfThenElse(lambda ctx: find_version(ctx) in [Version.AOK, Version.AOC, Version.HD], Byte, Int32ul),
         "target_object_pointer"/Int32sl,
         "target_object_pointer2"/Int32sl,
         "target_object_id"/Int32sl,
@@ -227,6 +240,7 @@ action_list = "action_list"/Struct(
 
 action = "action"/Struct(
     Embedded(base_moving),
+    "hd_action"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(3)),
     "waiting"/Byte,
     "command_flag"/Byte,
     "selected_group_info"/If(lambda ctx: find_version(ctx) != Version.AOK, Int16ul),
@@ -372,7 +386,8 @@ combat = "combat"/Struct(
     "has_ai"/Int32ul,
     "ai"/If(lambda ctx: ctx.has_ai > 0, unit_ai),
     "peek"/Peek(Bytes(5)), # TODO: figure out the right way to do this part
-    "de_position"/If(lambda ctx: ctx.peek != b'\x00\xff\xff\xff\xff', Struct(
+    "hd_position"/If(lambda ctx: find_version(ctx) == Version.HD and ctx.peek != b'\x00\xff\xff\xff\xff', Bytes(4)),
+    "de_position"/If(lambda ctx: find_version(ctx) == Version.DE and ctx.peek != b'\x00\xff\xff\xff\xff', Struct(
         "position"/vector,
         "flag"/Byte,
     )),
@@ -410,7 +425,7 @@ building = "building"/Struct(
     "desolid_flag"/Byte,
     "pending_order"/Int32ul,
     "linked_owner"/Int32sl,
-    "linked_children"/Array(lambda ctx: 3 if find_version(ctx) == Version.DE else 4, Int32sl),
+    "linked_children"/Array(lambda ctx: 3 if find_version(ctx) in (Version.DE, Version.HD) else 4, Int32sl),
     "captured_unit_count"/Byte,
     "extra_actions"/action_list,
     "research_actions"/If(lambda ctx: find_version(ctx) != Version.DE, action_list),

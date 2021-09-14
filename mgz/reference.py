@@ -12,6 +12,8 @@ def get_dataset(version, mod):
     """Fetch dataset reference data."""
     if version is Version.DE:
         dataset_id = 100
+    elif version is Version.HD:
+        dataset_id = 300
     elif mod:
         dataset_id = mod[0]
     else:

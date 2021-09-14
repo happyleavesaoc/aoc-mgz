@@ -13,7 +13,7 @@ lobby = "lobby"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(5)),
     If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(9)),
     Array(8, "teams"/Byte), # team number selected by each player
-    If(lambda ctx: ctx._.version != Version.DE,
+    If(lambda ctx: ctx._.version not in (Version.DE, Version.HD),
         Padding(1),
     ),
     Peek("reveal_map_id"/Int32ul),
@@ -29,7 +29,7 @@ lobby = "lobby"/Struct(
             "lock_teams"/Flag
         )
     )),
-    If(lambda ctx: ctx._.version == Version.DE,
+    If(lambda ctx: ctx._.version in (Version.DE, Version.HD),
         Struct(
             "treaty_length"/Byte,
             "cheat_codes_used"/Int32ul,
