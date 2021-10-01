@@ -37,7 +37,7 @@ map_info = "map_info"/Struct(
     "tile_num"/Computed(lambda ctx: ctx.size_x * ctx.size_y),
     "zone_num"/Int32ul,
     Array(lambda ctx: ctx.zone_num, Struct(
-        IfThenElse(lambda ctx: ctx._._.version == Version.DE,
+        IfThenElse(lambda ctx: ctx._._.version in (Version.DE, Version.HD),
             Padding(lambda ctx: 2048 + (ctx._.tile_num * 2)),
             Padding(lambda ctx: 1275 + ctx._.tile_num)
         ),

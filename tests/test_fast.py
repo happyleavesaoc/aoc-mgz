@@ -19,7 +19,6 @@ class TestFastUserPatch15(unittest.TestCase):
         self.assertEqual(players[1]['diplomacy'], [0, 1, 4, -1, -1, -1, -1, -1, -1])
         self.assertEqual(players[2]['diplomacy'], [0, 4, 1, -1, -1, -1, -1, -1, -1])
 
-
     def test_map(self):
         self.assertEqual(self.data['scenario']['map_id'], 44)
 
@@ -41,3 +40,21 @@ class TestFastDE(unittest.TestCase):
     def test_map(self):
         self.assertEqual(self.data['scenario']['map_id'], 9)
         self.assertEqual(self.data['lobby']['seed'], -1970180596)
+
+
+class TestFastHD(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        with open('tests/recs/hd-5.8.aoe2record', 'rb') as handle:
+            cls.data = parse(handle)
+
+    def test_version(self):
+        self.assertEqual(self.data['version'], Version.HD)
+
+    def test_players(self):
+        players = self.data.get('players')
+        self.assertEqual(len(players), 7)
+
+    def test_map(self):
+        self.assertEqual(self.data['scenario']['map_id'], 0)

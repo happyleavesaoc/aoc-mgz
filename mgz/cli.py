@@ -101,6 +101,7 @@ def is_valid(path):
         size = os.fstat(handle.fileno()).st_size
         try:
             mgz.header.parse_stream(handle)
+            mgz.body.meta.parse_stream(handle)
             while handle.tell() < size:
                 mgz.body.operation.parse_stream(handle)
             print('valid')

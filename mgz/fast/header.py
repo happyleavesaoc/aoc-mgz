@@ -44,8 +44,15 @@ def aoc_string(data):
 
 def de_string(data):
     """Read DE string."""
-    assert data.read(2) == b'\x60\x0A'
+    assert data.read(2) == b'\x60\x0a'
     length = unpack('<h', data)
+    return unpack(f'<{length}s', data)
+
+
+def hd_string(data):
+    """Read HD string."""
+    length = unpack('<h', data)
+    assert data.read(2) == b'\x60\x0a'
     return unpack(f'<{length}s', data)
 
 
@@ -141,11 +148,13 @@ def parse_lobby(data, version, save):
         if save >= 20.06:
             data.read(9)
     data.read(8)
-    if version is not Version.DE:
+    if version not in (Version.DE, Version.HD):
         data.read(1)
     reveal_map_id, map_size, population, game_type_id, lock_teams = unpack('I4xIIbb', data)
-    if version is Version.DE:
-        data.read(9)
+    if version in (Version.DE, Version.HD):
+        data.read(5)
+        if save >= 13.13:
+            data.read(4)
     chat = []
     for _ in range(0, unpack('<I', data)):
         message = data.read(unpack('<I', data)).strip(b'\x00')
@@ -157,7 +166,7 @@ def parse_lobby(data, version, save):
     return dict(
         reveal_map_id=reveal_map_id,
         map_size=map_size,
-        population=population * (25 if version is not Version.DE else 1),
+        population=population * (25 if version not in (Version.DE, Version.HD) else 1),
         game_type_id=game_type_id,
         lock_teams=lock_teams == 1,
         chat=chat,
@@ -175,7 +184,7 @@ def parse_map(data, version):
     size_x, size_y, zone_num = unpack('<III', data)
     tile_num = size_x * size_y
     for _ in range(zone_num):
-        if version is Version.DE:
+        if version in (Version.DE, Version.HD):
             data.read(2048 + (tile_num * 2))
         else:
             data.read(1275 + tile_num)
@@ -216,7 +225,7 @@ def parse_scenario(data, num_players, version):
     data.read(196)
     for _ in range(0, 16):
         data.read(24)
-        if version is Version.DE:
+        if version in (Version.DE, Version.HD):
             data.read(4)
     data.read(12672)
     if version is Version.DE:
@@ -224,7 +233,11 @@ def parse_scenario(data, num_players, version):
     else:
         for _ in range(0, 16):
             data.read(332)
+    if version is Version.HD:
+        data.read(644)
     data.read(88)
+    if version is Version.HD:
+        data.read(16)
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
@@ -293,7 +306,60 @@ def parse_de(data, version, save):
         players=players,
         guid=str(uuid.UUID(bytes=guid)),
         lobby=lobby.decode('utf-8'),
-        mod=mod
+        mod=mod.decode('utf-8')
+    )
+
+
+def parse_hd(data, version, save):
+    """Parse HD-specifc header."""
+    if version is not Version.HD or save <= 12.34:
+        return None
+    data.read(12)
+    dlc_count = unpack('<I', data)
+    data.read(dlc_count * 4)
+    data.read(8)
+    map_id = unpack('<I', data)
+    data.read(80)
+    players = []
+    for _ in range(8):
+        data.read(4)
+        color_id = unpack('<i', data)
+        data.read(12)
+        civilization_id = unpack('<I', data)
+        hd_string(data)
+        data.read(1)
+        hd_string(data)
+        name = hd_string(data)
+        data.read(4)
+        steam_id, number = unpack('<Qi', data)
+        data.read(8)
+        if name:
+            players.append(dict(
+                number=number,
+                color_id=color_id,
+                name=name,
+                profile_id=steam_id,
+                civilization_id=civilization_id
+            ))
+    data.read(26)
+    hd_string(data)
+    data.read(8)
+    hd_string(data)
+    data.read(8)
+    hd_string(data)
+    data.read(8)
+    guid = data.read(16)
+    lobby = hd_string(data)
+    mod = hd_string(data)
+    data.read(8)
+    hd_string(data)
+    data.read(4)
+    return dict(
+        players=players,
+        guid=str(uuid.UUID(bytes=guid)),
+        lobby=lobby.decode('utf-8'),
+        mod=mod.decode('utf-8'),
+        map_id=map_id
     )
 
 
@@ -310,7 +376,7 @@ def parse_version(header, data):
     log = unpack('<I', data)
     game, save = unpack('<7sxf', header)
     version = get_version(game.decode('ascii'), round(save, 2), log)
-    if version not in (Version.USERPATCH15, Version.DE):
+    if version not in (Version.USERPATCH15, Version.DE, Version.HD):
         raise RuntimeError(f"{version} not supported")
     return version, round(save, 2)
 
@@ -318,7 +384,7 @@ def parse_version(header, data):
 def parse_players(header, num_players, version):
     """Parse all players."""
     cur = header.tell()
-    gaia = b'Gaia' if version is Version.DE else b'GAIA'
+    gaia = b'Gaia' if version in (Version.DE, Version.HD) else b'GAIA'
     anchor = header.read().find(b'\x05\x00' + gaia + b'\x00')
     header.seek(cur + anchor - num_players - 43)
     mod = parse_mod(header, num_players, version)
@@ -350,6 +416,7 @@ def parse(data):
         header = decompress(data)
         version, save = parse_version(header, data)
         de = parse_de(header, version, save)
+        hd = parse_hd(header, version, save)
         metadata, num_players = parse_metadata(header)
         map_ = parse_map(header, version)
         players, mod = parse_players(header, num_players, version)
@@ -362,6 +429,7 @@ def parse(data):
         players=players,
         map=map_,
         de=de,
+        hd=hd,
         mod=mod,
         metadata=metadata,
         scenario=scenario,

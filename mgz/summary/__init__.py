@@ -147,6 +147,8 @@ class Summary: # pylint: disable=too-many-public-methods
             rated = len(ratings) > 0 and set(ratings.values()) != {1600}
         if self._header.version == Version.DE:
             self._cache['hash'] = hashlib.sha1(self._header.de.guid)
+        elif self._header.version == Version.HD and self._header.save_version >= 12.49:
+            self._cache['hash'] = hashlib.sha1(self._header.hd.guid)
         else:
             self._cache['hash'] = hashlib.sha1(b''.join(checksums)) \
                 if len(checksums) == CHECKSUMS else None
@@ -155,6 +157,8 @@ class Summary: # pylint: disable=too-many-public-methods
             self._cache['platform_id'] = 'voobly'
         if self._header.version == Version.DE and self._header.de.multiplayer:
             self._cache['platform_id'] = 'de'
+        if self._header.version == Version.HD and self._header.hd.multiplayer:
+            self._cache['platform_id'] = 'hd'
         self._cache['ladder'] = ladder
         self._cache['rated'] = rated
         self._cache['ratings'] = ratings if rated else {}
@@ -207,14 +211,20 @@ class Summary: # pylint: disable=too-many-public-methods
         return get_diplomacy_data(self.get_header(), self.get_teams())
 
     def get_profile_ids(self):
-        """Get map of player color to profile IDs (DE only)."""
+        """Get map of player color to profile IDs (DE/HD only)."""
         if self._header.version == Version.DE:
-            return {
-                p.player_number: p.profile_id
-                for p in self._header.de.players
-                if p.player_number >= 0 and p.profile_id > 0
-            }
-        return {}
+            key = 'de'
+            field = 'profile_id'
+        elif self._header.version == Version.HD and self._header.save_version >= 12.49:
+            key = 'hd'
+            field = 'steam_id'
+        else:
+            return {}
+        return {
+            p.player_number: p[field]
+            for p in self._header[key].players
+            if p.player_number >= 0 and p[field] > 0
+        }
 
     def get_players(self):
         """Get players."""
@@ -249,6 +259,17 @@ class Summary: # pylint: disable=too-many-public-methods
         if self._header.version == Version.DE:
             lobby_name = self._header.de.lobby_name.value.decode(self.get_encoding()).strip()
             guid = str(uuid.UUID(bytes=self._header.de.guid))
+        elif self._header.version == Version.HD and self._header.save_version >= 12.49:
+            lobby_name = self._header.hd.lobby_name.value.decode(self.get_encoding()).strip()
+            guid = str(uuid.UUID(bytes=self._header.hd.guid))
+            rating_key = "hd_{}_rating".format(self._header.lobby.game_type.lower())
+            for player in self._header.hd.players:
+                if player.player_number < 1:
+                    continue
+                if rating_key not in player:
+                    continue
+                self._cache['ratings'][player.name.value.decode(self.get_encoding())] = player[rating_key]
+            self._cache['rated'] = self._header.hd.is_ranked
         return {
             'platform_id': self._cache['platform_id'],
             'platform_match_id': guid,
@@ -287,7 +308,7 @@ class Summary: # pylint: disable=too-many-public-methods
         tiles = tiles = [(tile.terrain_type, tile.elevation) for tile in self._header.map_info.tile]
         if not self._cache['map']:
             self._cache['map'], self._cache['encoding'], self._cache['language'] = get_map_data(
-                self._header.scenario.game_settings.map_id,
+                self._header.hd.selected_map_id if self._header.hd else self._header.scenario.game_settings.map_id,
                 self._header.scenario.messages.instructions,
                 self._header.map_info.size_x,
                 self._header.version,
