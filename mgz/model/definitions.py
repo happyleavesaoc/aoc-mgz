@@ -13,6 +13,9 @@ class Position:
     x: float
     y: float
 
+    def __hash__(self):
+        return hash((self.x, self.y))
+
 
 @dataclass
 class Object:
@@ -61,7 +64,7 @@ class Input:
 
     timestamp: timedelta
     type: str
-    modifier: str
+    param: str
     payload: dict
     player: Player = None
     position: Position = None
