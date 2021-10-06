@@ -108,6 +108,7 @@ de = "de"/Struct(
         "name"/de_string,
         Bytes(4),
     )),
+    If(lambda ctx: ctx._.save_version >= 25.02, Bytes(8)),
     "guid"/Bytes(16),
     "lobby_name"/de_string,
     "modded_dataset"/de_string,

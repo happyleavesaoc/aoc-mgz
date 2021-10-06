@@ -12,7 +12,7 @@ from mgz.util import Find, Version, find_save_version, find_version
 # Scenario header.
 scenario_header = "scenario_header"/Struct(
     "next_uid"/Int32ul,
-    "constant"/Bytes(4),
+    "scenario_version"/Float32l,
     Array(16, "names"/String(256)),
     Array(16, "player_ids"/Int32ul),
     Array(16, "player_data"/Struct(
@@ -126,7 +126,8 @@ game_settings = "game_settings"/Struct(
             If(lambda ctx: find_save_version(ctx) >= 13.07, Padding(1)),
             If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(132)),
             If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(1)),
-            If(lambda ctx: find_save_version(ctx) >= 20.16, Padding(4))
+            If(lambda ctx: find_save_version(ctx) >= 20.16, Padding(4)),
+            If(lambda ctx: find_save_version(ctx) >= 25.02, Padding(4*16))
         )
     ),
     Array(9, "player_info"/Struct(
