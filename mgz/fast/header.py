@@ -378,7 +378,7 @@ def parse_version(header, data):
     version = get_version(game.decode('ascii'), round(save, 2), log)
     if version not in (Version.USERPATCH15, Version.DE, Version.HD):
         raise RuntimeError(f"{version} not supported")
-    return version, round(save, 2)
+    return version, game.decode('ascii'), round(save, 2), log
 
 
 def parse_players(header, num_players, version):
@@ -414,7 +414,7 @@ def parse(data):
     """Parse recorded game header."""
     try:
         header = decompress(data)
-        version, save = parse_version(header, data)
+        version, game, save, log = parse_version(header, data)
         de = parse_de(header, version, save)
         hd = parse_hd(header, version, save)
         metadata, num_players = parse_metadata(header)
@@ -426,6 +426,9 @@ def parse(data):
         raise RuntimeError("could not parse")
     return dict(
         version=version,
+        game_version=game,
+        save_version=save,
+        log_version=log,
         players=players,
         map=map_,
         de=de,

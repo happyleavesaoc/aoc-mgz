@@ -2,6 +2,7 @@
 
 import codecs
 import collections
+import hashlib
 from datetime import timedelta
 from enum import Enum
 
@@ -31,9 +32,9 @@ def parse_match(handle):
     consts = get_consts()
 
     dataset_id, dataset = get_dataset(data['version'], data['mod'])
-    # self._header.hd.selected_map_id if self._header.hd else self._header.scenario.game_settings.map_id
+    map_id = data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id']
     map_data, encoding, language = get_map_data(
-        data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id'],
+        map_id,
         data['scenario']['instructions'],
         data['map']['dimension'],
         data['version'],
@@ -86,7 +87,9 @@ def parse_match(handle):
             player['color_id'] + 1,
             player['name'].decode(encoding),
             consts['player_colors'][str(player['color_id'])],
+            player['color_id'],
             dataset['civilizations'][str(player['civilization_id'])]['name'],
+            player['civilization_id'],
             Position(pos_x, pos_y),
             [
                 Object(
@@ -121,6 +124,8 @@ def parse_match(handle):
         chats.append(Chat(
             timedelta(milliseconds=chat['timestamp']),
             chat['message'],
+            chat['origination'],
+            chat['audience'],
             players[chat['player_number']]
         ))
         inputs.add_chat(chats[-1])
@@ -149,6 +154,8 @@ def parse_match(handle):
                     chats.append(Chat(
                         timedelta(milliseconds=chat['timestamp']),
                         chat['message'],
+                        chat['origination'],
+                        chat['audience'],
                         players[chat['player_number']]
                     ))
                     inputs.add_chat(chats[-1])
@@ -191,16 +198,23 @@ def parse_match(handle):
         for player in team:
             player.winner = winner
 
+    handle.seek(0)
+    file_bytes = handle.read()
+    file_size = len(file_bytes)
+    file_hash = hashlib.sha1(file_bytes).hexdigest()
     return Match(
         list(players.values()),
         teams,
         gaia,
         Map(
+            map_id,
             map_data['name'],
             map_data['dimension'],
             consts['map_sizes'][str(map_data['dimension'])],
             map_data['custom'],
             map_data['seed'],
+            map_data['name'].startswith('ZR@'),
+            map_data['modes'],
             [
                 Tile(
                     tile['terrain_id'],
@@ -212,10 +226,13 @@ def parse_match(handle):
         File(
             codecs.lookup(encoding),
             language,
+            file_hash,
+            file_size,
             players[data['metadata']['owner_id']],
             viewlocks
         ),
         consts['speeds'][str(int(round(data['metadata']['speed'], 2) * 100))],
+        int(round(data['metadata']['speed'], 2) * 100),
         data['metadata']['cheats'],
         data['lobby']['lock_teams'],
         data['lobby']['population'],
@@ -224,10 +241,16 @@ def parse_match(handle):
         lobby,
         dataset['dataset']['name'],
         consts['game_types'][str(data['lobby']['game_type_id'])],
+        data['lobby']['game_type_id'],
         consts['map_reveal_choices'][str(data['lobby']['reveal_map_id'])],
+        data['lobby']['reveal_map_id'],
+        True if data['version'] is Version.DE else None,
         timedelta(milliseconds=timestamp),
         diplomacy_type,
         data['version'],
+        data['game_version'],
+        data['save_version'],
+        data['log_version'],
         actions,
         inputs.inputs
     )

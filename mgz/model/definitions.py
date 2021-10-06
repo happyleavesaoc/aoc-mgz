@@ -33,7 +33,9 @@ class Player:
     number: int
     name: str
     color: str
+    color_id: int
     civilization: str
+    civilization_id: int
     position: Position
     objects: list
     profile_id: int
@@ -92,11 +94,14 @@ class Tile:
 class Map:
     """Represents a map."""
 
+    id: int
     name: str
     dimension: int
     size: str
     custom: bool
     seed: int
+    zr: bool
+    modes: dict
     tiles: list
 
     def __repr__(self):
@@ -108,6 +113,8 @@ class File:
 
     encoding: str
     language: str
+    hash: str
+    size: int
     perspective: Player
     viewlocks: list
 
@@ -118,6 +125,8 @@ class Chat:
 
     timestamp: timedelta
     message: str
+    origination: str
+    audience: str
     player: Player
 
     def __repr__(self):
@@ -134,6 +143,7 @@ class Match:
     map: Map
     file: File
     speed: str
+    speed_id: int
     cheats: bool
     lock_teams: bool
     population: int
@@ -142,9 +152,15 @@ class Match:
     lobby: str
     dataset: str
     type: str
+    type_id: int
     map_reveal: str
+    map_reveal_id: int
+    multiqueue: bool
     duration: timedelta
     diplomacy_type: str
     version: Version
+    game_version: str
+    save_version: float
+    log_version: int
     actions: list
     inputs: list
