@@ -5,7 +5,7 @@ def get_diplomacy_type(teams, players):
     """Get type of diplomacy."""
     if len(teams) == 2 and len(players) > 2:
         return 'TG'
-    elif len(teams) == len(players) and len(players) > 2:
+    elif (len(teams) == len(players) or len(teams) == 1) and len(players) > 2:
         return 'FFA'
     elif len(players) == 2:
         return '1v1'

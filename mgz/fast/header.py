@@ -252,7 +252,7 @@ def parse_scenario(data, num_players, version):
     )
 
 
-def parse_de(data, version, save):
+def parse_de(data, version, save, skip=False):
     """Parse DE-specific header."""
     if version is not Version.DE:
         return None
@@ -292,6 +292,8 @@ def parse_de(data, version, save):
         data.read(4)
         de_string(data)
         data.read(4)
+    if save >= 25.02:
+        data.read(8)
     guid = data.read(16)
     lobby = de_string(data)
     mod = de_string(data)
@@ -300,8 +302,9 @@ def parse_de(data, version, save):
         data.read(1)
     if save >= 20.16:
         data.read(8)
-    de_string(data)
-    data.read(8)
+    if not skip:
+        de_string(data)
+        data.read(8)
     return dict(
         players=players,
         guid=str(uuid.UUID(bytes=guid)),
