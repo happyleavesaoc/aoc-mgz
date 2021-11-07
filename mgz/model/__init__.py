@@ -27,13 +27,13 @@ def enrich_action(action, action_data, dataset, consts):
         del action.payload['x']
         del action.payload['y']
     if 'technology_id' in action_data:
-        action.payload['technology'] = dataset['technologies'][str(action_data['technology_id'])]
+        action.payload['technology'] = dataset['technologies'].get(str(action_data['technology_id']))
     if 'formation_id' in action_data:
-        action.payload['formation'] = consts['formations'][str(action_data['formation_id'])]
+        action.payload['formation'] = consts['formations'].get(str(action_data['formation_id']))
     if 'stance_id' in action_data:
-        action.payload['stance'] = consts['stances'][str(action_data['stance_id'])]
+        action.payload['stance'] = consts['stances'].get(str(action_data['stance_id']))
     if 'building_id' in action_data:
-        action.payload['building'] = dataset['objects'][str(action_data['building_id'])]
+        action.payload['building'] = dataset['objects'].get(str(action_data['building_id']))
     if 'unit_id' in action_data:
         action.payload['unit'] = dataset['objects'].get(str(action_data['unit_id']))
     if 'command_id' in action_data:
@@ -41,7 +41,7 @@ def enrich_action(action, action_data, dataset, consts):
     if 'order_id' in action_data:
         action.payload['order'] = consts['orders'].get(str(action_data['order_id']))
     if 'resource_id' in action_data:
-        action.payload['resource'] = consts['resources'][str(action_data['resource_id'])]
+        action.payload['resource'] = consts['resources'].get(str(action_data['resource_id']))
 
 
 def parse_match(handle):
