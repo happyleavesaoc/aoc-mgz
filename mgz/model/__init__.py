@@ -21,6 +21,30 @@ from mgz.summary.objects import TC_IDS
 from mgz.util import Version
 
 
+def enrich_action(action, action_data, dataset, consts):
+    """Enrich action data with lookups."""
+    if 'x' in action_data and 'y' in action_data:
+        action.position = Position(action_data['x'], action_data['y'])
+        del action.payload['x']
+        del action.payload['y']
+    if 'technology_id' in action_data:
+        action.payload['technology'] = dataset['technologies'].get(str(action_data['technology_id']))
+    if 'formation_id' in action_data:
+        action.payload['formation'] = consts['formations'].get(str(action_data['formation_id']))
+    if 'stance_id' in action_data:
+        action.payload['stance'] = consts['stances'].get(str(action_data['stance_id']))
+    if 'building_id' in action_data:
+        action.payload['building'] = dataset['objects'].get(str(action_data['building_id']))
+    if 'unit_id' in action_data:
+        action.payload['unit'] = dataset['objects'].get(str(action_data['unit_id']))
+    if 'command_id' in action_data:
+        action.payload['command'] = consts['commands'].get(str(action_data['command_id']))
+    if 'order_id' in action_data:
+        action.payload['order'] = consts['orders'].get(str(action_data['order_id']))
+    if 'resource_id' in action_data:
+        action.payload['resource'] = consts['resources'].get(str(action_data['resource_id']))
+
+
 def parse_match(handle):
     """Parse a match.
 
@@ -167,26 +191,7 @@ def parse_match(handle):
                 if 'player_id' in action_data:
                     action.player = players[action_data['player_id']]
                     del action.payload['player_id']
-                if 'x' in action_data and 'y' in action_data:
-                    action.position = Position(action_data['x'], action_data['y'])
-                    del action.payload['x']
-                    del action.payload['y']
-                if 'technology_id' in action_data:
-                    action.payload['technology'] = dataset['technologies'][str(action_data['technology_id'])]
-                if 'formation_id' in action_data:
-                    action.payload['formation'] = consts['formations'][str(action_data['formation_id'])]
-                if 'stance_id' in action_data:
-                    action.payload['stance'] = consts['stances'][str(action_data['stance_id'])]
-                if 'building_id' in action_data:
-                    action.payload['building'] = dataset['objects'][str(action_data['building_id'])]
-                if 'unit_id' in action_data:
-                    action.payload['unit'] = dataset['objects'].get(str(action_data['unit_id']))
-                if 'command_id' in action_data:
-                    action.payload['command'] = consts['commands'].get(str(action_data['command_id']))
-                if 'order_id' in action_data:
-                    action.payload['order'] = consts['orders'].get(str(action_data['order_id']))
-                if 'resource_id' in action_data:
-                    action.payload['resource'] = consts['resources'][str(action_data['resource_id'])]
+                enrich_action(action, action_data, dataset, consts)
                 actions.append(action)
                 inputs.add_action(action)
         except EOFError:

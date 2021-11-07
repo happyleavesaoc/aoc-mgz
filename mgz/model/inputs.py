@@ -69,11 +69,13 @@ class Inputs:
             param = action.payload['unit']
         elif action.type is ActionEnum.RESEARCH:
             param = action.payload['technology']
-        self.inputs.append(Input(
+        new_input = Input(
             action.timestamp,
             name,
             param,
             action.payload,
             action.player,
             action.position
-        ))
+        )
+        self.inputs.append(new_input)
+        return new_input

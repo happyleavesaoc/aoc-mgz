@@ -70,6 +70,7 @@ class Action(Enum):
     DE_UNKNOWN_130 = 130
     DE_UNKNOWN_131 = 131
     DE_UNKNOWN_135 = 135
+    DE_UNKNOWN_196 = 196
     POSTGAME = 255
 
 
