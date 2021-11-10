@@ -22,7 +22,10 @@ class Object:
     """Represents an object."""
 
     name: str
+    class_id: int
+    object_id: int
     instance_id: int
+    index: int
     position: Position
 
 
@@ -155,12 +158,19 @@ class Match:
     type_id: int
     map_reveal: str
     map_reveal_id: int
+    difficulty: str
+    difficulty_id: int
+    team_together: bool
+    lock_speed: bool
+    all_technologies: bool
     multiqueue: bool
     duration: timedelta
     diplomacy_type: str
+    completed: bool
     version: Version
     game_version: str
     save_version: float
     log_version: int
+    hash: str
     actions: list
     inputs: list

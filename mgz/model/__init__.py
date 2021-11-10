@@ -45,6 +45,38 @@ def enrich_action(action, action_data, dataset, consts):
         action.payload['resource'] = consts['resources'].get(str(action_data['resource_id']))
 
 
+def get_difficulty(data):
+    if data['version'] is Version.HD:
+        return data['hd']['difficulty_id']
+    elif data['version'] is Version.DE:
+        return data['de']['difficulty_id']
+    return data['scenario']['difficulty_id']
+
+
+def get_team_together(data):
+    if data['version'] is Version.DE:
+        return data['de']['team_together']
+    return None
+
+
+def get_lock_speed(data):
+    if data['version'] is Version.DE:
+        return data['de']['lock_speed']
+    return None
+
+
+def get_all_technologies(data):
+    if data['version'] is Version.DE:
+        return data['de']['all_technologies']
+    return None
+
+
+def get_hash(data):
+    if data['version'] is Version.DE:
+        return data['de']['hash']
+    return None
+
+
 def parse_match(handle):
     """Parse a match.
 
@@ -82,7 +114,10 @@ def parse_match(handle):
     gaia = [
         Object(
             dataset['objects'].get(str(obj['object_id'])),
+            obj['class_id'],
+            obj['object_id'],
             obj['instance_id'],
+            obj['index'],
             Position(obj['position']['x'], obj['position']['y'])
         )
         for obj in data['players'][0]['objects']
@@ -118,7 +153,10 @@ def parse_match(handle):
             [
                 Object(
                     dataset['objects'].get(str(obj['object_id'])),
+                    obj['class_id'],
+                    obj['object_id'],
                     obj['instance_id'],
+                    obj['index'],
                     Position(obj['position']['x'], obj['position']['y'])
                 )
                 for obj in player['objects']
@@ -249,13 +287,20 @@ def parse_match(handle):
         data['lobby']['game_type_id'],
         consts['map_reveal_choices'][str(data['lobby']['reveal_map_id'])],
         data['lobby']['reveal_map_id'],
+        consts['difficulties'][str(get_difficulty(data))],
+        get_difficulty(data),
+        get_team_together(data),
+        get_lock_speed(data),
+        get_all_technologies(data),
         True if data['version'] is Version.DE else None,
         timedelta(milliseconds=timestamp),
         diplomacy_type,
+        bool(resigned),
         data['version'],
         data['game_version'],
         data['save_version'],
         data['log_version'],
+        get_hash(data),
         actions,
         inputs.inputs
     )
@@ -287,6 +332,8 @@ def serialize(obj):
             return str(obj)
         elif isinstance(obj, bytes):
             return None
+        elif isinstance(obj, hashlib.HASH):
+            return obj.hexdigest()
         else:
             return obj
 

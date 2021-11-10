@@ -1,5 +1,6 @@
 """Fast(er) parsing for recorded game headers."""
 import io
+import hashlib
 import re
 import struct
 import uuid
@@ -70,7 +71,7 @@ def parse_object(data, offset):
     )
 
 
-def object_block(data, pos, player_number):
+def object_block(data, pos, player_number, index):
     """Parse a block of objects."""
     objects = []
     offset = None
@@ -92,7 +93,7 @@ def object_block(data, pos, player_number):
             if test == fingerprint:
                 break
         else:
-            objects.append(parse_object(data, pos))
+            objects.append(dict(parse_object(data, pos), index=index))
         offset = None
         pos += 31
     return objects, pos + end
@@ -120,9 +121,9 @@ def parse_player(header, player_number, num_players):
     data = header.read()
     # Skips thousands of bytes that are not easy to parse.
     start = re.search(b'\x0b\x00.\x00\x00\x00\x02\x00\x00', data).end()
-    objects, end = object_block(data, start, player_number)
-    sleeping, end = object_block(data, end, player_number)
-    doppel, end = object_block(data, end, player_number)
+    objects, end = object_block(data, start, player_number, 0)
+    sleeping, end = object_block(data, end, player_number, 1)
+    doppel, end = object_block(data, end, player_number, 2)
     if data[end + 8:end + 10] == BLOCK_END:
         end += 10
     header.seek(offset + end)
@@ -259,7 +260,13 @@ def parse_de(data, version, save, skip=False):
     data.read(12)
     dlc_count = unpack('<I', data)
     data.read(dlc_count * 4)
-    data.read(103)
+    data.read(4)
+    difficulty_id = unpack('<I', data)
+    data.read(70)
+    random_positions, all_technologies = unpack('<bb', data)
+    data.read(2)
+    lock_speed = unpack('<b', data)
+    data.read(20)
     players = []
     for _ in range(8):
         data.read(4)
@@ -308,8 +315,13 @@ def parse_de(data, version, save, skip=False):
     return dict(
         players=players,
         guid=str(uuid.UUID(bytes=guid)),
+        hash=hashlib.sha1(guid),
         lobby=lobby.decode('utf-8'),
-        mod=mod.decode('utf-8')
+        mod=mod.decode('utf-8'),
+        difficulty_id=difficulty_id,
+        team_together=not bool(random_positions),
+        all_technologies=bool(all_technologies),
+        lock_speed=bool(lock_speed)
     )
 
 
@@ -320,8 +332,8 @@ def parse_hd(data, version, save):
     data.read(12)
     dlc_count = unpack('<I', data)
     data.read(dlc_count * 4)
-    data.read(8)
-    map_id = unpack('<I', data)
+    data.read(4)
+    difficulty_id, map_id = unpack('<II', data)
     data.read(80)
     players = []
     for _ in range(8):
@@ -362,7 +374,8 @@ def parse_hd(data, version, save):
         guid=str(uuid.UUID(bytes=guid)),
         lobby=lobby.decode('utf-8'),
         mod=mod.decode('utf-8'),
-        map_id=map_id
+        map_id=map_id,
+        difficulty_id=difficulty_id
     )
 
 
@@ -379,8 +392,6 @@ def parse_version(header, data):
     log = unpack('<I', data)
     game, save = unpack('<7sxf', header)
     version = get_version(game.decode('ascii'), round(save, 2), log)
-    if version not in (Version.USERPATCH15, Version.DE, Version.HD):
-        raise RuntimeError(f"{version} not supported")
     return version, game.decode('ascii'), round(save, 2), log
 
 
@@ -418,6 +429,8 @@ def parse(data):
     try:
         header = decompress(data)
         version, game, save, log = parse_version(header, data)
+        if version not in (Version.USERPATCH15, Version.DE, Version.HD):
+            raise RuntimeError(f"{version} not supported")
         de = parse_de(header, version, save)
         hd = parse_hd(header, version, save)
         metadata, num_players = parse_metadata(header)
