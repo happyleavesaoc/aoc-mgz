@@ -127,7 +127,8 @@ game_settings = "game_settings"/Struct(
             If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(132)),
             If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(1)),
             If(lambda ctx: find_save_version(ctx) >= 20.16, Padding(4)),
-            If(lambda ctx: find_save_version(ctx) >= 25.02, Padding(4*16))
+            If(lambda ctx: find_save_version(ctx) >= 25.02, Padding(4*16)),
+            If(lambda ctx: find_save_version(ctx) >= 25.06, Padding(4)),
         )
     ),
     Array(9, "player_info"/Struct(
@@ -139,10 +140,13 @@ game_settings = "game_settings"/Struct(
     Padding(4),
     IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         IfThenElse(lambda ctx: find_save_version(ctx) >= 13.34,
-            "end_of_game_settings"/Find(b'\x33\x33\x33\x33\x33\x33\x03\x40', None),
-            "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None)
+            IfThenElse(lambda ctx: find_save_version(ctx) >= 25.06,
+                "end_of_game_settings"/Find(b'\x00\x00\x00\x00\x00\x00\x04\x40', None),  # double: 2.5
+                "end_of_game_settings"/Find(b'\x33\x33\x33\x33\x33\x33\x03\x40', None)   # double: 2.4
+            ),
+            "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None)   # double: 2.2
         ),
-        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
+        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)   # double: 1.6
     )
 )
 
