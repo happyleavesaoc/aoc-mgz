@@ -14,11 +14,13 @@ from mgz.fast import Action as ActionEnum
 from mgz.fast.header import parse
 from mgz.model.definitions import *
 from mgz.model.inputs import Inputs
-from mgz.summary.chat import parse_chat, Chat as ChatEnum
-from mgz.summary.diplomacy import get_diplomacy_type
-from mgz.summary.map import get_map_data
-from mgz.summary.objects import TC_IDS
+from mgz.common.chat import parse_chat, Chat as ChatEnum
+from mgz.common.diplomacy import get_diplomacy_type
+from mgz.common.map import get_map_data
 from mgz.util import Version
+
+
+TC_IDS = [71, 109, 141, 142]
 
 
 def enrich_action(action, action_data, dataset, consts):
@@ -70,6 +72,10 @@ def get_all_technologies(data):
         return data['de']['all_technologies']
     return None
 
+def get_starting_age(data):
+    if data['version'] is Version.DE:
+        return data['de']['starting_age_id']
+    return None
 
 def get_hash(data):
     if data['version'] is Version.DE:
@@ -85,6 +91,7 @@ def parse_match(handle):
     """
 
     data = parse(handle)
+    body_pos = handle.tell() - 4 # log version
     consts = get_consts()
 
     dataset_id, dataset = get_dataset(data['version'], data['mod'])
@@ -241,9 +248,9 @@ def parse_match(handle):
         for player in team:
             player.winner = winner
 
-    handle.seek(0)
+    handle.seek(body_pos)
     file_bytes = handle.read()
-    file_size = len(file_bytes)
+    file_size = body_pos + 4 + len(file_bytes)
     file_hash = hashlib.sha1(file_bytes).hexdigest()
     return Match(
         list(players.values()),
@@ -289,6 +296,8 @@ def parse_match(handle):
         data['lobby']['reveal_map_id'],
         consts['difficulties'][str(get_difficulty(data))],
         get_difficulty(data),
+        consts['starting_ages'].get(str(get_starting_age(data))),
+        get_starting_age(data),
         get_team_together(data),
         get_lock_speed(data),
         get_all_technologies(data),

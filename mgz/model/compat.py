@@ -1,12 +1,55 @@
 """Summary compatibiilty."""
 from collections import defaultdict
 from mgz.model import parse_match
-from mgz.summary.diplomacy import get_diplomacy_type
+from mgz.common.diplomacy import get_diplomacy_type
+from mgz.common.chat import Chat as ChatType
 
 
 TC_IDS = [71, 109, 141, 142]
 STONE_WALL_ID = 117
 PALISADE_WALL_ID = 72
+
+
+def empty_achievements():
+    ach = {}
+    ach['military'] = dict(
+        score=None,
+        units_killed=None,
+        units_lost=None,
+        buildings_lost=None,
+        buildings_razed=None,
+        units_converted=None,
+        hit_points_killed=None,
+        hit_points_razed=None,
+    )
+    ach['economy'] = dict(
+        score=None,
+        food_collected=None,
+        wood_collected=None,
+        stone_collected=None,
+        gold_collected=None,
+        tribute_sent=None,
+        tribute_received=None,
+        trade_gold=None,
+        relic_gold=None,
+    )
+    ach['society'] = dict(
+        score=None,
+        total_relics=None,
+        total_castles=None,
+        total_wonders=None,
+        villager_high=None,
+    )
+    ach['technology'] = dict(
+        score=None,
+        explored_percent=None,
+        research_count=None,
+        research_percent=None,
+        feudal_time=None,
+        castle_time=None,
+        imperial_time=None,
+    )
+    return ach
 
 
 class ModelSummary:
@@ -18,9 +61,10 @@ class ModelSummary:
 
     def get_chat(self):
         return [dict(
+            type=ChatType.MESSAGE,
             player_number=c.player.number,
             message=c.message,
-            timestamp=c.timestamp,
+            timestamp=c.timestamp.total_seconds() * 1000,
             origination=c.origination,
             audience=c.audience
         ) for c in self.match.chat]
@@ -50,10 +94,13 @@ class ModelSummary:
                 self.match.map_reveal
             ),
             diplomacy_type=self.match.diplomacy_type,
-            starting_resources=None,
-            starting_age=None,
-            ending_age=None,
-            victory_condition=None,
+            starting_resources=(0, 'Standard'),
+            starting_age=(
+                self.match.starting_age_id,
+                self.match.starting_age
+            ),
+            ending_age=(3, 'Imperial'),
+            victory_condition=(1, 'Conquest'),
             treaty_length=None,
             multiqueue=self.match.multiqueue
         )
@@ -84,20 +131,20 @@ class ModelSummary:
         return self.match.file.perspective.number
 
     def get_duration(self):
-        return self.match.duration
+        return self.match.duration.total_seconds() * 1000
 
     def get_completed(self):
         return self.match.completed
 
     def get_restored(self):
-        return False
+        return False, False
 
     def has_achievements(self):
         return False
 
     def get_version(self):
         return (
-            self.match.version.value,
+            self.match.version,
             self.match.game_version,
             self.match.save_version,
             self.match.log_version
@@ -108,7 +155,7 @@ class ModelSummary:
             id=100,
             name='Definitive Edition',
             version=None
-        ), None
+        )
 
     def get_teams(self):
         return [[p.number for p in t] for t in self.match.teams]
@@ -139,7 +186,7 @@ class ModelSummary:
                 score=None,
                 rate_snapshot=None,
                 cheater=None,
-                achievements=None
+                achievements=empty_achievements()
             ) for p in self.match.players
         ]
 
@@ -149,7 +196,7 @@ class ModelSummary:
             civs = set()
             for data in self.get_players():
                 civs.add(data['civilization'])
-        mirror = (len(civs) == 1)
+            mirror = (len(civs) == 1)
         return mirror
 
     def get_objects(self):
@@ -182,14 +229,14 @@ class ModelSummary:
                 ))
         return dict(
             objects=output,
-            tcs=tcs,
-            stone_walls=stone_walls,
-            palisade_walls=palisade_walls
+            tcs=max(tcs.values()) if len(tcs.values()) > 0 else None,
+            stone_walls=bool(stone_walls) and all(stone_walls.values()),
+            palisade_walls=bool(palisade_walls) and all(palisade_walls.values())
         )
 
     def get_map(self):
         return dict(
-            id=self.match.map.id,
+            id=self.match.map.id if not self.match.map.custom else None,
             name=self.match.map.name,
             size=self.match.map.size,
             dimension=self.match.map.dimension,
@@ -208,12 +255,5 @@ class ModelSummary:
             ]
         )
 
-
-if __name__ == '__main__':
-    for f in ['small.mgz', 'tests/recs/de-25.02.aoe2record']:
-        print('----------------')
-        with open(f, 'rb') as h:
-            ms = ModelSummary(h)
-        print(ms.get_players())
-        print(ms.get_mirror())
-        #print(ms.get_platform())
+    def can_playback(self):
+        return False

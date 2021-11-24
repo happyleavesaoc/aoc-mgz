@@ -212,7 +212,7 @@ def parse_map(data, version):
     )
 
 
-def parse_scenario(data, num_players, version):
+def parse_scenario(data, num_players, version, save):
     """Parse scenario section."""
     data.read(4455)
     if version is Version.DE:
@@ -242,7 +242,11 @@ def parse_scenario(data, num_players, version):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
-        end = remainder.find(b'\x33\x33\x33\x33\x33\x33\x03\x40') + 1045
+        if save >= 25.06:
+            end = remainder.find(b'\x00\x00\x00\x00\x00\x00\x04\x40')
+        else:
+            end = remainder.find(b'\x33\x33\x33\x33\x33\x33\x03\x40')
+        end += 1045
     else:
         end = remainder.find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f') + 13
     data.seek(end - len(remainder), 1)
@@ -262,11 +266,15 @@ def parse_de(data, version, save, skip=False):
     data.read(dlc_count * 4)
     data.read(4)
     difficulty_id = unpack('<I', data)
-    data.read(70)
+    data.read(20)
+    starting_age_id = unpack('<I', data)
+    data.read(46)
     random_positions, all_technologies = unpack('<bb', data)
     data.read(2)
     lock_speed = unpack('<b', data)
     data.read(20)
+    if save >= 25.06:
+        data.read(1)
     players = []
     for _ in range(8):
         data.read(4)
@@ -280,6 +288,8 @@ def parse_de(data, version, save, skip=False):
         data.read(4)
         profile_id, number = unpack('<I4xi', data)
         data.read(10)
+        if save >= 25.06:
+            data.read(8)
         if name:
             players.append(dict(
                 number=number,
@@ -292,7 +302,7 @@ def parse_de(data, version, save, skip=False):
     for _ in range(23):
         de_string(data)
         c = unpack('<I', data)
-        while c in [3, 21, 23, 42, 44, 45, 46]:
+        while c in [3, 21, 23, 42, 44, 45, 46, 47]:
             c = unpack('<I', data)
     data.read(236)
     for _ in range(unpack('<Q', data)):
@@ -309,6 +319,8 @@ def parse_de(data, version, save, skip=False):
         data.read(1)
     if save >= 20.16:
         data.read(8)
+    if save >= 25.06:
+        data.read(21)
     if not skip:
         de_string(data)
         data.read(8)
@@ -319,6 +331,7 @@ def parse_de(data, version, save, skip=False):
         lobby=lobby.decode('utf-8'),
         mod=mod.decode('utf-8'),
         difficulty_id=difficulty_id,
+        starting_age_id=starting_age_id - 2 if starting_age_id > 0 else 0,
         team_together=not bool(random_positions),
         all_technologies=bool(all_technologies),
         lock_speed=bool(lock_speed)
@@ -436,7 +449,7 @@ def parse(data):
         metadata, num_players = parse_metadata(header)
         map_ = parse_map(header, version)
         players, mod = parse_players(header, num_players, version)
-        scenario = parse_scenario(header, num_players, version)
+        scenario = parse_scenario(header, num_players, version, save)
         lobby = parse_lobby(header, version, save)
     except (struct.error, zlib.error, AssertionError, MemoryError):
         raise RuntimeError("could not parse")

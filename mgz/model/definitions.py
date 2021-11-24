@@ -160,6 +160,8 @@ class Match:
     map_reveal_id: int
     difficulty: str
     difficulty_id: int
+    starting_age: str
+    starting_age_id: int
     team_together: bool
     lock_speed: bool
     all_technologies: bool

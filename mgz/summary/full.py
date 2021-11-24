@@ -20,13 +20,13 @@ from mgz import fast
 from mgz.util import Version
 
 from mgz.const import VALID_BUILDINGS
-from mgz.summary.map import get_map_data
+from mgz.common.map import get_map_data
 from mgz.summary.settings import get_settings_data
 from mgz.summary.dataset import get_dataset_data
 from mgz.summary.teams import get_teams_data
 from mgz.summary.players import get_players_data, enrich_de_player_data
-from mgz.summary.diplomacy import get_diplomacy_data
-from mgz.summary.chat import get_lobby_chat, parse_chat, Chat
+from mgz.common.diplomacy import get_diplomacy_data
+from mgz.common.chat import get_lobby_chat, parse_chat, Chat
 from mgz.summary.objects import get_objects_data
 
 
@@ -77,7 +77,6 @@ class FullSummary: # pylint: disable=too-many-public-methods
                 self.get_diplomacy().get('type'), self.get_players()
             )
             body_pos = self._handle.tell()
-            self._handle.seek(0)
             self._cache['file_hash'] = hashlib.sha1(self._handle.read()).hexdigest()
             self._handle.seek(body_pos)
             self._process_body()
