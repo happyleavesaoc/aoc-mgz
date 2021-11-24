@@ -65,7 +65,7 @@ de = "de"/Struct(
     "shared_exploration"/Flag,
     "team_positions"/Flag,
     If(lambda ctx: find_save_version(ctx) >= 13.34, Bytes(8)),
-    If(lambda ctx: find_save_version(ctx) >= 25.06, Bytes(1)),
+    If(lambda ctx: find_save_version(ctx) >= 25.06, Bytes(1)),   # maybe handicap
     separator,
     "players"/Array(8, Struct(
         "dlc_id"/Int32ul,
@@ -88,7 +88,7 @@ de = "de"/Struct(
         "hd_dm_elo"/Int32ul,
         "animated_destruction_enabled"/Flag,
         "custom_ai"/Flag,
-        If(lambda ctx: find_save_version(ctx) >= 25.06, Bytes(8)),
+        If(lambda ctx: find_save_version(ctx) >= 25.06, "unk"/Bytes(8)),  # maybe handicap related?
     )),
     "fog_of_war"/Flag,
     "cheat_notifications"/Flag,
@@ -100,7 +100,7 @@ de = "de"/Struct(
     "strings"/Array(23,
         Struct(
             "string"/de_string,
-            "x"/RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45, 46, 47], Int32ul)
+            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45, 46, 47], Int32ul)
         )
     ),
     "strategic_numbers"/Array(59, Int32sl),

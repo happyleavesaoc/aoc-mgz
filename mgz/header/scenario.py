@@ -140,11 +140,11 @@ game_settings = "game_settings"/Struct(
     Padding(4),
     IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         Struct(
-            If(lambda ctx: find_save_version(ctx) < 13.34, Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None)),
-            If(lambda ctx: 25.06 > find_save_version(ctx) >= 13.34, Find(b'\x33\x33\x33\x33\x33\x33\x03\x40', None)),
-            If(lambda ctx: find_save_version(ctx) >= 25.06, Find(b'\x00\x00\x00\x00\x00\x00\x04\x40', None)) #Bytes(3627))
+            If(lambda ctx: find_save_version(ctx) < 13.34, Find(b'\x9a\x99\x99\x99\x99\x99\x01\x40', None)),   # double: 2.2
+            If(lambda ctx: 25.06 > find_save_version(ctx) >= 13.34, Find(b'\x33\x33\x33\x33\x33\x33\x03\x40', None)),  # double: 2.4
+            If(lambda ctx: find_save_version(ctx) >= 25.06, Find(b'\x00\x00\x00\x00\x00\x00\x04\x40', None))  # double: 2.5
         ),
-        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
+        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)   # double: 1.6
     )
 )
 

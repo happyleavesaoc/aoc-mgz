@@ -1,4 +1,4 @@
-"""Summary compatibiilty."""
+"""Summary compatibility."""
 from collections import defaultdict
 from mgz.model import parse_match
 from mgz.common.diplomacy import get_diplomacy_type
