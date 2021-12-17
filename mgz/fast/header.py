@@ -1,5 +1,6 @@
 """Fast(er) parsing for recorded game headers."""
 import io
+import hashlib
 import re
 import struct
 import uuid
@@ -70,7 +71,7 @@ def parse_object(data, offset):
     )
 
 
-def object_block(data, pos, player_number):
+def object_block(data, pos, player_number, index):
     """Parse a block of objects."""
     objects = []
     offset = None
@@ -92,7 +93,7 @@ def object_block(data, pos, player_number):
             if test == fingerprint:
                 break
         else:
-            objects.append(parse_object(data, pos))
+            objects.append(dict(parse_object(data, pos), index=index))
         offset = None
         pos += 31
     return objects, pos + end
@@ -120,9 +121,9 @@ def parse_player(header, player_number, num_players):
     data = header.read()
     # Skips thousands of bytes that are not easy to parse.
     start = re.search(b'\x0b\x00.\x00\x00\x00\x02\x00\x00', data).end()
-    objects, end = object_block(data, start, player_number)
-    sleeping, end = object_block(data, end, player_number)
-    doppel, end = object_block(data, end, player_number)
+    objects, end = object_block(data, start, player_number, 0)
+    sleeping, end = object_block(data, end, player_number, 1)
+    doppel, end = object_block(data, end, player_number, 2)
     if data[end + 8:end + 10] == BLOCK_END:
         end += 10
     header.seek(offset + end)
@@ -211,7 +212,7 @@ def parse_map(data, version):
     )
 
 
-def parse_scenario(data, num_players, version):
+def parse_scenario(data, num_players, version, save):
     """Parse scenario section."""
     data.read(4455)
     if version is Version.DE:
@@ -241,7 +242,11 @@ def parse_scenario(data, num_players, version):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
-        end = remainder.find(b'\x33\x33\x33\x33\x33\x33\x03\x40') + 1045
+        if save >= 25.06:
+            end = remainder.find(b'\x00\x00\x00\x00\x00\x00\x04\x40')
+        else:
+            end = remainder.find(b'\x33\x33\x33\x33\x33\x33\x03\x40')
+        end += 1045
     else:
         end = remainder.find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f') + 13
     data.seek(end - len(remainder), 1)
@@ -252,14 +257,24 @@ def parse_scenario(data, num_players, version):
     )
 
 
-def parse_de(data, version, save):
+def parse_de(data, version, save, skip=False):
     """Parse DE-specific header."""
     if version is not Version.DE:
         return None
     data.read(12)
     dlc_count = unpack('<I', data)
     data.read(dlc_count * 4)
-    data.read(103)
+    data.read(4)
+    difficulty_id = unpack('<I', data)
+    data.read(20)
+    starting_age_id = unpack('<I', data)
+    data.read(46)
+    random_positions, all_technologies = unpack('<bb', data)
+    data.read(2)
+    lock_speed = unpack('<b', data)
+    data.read(20)
+    if save >= 25.06:
+        data.read(1)
     players = []
     for _ in range(8):
         data.read(4)
@@ -273,6 +288,8 @@ def parse_de(data, version, save):
         data.read(4)
         profile_id, number = unpack('<I4xi', data)
         data.read(10)
+        if save >= 25.06:
+            data.read(8)
         if name:
             players.append(dict(
                 number=number,
@@ -285,13 +302,15 @@ def parse_de(data, version, save):
     for _ in range(23):
         de_string(data)
         c = unpack('<I', data)
-        while c in [3, 21, 23, 42, 44, 45, 46]:
+        while c in [3, 21, 23, 42, 44, 45, 46, 47]:
             c = unpack('<I', data)
     data.read(236)
     for _ in range(unpack('<Q', data)):
         data.read(4)
         de_string(data)
         data.read(4)
+    if save >= 25.02:
+        data.read(8)
     guid = data.read(16)
     lobby = de_string(data)
     mod = de_string(data)
@@ -300,13 +319,22 @@ def parse_de(data, version, save):
         data.read(1)
     if save >= 20.16:
         data.read(8)
-    de_string(data)
-    data.read(8)
+    if save >= 25.06:
+        data.read(21)
+    if not skip:
+        de_string(data)
+        data.read(8)
     return dict(
         players=players,
         guid=str(uuid.UUID(bytes=guid)),
+        hash=hashlib.sha1(guid),
         lobby=lobby.decode('utf-8'),
-        mod=mod.decode('utf-8')
+        mod=mod.decode('utf-8'),
+        difficulty_id=difficulty_id,
+        starting_age_id=starting_age_id - 2 if starting_age_id > 0 else 0,
+        team_together=not bool(random_positions),
+        all_technologies=bool(all_technologies),
+        lock_speed=bool(lock_speed)
     )
 
 
@@ -317,8 +345,8 @@ def parse_hd(data, version, save):
     data.read(12)
     dlc_count = unpack('<I', data)
     data.read(dlc_count * 4)
-    data.read(8)
-    map_id = unpack('<I', data)
+    data.read(4)
+    difficulty_id, map_id = unpack('<II', data)
     data.read(80)
     players = []
     for _ in range(8):
@@ -359,7 +387,8 @@ def parse_hd(data, version, save):
         guid=str(uuid.UUID(bytes=guid)),
         lobby=lobby.decode('utf-8'),
         mod=mod.decode('utf-8'),
-        map_id=map_id
+        map_id=map_id,
+        difficulty_id=difficulty_id
     )
 
 
@@ -376,9 +405,7 @@ def parse_version(header, data):
     log = unpack('<I', data)
     game, save = unpack('<7sxf', header)
     version = get_version(game.decode('ascii'), round(save, 2), log)
-    if version not in (Version.USERPATCH15, Version.DE, Version.HD):
-        raise RuntimeError(f"{version} not supported")
-    return version, round(save, 2)
+    return version, game.decode('ascii'), round(save, 2), log
 
 
 def parse_players(header, num_players, version):
@@ -414,18 +441,23 @@ def parse(data):
     """Parse recorded game header."""
     try:
         header = decompress(data)
-        version, save = parse_version(header, data)
+        version, game, save, log = parse_version(header, data)
+        if version not in (Version.USERPATCH15, Version.DE, Version.HD):
+            raise RuntimeError(f"{version} not supported")
         de = parse_de(header, version, save)
         hd = parse_hd(header, version, save)
         metadata, num_players = parse_metadata(header)
         map_ = parse_map(header, version)
         players, mod = parse_players(header, num_players, version)
-        scenario = parse_scenario(header, num_players, version)
+        scenario = parse_scenario(header, num_players, version, save)
         lobby = parse_lobby(header, version, save)
     except (struct.error, zlib.error, AssertionError, MemoryError):
         raise RuntimeError("could not parse")
     return dict(
         version=version,
+        game_version=game,
+        save_version=save,
+        log_version=log,
         players=players,
         map=map_,
         de=de,

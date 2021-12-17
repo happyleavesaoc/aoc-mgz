@@ -11,7 +11,11 @@ AGE_MARKERS = [
     'avanzó a la',
     'đã phát triển lên',
     '시대로 발전했습니다',
-    'vorangeschritten'
+    'vorangeschritten',
+    'переход в',
+    'avançou para a Idade',
+    'wkroczyło w Erę',
+    '升級至'
 ]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',

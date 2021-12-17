@@ -3,7 +3,7 @@ from construct import (
     Struct, Float32l, Int16ul, Byte, Embedded, Switch, If,
     Int32ul, Array, String, Padding, IfThenElse, this
 )
-from mgz.util import find_version, Version
+from mgz.util import find_version, find_save_version, Version
 
 attribute = "attribute"/Struct(
     "type"/Int16ul,
@@ -128,6 +128,7 @@ action = "action"/Struct(
     "default_task"/Int16ul,
     "search_radius"/Float32l,
     "work_rate"/Float32l,
+    "handicap_work_rate"/If(lambda ctx: find_save_version(ctx) >= 25.06, Float32l),
     "drop_site"/Int16ul,
     "backup_drop_site"/Int16ul,
     "task_by_group"/Byte,

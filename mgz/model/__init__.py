@@ -2,6 +2,7 @@
 
 import codecs
 import collections
+import hashlib
 from datetime import timedelta
 from enum import Enum
 
@@ -13,11 +14,73 @@ from mgz.fast import Action as ActionEnum
 from mgz.fast.header import parse
 from mgz.model.definitions import *
 from mgz.model.inputs import Inputs
-from mgz.summary.chat import parse_chat, Chat as ChatEnum
-from mgz.summary.diplomacy import get_diplomacy_type
-from mgz.summary.map import get_map_data
-from mgz.summary.objects import TC_IDS
+from mgz.common.chat import parse_chat, Chat as ChatEnum
+from mgz.common.diplomacy import get_diplomacy_type
+from mgz.common.map import get_map_data
 from mgz.util import Version
+
+
+TC_IDS = [71, 109, 141, 142]
+
+
+def enrich_action(action, action_data, dataset, consts):
+    """Enrich action data with lookups."""
+    if 'x' in action_data and 'y' in action_data:
+        action.position = Position(action_data['x'], action_data['y'])
+        del action.payload['x']
+        del action.payload['y']
+    if 'technology_id' in action_data:
+        action.payload['technology'] = dataset['technologies'].get(str(action_data['technology_id']))
+    if 'formation_id' in action_data:
+        action.payload['formation'] = consts['formations'].get(str(action_data['formation_id']))
+    if 'stance_id' in action_data:
+        action.payload['stance'] = consts['stances'].get(str(action_data['stance_id']))
+    if 'building_id' in action_data:
+        action.payload['building'] = dataset['objects'].get(str(action_data['building_id']))
+    if 'unit_id' in action_data:
+        action.payload['unit'] = dataset['objects'].get(str(action_data['unit_id']))
+    if 'command_id' in action_data:
+        action.payload['command'] = consts['commands'].get(str(action_data['command_id']))
+    if 'order_id' in action_data:
+        action.payload['order'] = consts['orders'].get(str(action_data['order_id']))
+    if 'resource_id' in action_data:
+        action.payload['resource'] = consts['resources'].get(str(action_data['resource_id']))
+
+
+def get_difficulty(data):
+    if data['version'] is Version.HD:
+        return data['hd']['difficulty_id']
+    elif data['version'] is Version.DE:
+        return data['de']['difficulty_id']
+    return data['scenario']['difficulty_id']
+
+
+def get_team_together(data):
+    if data['version'] is Version.DE:
+        return data['de']['team_together']
+    return None
+
+
+def get_lock_speed(data):
+    if data['version'] is Version.DE:
+        return data['de']['lock_speed']
+    return None
+
+
+def get_all_technologies(data):
+    if data['version'] is Version.DE:
+        return data['de']['all_technologies']
+    return None
+
+def get_starting_age(data):
+    if data['version'] is Version.DE:
+        return data['de']['starting_age_id']
+    return None
+
+def get_hash(data):
+    if data['version'] is Version.DE:
+        return data['de']['hash']
+    return None
 
 
 def parse_match(handle):
@@ -28,12 +91,13 @@ def parse_match(handle):
     """
 
     data = parse(handle)
+    body_pos = handle.tell() - 4 # log version
     consts = get_consts()
 
     dataset_id, dataset = get_dataset(data['version'], data['mod'])
-    # self._header.hd.selected_map_id if self._header.hd else self._header.scenario.game_settings.map_id
+    map_id = data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id']
     map_data, encoding, language = get_map_data(
-        data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id'],
+        map_id,
         data['scenario']['instructions'],
         data['map']['dimension'],
         data['version'],
@@ -57,7 +121,10 @@ def parse_match(handle):
     gaia = [
         Object(
             dataset['objects'].get(str(obj['object_id'])),
+            obj['class_id'],
+            obj['object_id'],
             obj['instance_id'],
+            obj['index'],
             Position(obj['position']['x'], obj['position']['y'])
         )
         for obj in data['players'][0]['objects']
@@ -86,12 +153,17 @@ def parse_match(handle):
             player['color_id'] + 1,
             player['name'].decode(encoding),
             consts['player_colors'][str(player['color_id'])],
+            player['color_id'],
             dataset['civilizations'][str(player['civilization_id'])]['name'],
+            player['civilization_id'],
             Position(pos_x, pos_y),
             [
                 Object(
                     dataset['objects'].get(str(obj['object_id'])),
+                    obj['class_id'],
+                    obj['object_id'],
                     obj['instance_id'],
+                    obj['index'],
                     Position(obj['position']['x'], obj['position']['y'])
                 )
                 for obj in player['objects']
@@ -121,6 +193,8 @@ def parse_match(handle):
         chats.append(Chat(
             timedelta(milliseconds=chat['timestamp']),
             chat['message'],
+            chat['origination'],
+            chat['audience'],
             players[chat['player_number']]
         ))
         inputs.add_chat(chats[-1])
@@ -149,6 +223,8 @@ def parse_match(handle):
                     chats.append(Chat(
                         timedelta(milliseconds=chat['timestamp']),
                         chat['message'],
+                        chat['origination'],
+                        chat['audience'],
                         players[chat['player_number']]
                     ))
                     inputs.add_chat(chats[-1])
@@ -160,26 +236,7 @@ def parse_match(handle):
                 if 'player_id' in action_data:
                     action.player = players[action_data['player_id']]
                     del action.payload['player_id']
-                if 'x' in action_data and 'y' in action_data:
-                    action.position = Position(action_data['x'], action_data['y'])
-                    del action.payload['x']
-                    del action.payload['y']
-                if 'technology_id' in action_data:
-                    action.payload['technology'] = dataset['technologies'][str(action_data['technology_id'])]
-                if 'formation_id' in action_data:
-                    action.payload['formation'] = consts['formations'][str(action_data['formation_id'])]
-                if 'stance_id' in action_data:
-                    action.payload['stance'] = consts['stances'][str(action_data['stance_id'])]
-                if 'building_id' in action_data:
-                    action.payload['building'] = dataset['objects'][str(action_data['building_id'])]
-                if 'unit_id' in action_data:
-                    action.payload['unit'] = dataset['objects'].get(str(action_data['unit_id']))
-                if 'command_id' in action_data:
-                    action.payload['command'] = consts['commands'].get(str(action_data['command_id']))
-                if 'order_id' in action_data:
-                    action.payload['order'] = consts['orders'].get(str(action_data['order_id']))
-                if 'resource_id' in action_data:
-                    action.payload['resource'] = consts['resources'][str(action_data['resource_id'])]
+                enrich_action(action, action_data, dataset, consts)
                 actions.append(action)
                 inputs.add_action(action)
         except EOFError:
@@ -191,16 +248,23 @@ def parse_match(handle):
         for player in team:
             player.winner = winner
 
+    handle.seek(body_pos)
+    file_bytes = handle.read()
+    file_size = body_pos + 4 + len(file_bytes)
+    file_hash = hashlib.sha1(file_bytes).hexdigest()
     return Match(
         list(players.values()),
         teams,
         gaia,
         Map(
+            map_id,
             map_data['name'],
             map_data['dimension'],
             consts['map_sizes'][str(map_data['dimension'])],
             map_data['custom'],
             map_data['seed'],
+            map_data['name'].startswith('ZR@'),
+            map_data['modes'],
             [
                 Tile(
                     tile['terrain_id'],
@@ -212,10 +276,13 @@ def parse_match(handle):
         File(
             codecs.lookup(encoding),
             language,
+            file_hash,
+            file_size,
             players[data['metadata']['owner_id']],
             viewlocks
         ),
         consts['speeds'][str(int(round(data['metadata']['speed'], 2) * 100))],
+        int(round(data['metadata']['speed'], 2) * 100),
         data['metadata']['cheats'],
         data['lobby']['lock_teams'],
         data['lobby']['population'],
@@ -224,10 +291,25 @@ def parse_match(handle):
         lobby,
         dataset['dataset']['name'],
         consts['game_types'][str(data['lobby']['game_type_id'])],
+        data['lobby']['game_type_id'],
         consts['map_reveal_choices'][str(data['lobby']['reveal_map_id'])],
+        data['lobby']['reveal_map_id'],
+        consts['difficulties'][str(get_difficulty(data))],
+        get_difficulty(data),
+        consts['starting_ages'].get(str(get_starting_age(data))),
+        get_starting_age(data),
+        get_team_together(data),
+        get_lock_speed(data),
+        get_all_technologies(data),
+        True if data['version'] is Version.DE else None,
         timedelta(milliseconds=timestamp),
         diplomacy_type,
+        bool(resigned),
         data['version'],
+        data['game_version'],
+        data['save_version'],
+        data['log_version'],
+        get_hash(data),
         actions,
         inputs.inputs
     )
@@ -259,6 +341,8 @@ def serialize(obj):
             return str(obj)
         elif isinstance(obj, bytes):
             return None
+        elif isinstance(obj, hashlib.HASH):
+            return obj.hexdigest()
         else:
             return obj
 
