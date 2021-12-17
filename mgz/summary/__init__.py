@@ -14,7 +14,10 @@ class SummaryStub:
         data.seek(0)
         if version is Version.DE and save > 13.34 and not fallback:
             logger.info("using model summary")
-            return ModelSummary(data, playback)
+            try:
+                return ModelSummary(data, playback)
+            except RuntimeError:
+                logger.warning("could not fast parse; falling back")
         logger.info("using full summary")
         return FullSummary(data, playback)
 
