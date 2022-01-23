@@ -42,6 +42,7 @@ class Player:
     position: Position
     objects: list
     profile_id: int
+    prefer_random: bool = None
     team: list = None
     winner: bool = False
 

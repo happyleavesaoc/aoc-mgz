@@ -150,6 +150,12 @@ def get_position(header, index):
     return (attr.camera_x, attr.camera_y)
 
 
+def get_prefer_random(header, index):
+    if header.save_version >= 20.06:
+        return header.de.players[index].prefer_random
+    return None
+
+
 def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, ratings, encoding): # pylint: disable=too-many-arguments, too-many-locals
     """Get basic player info."""
     out = []
@@ -176,6 +182,7 @@ def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, r
             'rate_snapshot': ratings.get(name),
             'user_id': profile_ids.get(i + 1),
             'cheater': (i + 1) in cheaters,
+            'prefer_random': get_prefer_random(header, i),
             'achievements': {
                 'military': {
                     'score': ach(achievements, ['military', 'score']),

@@ -186,7 +186,8 @@ class ModelSummary:
                 score=None,
                 rate_snapshot=None,
                 cheater=None,
-                achievements=empty_achievements()
+                achievements=empty_achievements(),
+                prefer_random=p.prefer_random,
             ) for p in self.match.players
         ]
 

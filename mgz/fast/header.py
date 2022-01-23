@@ -287,7 +287,9 @@ def parse_de(data, version, save, skip=False):
         name = de_string(data)
         data.read(4)
         profile_id, number = unpack('<I4xi', data)
-        data.read(10)
+        data.read(8)
+        prefer_random = unpack('b', data)
+        data.read(1)
         if save >= 25.06:
             data.read(8)
         if name:
@@ -296,7 +298,8 @@ def parse_de(data, version, save, skip=False):
                 color_id=color_id,
                 name=name,
                 profile_id=profile_id,
-                civilization_id=civilization_id
+                civilization_id=civilization_id,
+                prefer_random=prefer_random == 1
             ))
     data.read(33)
     for _ in range(23):

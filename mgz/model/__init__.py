@@ -168,7 +168,8 @@ def parse_match(handle):
                 )
                 for obj in player['objects']
             ],
-            player.get('profile_id')
+            player.get('profile_id'),
+            player.get('prefer_random')
         )
 
     # Assign teams
