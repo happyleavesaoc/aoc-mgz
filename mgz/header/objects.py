@@ -109,7 +109,6 @@ static = "static"/Struct(
             "peek"/Peek(Bytes(6)),
             If(lambda ctx: find_save_version(ctx) >= 25.22 and find_type(ctx) == 10, Bytes(1)),
             If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
-            If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[1:3] == b"\x00\x0b", Bytes(1)),
             If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
         ))
     ))
