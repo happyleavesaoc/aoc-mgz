@@ -237,7 +237,8 @@ def TheirDiplomacyEnum(ctx):
     return Enum(
         ctx,
         ally_or_self=0,
-        enemy=3
+        enemy=3,
+        treaty=4
     )
 
 def DiplomacyStanceEnum(ctx):

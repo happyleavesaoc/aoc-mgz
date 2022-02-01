@@ -107,7 +107,9 @@ static = "static"/Struct(
         # not the right way to do this, needs improvement
         If(lambda ctx: find_save_version(ctx) >= 20.16, Struct(
             "peek"/Peek(Bytes(6)),
-            If(lambda ctx: find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
+            If(lambda ctx: find_save_version(ctx) >= 25.22 and find_type(ctx) == 10, Bytes(1)),
+            If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
+            If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[1:3] == b"\x00\x0b", Bytes(1)),
             If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
         ))
     ))
@@ -367,7 +369,8 @@ unit_ai = "ai"/Struct(
     "retarget_entries"/Array(lambda ctx: ctx.num_retarget_entries, retarget),
     "best_unit_to_attack"/Int32ul,
     "formation_type"/Byte,
-    "de_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(4))
+    "de_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(4)),
+    "de_unk_byte"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte)
 )
 
 
@@ -402,7 +405,7 @@ combat = "combat"/Struct(
     "num_builders"/Byte,
     "num_healers"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
     "de_unknown"/If(lambda ctx: find_save_version(ctx) >= 20.06, Int32ul),
-    "de_unknown2"/If(lambda ctx: find_save_version(ctx) >= 25.01, Int32ul)
+    "de_unknown2"/If(lambda ctx: find_save_version(ctx) >= 25.01, Int32ul),
 )
 
 production_queue = "production_queue"/Struct(
@@ -444,7 +447,8 @@ building = "building"/Struct(
     "semi_asleep"/Byte,
     "snow_flag"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
     "de_flag_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Byte),
-    "de_unk_2"/If(lambda ctx: find_save_version(ctx) >= 20.16, Int16ul)
+    "de_unk_2"/If(lambda ctx: find_save_version(ctx) >= 20.16, Int16ul),
+    "de_unk_3"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte)
 )
 
 # Objects that exist on the map at the start of the recorded game

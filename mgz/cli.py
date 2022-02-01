@@ -77,6 +77,7 @@ def print_info(path):
         summary = Summary(handle, fallback=True)
         dataset = summary.get_dataset()
         header = summary.get_header()
+        build = header.de.build if header.de and header.save_version >= 25.22 else None
         print('-------------')
         print(tabulate([
             ['Path', path],
@@ -85,7 +86,7 @@ def print_info(path):
             ['Restored', header.initial.restore_time > 0],
             ['Postgame', bool(summary.get_postgame())],
             ['Objects', bool(summary.get_objects()['objects'])],
-            ['Version', '{} ({}, {}, {})'.format(header.version.name, header.game_version, header.save_version, header.log_version)],
+            ['Version', '{} ({}, {}, {}, {})'.format(header.version.name, header.game_version, header.save_version, header.log_version, build)],
             ['Dataset', '{} {}'.format(dataset['name'], dataset['version'])],
             ['File Hash', summary.get_file_hash()],
             ['Match Hash', summary.get_hash().hexdigest() if summary.get_hash() else None],

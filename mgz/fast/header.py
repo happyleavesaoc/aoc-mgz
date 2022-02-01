@@ -261,6 +261,9 @@ def parse_de(data, version, save, skip=False):
     """Parse DE-specific header."""
     if version is not Version.DE:
         return None
+    build = None
+    if save >= 25.22 and not skip:
+        build = unpack('<I', data)
     data.read(12)
     dlc_count = unpack('<I', data)
     data.read(dlc_count * 4)
@@ -287,7 +290,8 @@ def parse_de(data, version, save, skip=False):
         name = de_string(data)
         data.read(4)
         profile_id, number = unpack('<I4xi', data)
-        data.read(8)
+        if save < 25.22:
+            data.read(8)
         prefer_random = unpack('b', data)
         data.read(1)
         if save >= 25.06:
@@ -307,7 +311,8 @@ def parse_de(data, version, save, skip=False):
         c = unpack('<I', data)
         while c in [3, 21, 23, 42, 44, 45, 46, 47]:
             c = unpack('<I', data)
-    data.read(236)
+    if save < 25.22:
+        data.read(236)
     for _ in range(unpack('<Q', data)):
         data.read(4)
         de_string(data)
@@ -316,6 +321,8 @@ def parse_de(data, version, save, skip=False):
         data.read(8)
     guid = data.read(16)
     lobby = de_string(data)
+    if save >= 25.22:
+        data.read(8)
     mod = de_string(data)
     data.read(33)
     if save >= 20.06:
@@ -324,6 +331,8 @@ def parse_de(data, version, save, skip=False):
         data.read(8)
     if save >= 25.06:
         data.read(21)
+    if save >= 25.22:
+        data.read(4)
     if not skip:
         de_string(data)
         data.read(8)
@@ -337,7 +346,8 @@ def parse_de(data, version, save, skip=False):
         starting_age_id=starting_age_id - 2 if starting_age_id > 0 else 0,
         team_together=not bool(random_positions),
         all_technologies=bool(all_technologies),
-        lock_speed=bool(lock_speed)
+        lock_speed=bool(lock_speed),
+        build=build
     )
 
 

@@ -33,7 +33,8 @@ lobby = "lobby"/Struct(
         Struct(
             "treaty_length"/Byte,
             "cheat_codes_used"/Int32ul,
-            If(lambda ctx: ctx._._.save_version >= 13.13, Padding(4))
+            If(lambda ctx: ctx._._.save_version >= 13.13, Padding(4)),
+            If(lambda ctx: ctx._._.save_version >= 25.22, Padding(1)),
         )
     ),
     Embedded(If(lambda ctx: ctx._.version != Version.AOK,
