@@ -110,10 +110,12 @@ de = "de"/Struct(
     "strings"/Array(23,
         Struct(
             "string"/de_string,
-            RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45, 46, 47], Int32ul)
+            "nums"/RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45, 46, 47], Int32ul)
         )
     ),
-    "strategic_numbers"/If(lambda ctx: ctx._.save_version < 25.22, Array(59, Int32sl)),
+    # There's probably a right way to do this, but this is not it.
+    "num_sn"/Computed(lambda ctx: ctx.strings[22].nums[1]),
+    "strategic_numbers"/Array(lambda ctx: ctx.num_sn if find_save_version(ctx) >= 25.22 else 59, Int32sl),
     "num_ai_files"/Int64ul,
     "ai_files"/Array(lambda ctx: ctx.num_ai_files, Struct(
         Bytes(4),

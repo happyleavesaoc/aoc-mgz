@@ -80,9 +80,36 @@ static = "static"/Struct(
     "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul),
     "group_id"/Int32sl,
     "roo_already_called"/Byte,
-    "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(19)),
-    "has_sprite_list"/Byte,
-    "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list)),
+    "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
+    "de_has_object_props"/If(lambda ctx: find_version(ctx) == Version.DE, Int16ul),
+    "de_object_props"/IfThenElse(lambda ctx: ctx.de_has_object_props == 1, Struct(
+        Bytes(162),
+        Find(b'`\n\x00\x00`\n\x00\x00', 1000), # Skip a large unparseable block that (likely) contains RMS-modified object data
+        Bytes(2)
+    ), Struct(
+        "has_sprite_list"/Byte,
+        "sprite_list"/If(lambda ctx: ctx.has_sprite_list != 0, RepeatUntil(lambda x,lst,ctx: lst[-1].type == 0, sprite_list)),
+        "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
+            "particles"/Array(5, particle),
+            If(lambda ctx: find_save_version(ctx) >= 13.15, Bytes(5)),
+            If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2)),
+            If(lambda ctx: find_save_version(ctx) >= 13.34, Struct(
+                Bytes(2),
+                de_string,
+                de_string,
+                Bytes(2)
+            ))
+        ))
+    )),
+    "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
+        # not the right way to do this, needs improvement
+        If(lambda ctx: find_save_version(ctx) >= 20.16, Struct(
+            "peek"/Peek(Bytes(6)),
+            If(lambda ctx: find_save_version(ctx) >= 25.22 and find_type(ctx) == 10, Bytes(1)),
+            If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
+            If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
+        ))
+    )),
     "hd_extension"/If(lambda ctx: find_version(ctx) == Version.HD and find_save_version(ctx) > 12.36, Struct(
         "flag"/Flag,
         Padding(4),
@@ -92,24 +119,6 @@ static = "static"/Struct(
                 "type"/Byte,
                 If(lambda ctx: ctx.type > 0, Bytes(16))
             ))
-        ))
-    )),
-    "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
-        "particles"/Array(5, particle),
-        If(lambda ctx: find_save_version(ctx) >= 13.15, Bytes(5)),
-        If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2)),
-        If(lambda ctx: find_save_version(ctx) >= 13.34, Struct(
-            Bytes(2),
-            de_string,
-            de_string,
-            Bytes(2)
-        )),
-        # not the right way to do this, needs improvement
-        If(lambda ctx: find_save_version(ctx) >= 20.16, Struct(
-            "peek"/Peek(Bytes(6)),
-            If(lambda ctx: find_save_version(ctx) >= 25.22 and find_type(ctx) == 10, Bytes(1)),
-            If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
-            If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
         ))
     ))
 )
