@@ -6,6 +6,7 @@ from mgz.util import check_flags
 
 CHECKSUM_INTERVAL = 500
 
+
 class Operation(Enum):
     """Operation types."""
     ACTION = 1
@@ -14,6 +15,7 @@ class Operation(Enum):
     CHAT = 4
     START = 5
     SAVE = 6
+
 
 class Action(Enum):
     """Action types."""
@@ -186,8 +188,27 @@ def parse_action(action_type, data):
         object_id, = struct.unpack_from('<3xI', data)
         return dict(object_ids=[object_id])
     if action_type == Action.WALL:
-        player_id, x, y = struct.unpack_from('<x3b', data)
-        return dict(player_id=player_id, x=x, y=y)
+        selection_count, = struct.unpack_from('b', data)
+        offset = len(data) - selection_count * 4
+
+        if offset > 15:
+            # In DE recordings all coordinates are prefixed with a zero.
+            player_id, x_start, y_start, x_end, y_end, building_id, z1, const = struct.unpack_from(
+                '<bxbxbxbxbx2h1i', data, offset=1)
+        else:
+            player_id, x_start, y_start, x_end, y_end, building_id, z1, const = struct.unpack_from(
+                '<5bx2h1i', data, offset=1)
+
+        object_ids = struct.unpack_from('<' + str(selection_count) + 'I', data[offset:])
+
+        return dict(player_id=player_id,
+                    x=x_start,
+                    y=y_start,
+                    x_end=x_end,
+                    y_end=y_end,
+                    building_id=building_id,
+                    object_ids=object_ids)
+
     if action_type == Action.GAME:
         return dict(player_id=data[1], command_id=data[0])
     if action_type == Action.FLARE:
@@ -264,9 +285,9 @@ def start(data):
     """Handle start."""
     data.read(20)
     a, b, _ = struct.unpack('<III', data.read(12))
-    if a != 0: # AOC 1.0x
+    if a != 0:  # AOC 1.0x
         data.seek(-12, 1)
-    if b == 2: # DE
+    if b == 2:  # DE
         data.seek(-8, 1)
 
 
@@ -282,13 +303,13 @@ def meta(data):
     """Handle log meta."""
     try:
         first, = struct.unpack('<I', data.read(4))
-        if first != 500: # Not AOK
+        if first != 500:  # Not AOK
             data.read(4)
         data.read(20)
         a, b, _ = struct.unpack('<III', data.read(12))
-        if a != 0: # AOC 1.0x
+        if a != 0:  # AOC 1.0x
             data.seek(-12, 1)
-        if b == 2: # DE
+        if b == 2:  # DE
             data.seek(-8, 1)
     except struct.error:
         raise ValueError("insufficient meta received")
