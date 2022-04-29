@@ -147,7 +147,8 @@ class ModelSummary:
             self.match.version,
             self.match.game_version,
             self.match.save_version,
-            self.match.log_version
+            self.match.log_version,
+            self.match.build_version
         )
 
     def get_dataset(self):

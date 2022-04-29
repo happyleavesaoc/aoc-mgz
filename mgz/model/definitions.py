@@ -174,6 +174,7 @@ class Match:
     game_version: str
     save_version: float
     log_version: int
+    build_version: int
     hash: str
     actions: list
     inputs: list

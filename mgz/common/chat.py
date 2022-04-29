@@ -15,7 +15,8 @@ AGE_MARKERS = [
     'переход в',
     'avançou para a Idade',
     'wkroczyło w Erę',
-    '升級至'
+    '升級至',
+    'passaggio'
 ]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',

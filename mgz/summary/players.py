@@ -175,6 +175,7 @@ def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, r
             'human': header.scenario.game_settings.player_info[i + 1].type == 'human',
             'number': i + 1,
             'color_id': get_color(header, i),
+            'team_id': header.lobby.teams[i] - 2,
             'winner': winner,
             'mvp': ach(achievements, ['mvp']),
             'score': ach(achievements, ['total_score']),
