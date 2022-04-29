@@ -234,7 +234,7 @@ def parse_match(handle):
                 action = Action(timedelta(milliseconds=timestamp), action_type, action_data)
                 if action_type is fast.Action.RESIGN:
                     resigned.append(players[action_data['player_id']])
-                if 'player_id' in action_data:
+                if 'player_id' in action_data and action_data['player_id'] in players:
                     action.player = players[action_data['player_id']]
                     del action.payload['player_id']
                 enrich_action(action, action_data, dataset, consts)
