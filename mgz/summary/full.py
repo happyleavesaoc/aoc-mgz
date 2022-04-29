@@ -152,6 +152,8 @@ class FullSummary: # pylint: disable=too-many-public-methods
         else:
             self._cache['hash'] = hashlib.sha1(b''.join(checksums)) \
                 if len(checksums) == CHECKSUMS else None
+        if self._header.de:
+            rated = self._header.de.ranked
         self._cache['from_voobly'] = voobly
         if voobly:
             self._cache['platform_id'] = 'voobly'
@@ -194,7 +196,10 @@ class FullSummary: # pylint: disable=too-many-public-methods
 
     def get_version(self):
         """Get game version."""
-        return self._header.version, self._header.game_version, self._header.save_version, self._header.log_version
+        build = None
+        if self._header.de:
+            build = self._header.de.build
+        return self._header.version, self._header.game_version, self._header.save_version, self._header.log_version, build
 
     def get_owner(self):
         """Get rec owner (POV)."""
@@ -276,7 +281,11 @@ class FullSummary: # pylint: disable=too-many-public-methods
             'ladder': self._cache['ladder'],
             'rated': self._cache['rated'],
             'ratings': self._cache['ratings'],
-            'lobby_name': lobby_name
+            'lobby_name': lobby_name,
+            'allow_specs': self._header.de.allow_specs if self._header.de else None,
+            'spec_delay': self._header.de.spec_delay if self._header.de else None,
+            'hidden_civs': self._header.de.hidden_civs if self._header.de else None,
+            'private': self._header.de.lobby_visibility == 2 if self._header.de else None,
         }
 
     def get_settings(self):

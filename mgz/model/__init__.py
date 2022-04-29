@@ -310,6 +310,7 @@ def parse_match(handle):
         data['game_version'],
         data['save_version'],
         data['log_version'],
+        data['de']['build'] if data['version'] is Version.DE else None,
         get_hash(data),
         actions,
         inputs.inputs
