@@ -1,4 +1,5 @@
 """Fast(er) parsing for situations requiring speed."""
+import io
 import struct
 from enum import Enum
 
@@ -14,7 +15,8 @@ class Operation(Enum):
     VIEWLOCK = 3
     CHAT = 4
     START = 5
-    SAVE = 6
+    POSTGAME = 6
+    SAVE = 7
 
 
 class Action(Enum):
@@ -45,6 +47,7 @@ class Action(Enum):
     DE_AUTOSCOUT = 38
     DE_UNKNOWN_39 = 39
     DE_UNKNOWN_41 = 41
+    DE_UNKNOWN_43 = 43
     AI_COMMAND = 53
     MAKE = 100
     RESEARCH = 101
@@ -74,6 +77,12 @@ class Action(Enum):
     DE_UNKNOWN_135 = 135
     DE_UNKNOWN_196 = 196
     POSTGAME = 255
+
+
+class Postgame(Enum):
+    """Postgame types."""
+    WORLD_TIME = 1
+    LEADERBOARDS = 2
 
 
 def sync(data):
@@ -299,6 +308,40 @@ def save(data):
     data.read(length - pos - 8)
 
 
+def postgame(data):
+    """Handle DE postgame."""
+    data = io.BytesIO(data.read()[::-1])
+    data.read(8)
+    version, num_blocks = struct.unpack('>II', data.read(8))
+    out = {}
+    for _ in range(0, num_blocks):
+        identifier, length = struct.unpack('>II', data.read(8))
+        block = io.BytesIO(data.read(length)[::-1])
+        postgame_type = Postgame(identifier)
+        if postgame_type == Postgame.WORLD_TIME:
+            out['world_time'] = struct.unpack('<I', block.read(4))[0]
+        elif postgame_type == Postgame.LEADERBOARDS:
+            num_leaderboards = struct.unpack('<I', block.read(4))[0]
+            leaderboards = []
+            for lb in range(0, num_leaderboards):
+                leaderboard_id, unk = struct.unpack('<IH', block.read(6))
+                num_players = struct.unpack('<I', block.read(4))[0]
+                player_data = []
+                for i in range(0, num_players):
+                    player_num, rank, rating = struct.unpack('<3i', block.read(12))
+                    player_data.append({
+                        'number': player_num,
+                        'rank': rank,
+                        'rating': rating
+                    })
+                leaderboards.append({
+                    'id': leaderboard_id,
+                    'players': player_data
+                })
+            out['leaderboards'] = leaderboards
+    return out
+
+
 def meta(data):
     """Handle log meta."""
     try:
@@ -331,6 +374,8 @@ def operation(data):
             return op_type, viewlock(data)
         if op_type == Operation.CHAT:
             return op_type, chat(data)
+        if op_type == Operation.POSTGAME:
+            return op_type, postgame(data)
     except struct.error:
         raise EOFError
     raise RuntimeError("unknown data received")

@@ -263,6 +263,8 @@ def parse_de(data, version, save, skip=False):
     build = None
     if save >= 25.22 and not skip:
         build = unpack('<I', data)
+    if save >= 26.16 and not skip:
+        timestamp = unpack('<I', data)
     data.read(12)
     dlc_count = unpack('<I', data)
     data.read(dlc_count * 4)

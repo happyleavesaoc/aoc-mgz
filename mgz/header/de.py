@@ -45,6 +45,7 @@ player = Struct(
 
 de = "de"/Struct(
     "build"/If(lambda ctx: find_save_version(ctx) >= 25.22, Int32ul),
+    "timestamp"/If(lambda ctx: find_save_version(ctx) >= 26.16, Int32ul),
     "version"/Float32l,
     "interval_version"/Int32ul,
     "game_options_version"/Int32ul,
@@ -134,6 +135,7 @@ de = "de"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 20.16, Bytes(8)),
     If(lambda ctx: find_save_version(ctx) >= 25.06, Bytes(21)),
     If(lambda ctx: find_save_version(ctx) >= 25.22, Bytes(4)),
+    If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(8)),
     de_string,
     Bytes(5),
     If(lambda ctx: find_save_version(ctx) >= 13.13, Byte),

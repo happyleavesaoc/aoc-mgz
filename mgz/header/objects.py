@@ -51,6 +51,7 @@ particle = "particle"/Struct(
     ))),
 )
 
+
 static = "static"/Struct(
     "object_type"/Int16ul,
     "sprite"/Int16ul,
@@ -81,6 +82,7 @@ static = "static"/Struct(
     "group_id"/Int32sl,
     "roo_already_called"/Byte,
     "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
+    If(lambda ctx: find_save_version(ctx) >= 26.16, Byte),
     "de_has_object_props"/If(lambda ctx: find_version(ctx) == Version.DE, Int16ul),
     "de_object_props"/IfThenElse(lambda ctx: ctx.de_has_object_props == 1, Struct(
         Bytes(162),
@@ -101,7 +103,7 @@ static = "static"/Struct(
             ))
         ))
     )),
-    "de_extension"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
+    "de_extension_p2"/If(lambda ctx: find_version(ctx) == Version.DE, Struct(
         # not the right way to do this, needs improvement
         If(lambda ctx: find_save_version(ctx) >= 20.16, Struct(
             "peek"/Peek(Bytes(6)),
@@ -191,7 +193,8 @@ base_moving = "base_moving"/Struct(
 moving = "moving"/Struct(
     Embedded(base_moving),
     "hd_moving"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(1)),
-    "de_moving"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17))
+    "de_moving"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
+    If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(8))
 )
 
 move_to = "move_to"/Struct(
@@ -385,6 +388,7 @@ unit_ai = "ai"/Struct(
 combat = "combat"/Struct(
     Embedded(base_combat),
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(18)),
+    "de_2"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(16)),
     "next_volley"/Byte,
     "using_special_animation"/Byte,
     "own_base"/Byte,
@@ -414,6 +418,7 @@ combat = "combat"/Struct(
     "num_healers"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
     "de_unknown"/If(lambda ctx: find_save_version(ctx) >= 20.06, Int32ul),
     "de_unknown2"/If(lambda ctx: find_save_version(ctx) >= 25.01, Int32ul),
+    "de_unknown3"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(5)),
 )
 
 production_queue = "production_queue"/Struct(
@@ -456,8 +461,10 @@ building = "building"/Struct(
     "snow_flag"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
     "de_flag_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Byte),
     "de_unk_2"/If(lambda ctx: find_save_version(ctx) >= 20.16, Int16ul),
-    "de_unk_3"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte)
+    "de_unk_3"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte),
+    "de_unk_4"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4))
 )
+
 
 # Objects that exist on the map at the start of the recorded game
 existing_object = "objects"/Struct(

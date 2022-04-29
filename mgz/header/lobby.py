@@ -16,6 +16,7 @@ lobby = "lobby"/Struct(
     If(lambda ctx: ctx._.version not in (Version.DE, Version.HD),
         Padding(1),
     ),
+    If(lambda ctx: ctx._.save_version >= 26.16, Bytes(5)),
     Peek("reveal_map_id"/Int32ul),
     RevealMapEnum("reveal_map"/Int32ul),
     "fog_of_war"/Int32ul,
@@ -53,7 +54,8 @@ lobby = "lobby"/Struct(
     "de"/If(lambda ctx: ctx._.version == Version.DE,
         Struct(
             "map_seed"/If(lambda ctx: ctx._._.save_version >= 13.08, Int32sl),
-            Bytes(10)
+            Bytes(10),
+            If(lambda ctx: ctx._._.save_version >= 26.16, Bytes(4)),
         )
     )
 )

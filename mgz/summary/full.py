@@ -356,6 +356,10 @@ class FullSummary: # pylint: disable=too-many-public-methods
             mirror = (len(civs) == 1)
         return mirror
 
+    def get_played(self):
+        if self._header.de:
+            return self._header.de.timestamp
+
     def can_playback(self):
         """Indicate whether playback is possible."""
         return self._playback
