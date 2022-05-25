@@ -12,11 +12,11 @@ from mgz.util import Version, find_save_version
 lobby = "lobby"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(5)),
     If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(9)),
+    If(lambda ctx: ctx._.save_version >= 26.16, Bytes(5)),
     Array(8, "teams"/Byte), # team number selected by each player
     If(lambda ctx: ctx._.version not in (Version.DE, Version.HD),
         Padding(1),
     ),
-    If(lambda ctx: ctx._.save_version >= 26.16, Bytes(5)),
     Peek("reveal_map_id"/Int32ul),
     RevealMapEnum("reveal_map"/Int32ul),
     "fog_of_war"/Int32ul,

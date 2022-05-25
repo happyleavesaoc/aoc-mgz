@@ -278,6 +278,7 @@ missile = "missile"/Struct(
     "fired_from_id"/Int32ul,
     "own_base"/Byte,
     "base"/If(lambda ctx: ctx.own_base > 0, unit_type),
+    If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(34))
 )
 
 waypoint = "waypoint"/Struct(

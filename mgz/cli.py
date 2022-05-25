@@ -6,6 +6,7 @@ import logging
 import os
 import struct
 import sys
+from datetime import datetime
 from collections import defaultdict
 
 from construct.core import ConstructError
@@ -82,10 +83,10 @@ def print_info(path):
         print(tabulate([
             ['Path', path],
             ['Duration', mgz.util.convert_to_timestamp(summary.get_duration() / 1000)],
+            ['Played', datetime.utcfromtimestamp(summary.get_played())],
             ['Completed', summary.get_completed()],
             ['Restored', header.initial.restore_time > 0],
             ['Postgame', bool(summary.get_postgame())],
-            ['Objects', bool(summary.get_objects()['objects'])],
             ['Version', '{} ({}, {}, {}, {})'.format(header.version.name, header.game_version, header.save_version, header.log_version, build)],
             ['Dataset', '{} {}'.format(dataset['name'], dataset['version'])],
             ['File Hash', summary.get_file_hash()],
