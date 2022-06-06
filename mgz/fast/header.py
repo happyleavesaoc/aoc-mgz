@@ -125,6 +125,8 @@ def parse_player(header, player_number, num_players):
     doppel, end = object_block(data, end, player_number, 2)
     if data[end + 8:end + 10] == BLOCK_END:
         end += 10
+    if data[end:end + 2] == BLOCK_END:
+        end += 2
     header.seek(offset + end)
     return dict(
         number=player_number,
@@ -147,6 +149,8 @@ def parse_lobby(data, version, save):
         data.read(5)
         if save >= 20.06:
             data.read(9)
+        if save >= 26.16:
+            data.read(5)
     data.read(8)
     if version not in (Version.DE, Version.HD):
         data.read(1)
@@ -155,6 +159,8 @@ def parse_lobby(data, version, save):
         data.read(5)
         if save >= 13.13:
             data.read(4)
+        if save >= 25.22:
+            data.read(1)
     chat = []
     for _ in range(0, unpack('<I', data)):
         message = data.read(unpack('<I', data)).strip(b'\x00')
@@ -201,8 +207,8 @@ def parse_map(data, version):
     x2, y2 = unpack('<II', data)
     data.read(x2 * y2 * 4)
     restore_time = unpack('<I', data)
-    if restore_time > 0:
-        raise RuntimeError("restored matches can't be parsed yet")
+    #if restore_time > 0:
+    #    raise RuntimeError("restored matches can't be parsed yet")
     return dict(
         all_visible=all_visible == 1,
         restore_time=restore_time,
@@ -241,10 +247,17 @@ def parse_scenario(data, num_players, version, save):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
-        if save >= 25.06:
-            end = remainder.find(b'\x00\x00\x00\x00\x00\x00\x04\x40')
+        if save >= 26.16:
+            settings_version = 3.0
+        elif save >= 25.22:
+            settings_version = 2.6
+        elif save >= 25.06:
+            settings_version = 2.5
+        elif save >= 13.34:
+            settings_version = 2.4
         else:
-            end = remainder.find(b'\x33\x33\x33\x33\x33\x33\x03\x40')
+            settings_version = 2.2
+        end = remainder.find(struct.pack('<d', settings_version))
         end += 1045
     else:
         end = remainder.find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f') + 13
@@ -263,6 +276,7 @@ def parse_de(data, version, save, skip=False):
     build = None
     if save >= 25.22 and not skip:
         build = unpack('<I', data)
+    timestamp = None
     if save >= 26.16 and not skip:
         timestamp = unpack('<I', data)
     data.read(12)
@@ -306,7 +320,9 @@ def parse_de(data, version, save, skip=False):
                 civilization_id=civilization_id,
                 prefer_random=prefer_random == 1
             ))
-    data.read(33)
+    data.read(24)
+    spec_delay = unpack('<I', data)
+    data.read(5)
     for _ in range(23):
         de_string(data)
         c = unpack('<I', data)
@@ -314,6 +330,10 @@ def parse_de(data, version, save, skip=False):
             c = unpack('<I', data)
     if save < 25.22:
         data.read(236)
+    if save >= 25.22:
+        data.seek(-4, 1)
+        l = unpack('<I', data)
+        data.read(l * 4)
     for _ in range(unpack('<Q', data)):
         data.read(4)
         de_string(data)
@@ -334,6 +354,8 @@ def parse_de(data, version, save, skip=False):
         data.read(21)
     if save >= 25.22:
         data.read(4)
+    if save >= 26.16:
+        data.read(8)
     if not skip:
         de_string(data)
         data.read(8)
@@ -348,7 +370,9 @@ def parse_de(data, version, save, skip=False):
         team_together=not bool(random_positions),
         all_technologies=bool(all_technologies),
         lock_speed=bool(lock_speed),
-        build=build
+        build=build,
+        timestamp=timestamp,
+        spec_delay=spec_delay
     )
 
 

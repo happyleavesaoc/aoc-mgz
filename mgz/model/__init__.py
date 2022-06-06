@@ -3,7 +3,7 @@
 import codecs
 import collections
 import hashlib
-from datetime import timedelta
+from datetime import timedelta, datetime
 from enum import Enum
 
 import dataclasses
@@ -282,6 +282,8 @@ def parse_match(handle):
             players[data['metadata']['owner_id']],
             viewlocks
         ),
+        data['map']['restore_time'] > 0,
+        timedelta(milliseconds=data['map']['restore_time']),
         consts['speeds'][str(int(round(data['metadata']['speed'], 2) * 100))],
         int(round(data['metadata']['speed'], 2) * 100),
         data['metadata']['cheats'],
@@ -311,6 +313,8 @@ def parse_match(handle):
         data['save_version'],
         data['log_version'],
         data['de']['build'] if data['version'] is Version.DE else None,
+        datetime.fromtimestamp(data['de']['timestamp']) if data['de']['timestamp'] else None,
+        timedelta(seconds=data['de']['spec_delay']),
         get_hash(data),
         actions,
         inputs.inputs

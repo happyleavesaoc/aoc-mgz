@@ -1,7 +1,7 @@
 """Model class definitions."""
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, datetime
 from mgz.fast import Action as ActionEnum
 from mgz.util import Version
 
@@ -146,6 +146,8 @@ class Match:
     gaia: list
     map: Map
     file: File
+    restored: bool
+    restored_at: timedelta
     speed: str
     speed_id: int
     cheats: bool
@@ -175,6 +177,8 @@ class Match:
     save_version: float
     log_version: int
     build_version: int
+    timestamp: datetime
+    spec_delay: timedelta
     hash: str
     actions: list
     inputs: list

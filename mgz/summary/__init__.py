@@ -16,8 +16,8 @@ class SummaryStub:
             logger.info("using model summary")
             try:
                 return ModelSummary(data, playback)
-            except RuntimeError:
-                logger.warning("could not fast parse; falling back")
+            except RuntimeError as e:
+                logger.warning(f"could not fast parse; falling back: {e}")
         logger.info("using full summary")
         return FullSummary(data, playback)
 
