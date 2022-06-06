@@ -339,6 +339,8 @@ def postgame(data):
                     'players': player_data
                 })
             out['leaderboards'] = leaderboards
+        else:
+            raise RuntimeError("unparsed postgame block")
     return out
 
 

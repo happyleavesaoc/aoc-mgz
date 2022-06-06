@@ -390,6 +390,7 @@ combat = "combat"/Struct(
     Embedded(base_combat),
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(18)),
     "de_2"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(16)),
+    "de_3"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(1)),
     "next_volley"/Byte,
     "using_special_animation"/Byte,
     "own_base"/Byte,
@@ -419,7 +420,8 @@ combat = "combat"/Struct(
     "num_healers"/If(lambda ctx: find_version(ctx) != Version.AOK, Byte),
     "de_unknown"/If(lambda ctx: find_save_version(ctx) >= 20.06, Int32ul),
     "de_unknown2"/If(lambda ctx: find_save_version(ctx) >= 25.01, Int32ul),
-    "de_unknown3"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(5)),
+    "de_unknown3"/If(lambda ctx: 26.18 > find_save_version(ctx) >= 26.16, Bytes(5)),
+    "de_unknown4"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(4)),
 )
 
 production_queue = "production_queue"/Struct(

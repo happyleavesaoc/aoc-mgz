@@ -83,7 +83,7 @@ def print_info(path):
         print(tabulate([
             ['Path', path],
             ['Duration', mgz.util.convert_to_timestamp(summary.get_duration() / 1000)],
-            ['Played', datetime.utcfromtimestamp(summary.get_played())],
+            ['Played', datetime.utcfromtimestamp(summary.get_played()) if summary.get_played() else None],
             ['Completed', summary.get_completed()],
             ['Restored', header.initial.restore_time > 0],
             ['Postgame', bool(summary.get_postgame())],
