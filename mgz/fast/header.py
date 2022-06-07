@@ -284,7 +284,7 @@ def parse_de(data, version, save, skip=False):
         data.read(4)
         color_id = unpack('<i', data)
         data.read(2)
-        resolved_team_id = unpack('<b', data)
+        team_id = unpack('<b', data)
         data.read(9)
         civilization_id = unpack('<I', data)
         de_string(data)
