@@ -303,7 +303,7 @@ def parse_de(data, version, save, skip=False):
             players.append(dict(
                 number=number,
                 color_id=color_id,
-                resolved_team_id=resolved_team_id,
+                team_id=team_id,
                 name=name,
                 profile_id=profile_id,
                 civilization_id=civilization_id,
