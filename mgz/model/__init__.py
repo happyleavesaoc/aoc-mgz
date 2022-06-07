@@ -96,16 +96,19 @@ def parse_match(handle):
 
     dataset_id, dataset = get_dataset(data['version'], data['mod'])
     map_id = data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id']
-    map_data, encoding, language = get_map_data(
-        map_id,
-        data['scenario']['instructions'],
-        data['map']['dimension'],
-        data['version'],
-        dataset_id,
-        dataset,
-        data['map']['tiles'],
-        de_seed=data['lobby']['seed']
-    )
+    try:
+            map_data, encoding, language = get_map_data(
+            map_id,
+            data['scenario']['instructions'],
+            data['map']['dimension'],
+            data['version'],
+            dataset_id,
+            dataset,
+            data['map']['tiles'],
+            de_seed=data['lobby']['seed']
+        )
+    except ValueError:
+        raise RuntimeError("could not get map data")
 
     # Handle DE-specific data
     if data['de']:
