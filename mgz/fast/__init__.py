@@ -116,7 +116,12 @@ def parse_action(action_type, data):
         return dict(player_id=player_id, player_id_to=player_id_to, resource_id=resource_id, amount=amount, fee=fee)
     if action_type == Action.DE_TRIBUTE:
         player_id, player_id_to, unknown_byte, unknown_int, wood, food, gold, stone = struct.unpack_from('<bbbiffff', data)
-        return dict(player_id=player_id, player_id_to=player_id_to, unknown_byte=unknown_byte, unknown_int=unknown_int, food=food, wood=wood, stone=stone, gold=gold)
+        return dict(player_id=player_id,
+                    player_id_to=player_id_to,
+                    food=food,
+                    wood=wood,
+                    stone=stone,
+                    gold=gold)
     if action_type == Action.MOVE:
         player_id, selected, x, y = struct.unpack_from('<b6xI2f', data)
         object_ids = []
