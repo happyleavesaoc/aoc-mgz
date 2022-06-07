@@ -150,7 +150,7 @@ def parse_match(handle):
                 pos_x = obj['position']['x']
                 pos_y = obj['position']['y']
         players[player['number']] = Player(
-            player['color_id'] + 1,
+            player['number'],
             player['name'].decode(encoding),
             consts['player_colors'][str(player['color_id'])],
             player['color_id'],
@@ -173,7 +173,16 @@ def parse_match(handle):
         )
 
     # Assign teams
-    team_ids = set([frozenset(s) for s in allies.values()])
+    if de_players:
+        by_team = collections.defaultdict(list)
+        for number, player in de_players.items():
+            if player['team_id'] > 1:
+                by_team[player['team_id']].append(number)
+            elif player['team_id'] == 1:
+                by_team[number].append(number)
+        team_ids = by_team.values()
+    else:
+        team_ids = set([frozenset(s) for s in allies.values()])
     teams = []
     for team in team_ids:
         t = [players[x] for x in team]

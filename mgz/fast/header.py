@@ -297,7 +297,9 @@ def parse_de(data, version, save, skip=False):
     for _ in range(8):
         data.read(4)
         color_id = unpack('<i', data)
-        data.read(12)
+        data.read(2)
+        team_id = unpack('b', data)
+        data.read(9)
         civilization_id = unpack('<I', data)
         de_string(data)
         data.read(1)
@@ -315,6 +317,7 @@ def parse_de(data, version, save, skip=False):
             players.append(dict(
                 number=number,
                 color_id=color_id,
+                team_id=team_id,
                 name=name,
                 profile_id=profile_id,
                 civilization_id=civilization_id,
