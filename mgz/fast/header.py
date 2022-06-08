@@ -59,6 +59,8 @@ def hd_string(data):
 def parse_object(data, offset):
     """Parse an object."""
     class_id, object_id, instance_id, pos_x, pos_y = struct.unpack_from('<bxH14xIxff', data, offset)
+    if object_id >= 65535:
+        raise RuntimeError("bad object parse")
     return dict(
         class_id=class_id,
         object_id=object_id,
