@@ -2,6 +2,7 @@
 
 import codecs
 import collections
+import _hashlib
 import hashlib
 from datetime import timedelta, datetime
 from enum import Enum
@@ -357,9 +358,11 @@ def serialize(obj):
             return obj.name
         elif isinstance(obj, timedelta):
             return str(obj)
+        elif isinstance(obj, datetime):
+            return str(obj)
         elif isinstance(obj, bytes):
             return None
-        elif isinstance(obj, hashlib.HASH):
+        elif isinstance(obj, _hashlib.HASH):
             return obj.hexdigest()
         else:
             return obj
