@@ -13,7 +13,7 @@ class Position:
     x: float
     y: float
 
-    def __hash__(self):
+    def hash(self):
         return hash((self.x, self.y))
 
 
