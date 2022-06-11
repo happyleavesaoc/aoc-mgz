@@ -2,8 +2,9 @@
 
 import codecs
 import collections
+import _hashlib
 import hashlib
-from datetime import timedelta
+from datetime import timedelta, datetime
 from enum import Enum
 
 import dataclasses
@@ -96,16 +97,19 @@ def parse_match(handle):
 
     dataset_id, dataset = get_dataset(data['version'], data['mod'])
     map_id = data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id']
-    map_data, encoding, language = get_map_data(
-        map_id,
-        data['scenario']['instructions'],
-        data['map']['dimension'],
-        data['version'],
-        dataset_id,
-        dataset,
-        data['map']['tiles'],
-        de_seed=data['lobby']['seed']
-    )
+    try:
+            map_data, encoding, language = get_map_data(
+            map_id,
+            data['scenario']['instructions'],
+            data['map']['dimension'],
+            data['version'],
+            dataset_id,
+            dataset,
+            data['map']['tiles'],
+            de_seed=data['lobby']['seed']
+        )
+    except ValueError:
+        raise RuntimeError("could not get map data")
 
     # Handle DE-specific data
     if data['de']:
@@ -150,7 +154,7 @@ def parse_match(handle):
                 pos_x = obj['position']['x']
                 pos_y = obj['position']['y']
         players[player['number']] = Player(
-            player['color_id'] + 1,
+            player['number'],
             player['name'].decode(encoding),
             consts['player_colors'][str(player['color_id'])],
             player['color_id'],
@@ -173,7 +177,16 @@ def parse_match(handle):
         )
 
     # Assign teams
-    team_ids = set([frozenset(s) for s in allies.values()])
+    if de_players:
+        by_team = collections.defaultdict(list)
+        for number, player in de_players.items():
+            if player['team_id'] > 1:
+                by_team[player['team_id']].append(number)
+            elif player['team_id'] == 1:
+                by_team[number].append(number)
+        team_ids = by_team.values()
+    else:
+        team_ids = set([frozenset(s) for s in allies.values()])
     teams = []
     for team in team_ids:
         t = [players[x] for x in team]
@@ -282,6 +295,8 @@ def parse_match(handle):
             players[data['metadata']['owner_id']],
             viewlocks
         ),
+        data['map']['restore_time'] > 0,
+        timedelta(milliseconds=data['map']['restore_time']),
         consts['speeds'][str(int(round(data['metadata']['speed'], 2) * 100))],
         int(round(data['metadata']['speed'], 2) * 100),
         data['metadata']['cheats'],
@@ -311,6 +326,8 @@ def parse_match(handle):
         data['save_version'],
         data['log_version'],
         data['de']['build'] if data['version'] is Version.DE else None,
+        datetime.fromtimestamp(data['de']['timestamp']) if data['de']['timestamp'] else None,
+        timedelta(seconds=data['de']['spec_delay']),
         get_hash(data),
         actions,
         inputs.inputs
@@ -341,9 +358,11 @@ def serialize(obj):
             return obj.name
         elif isinstance(obj, timedelta):
             return str(obj)
+        elif isinstance(obj, datetime):
+            return str(obj)
         elif isinstance(obj, bytes):
             return None
-        elif isinstance(obj, hashlib.HASH):
+        elif isinstance(obj, _hashlib.HASH):
             return obj.hexdigest()
         else:
             return obj

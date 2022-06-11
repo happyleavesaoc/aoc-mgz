@@ -47,24 +47,24 @@ class Inputs:
         elif action.type is ActionEnum.ORDER and action.payload['target_id'] in self._gaia:
             name = 'Gather'
             param = self._gaia[action.payload['target_id']]
-        elif action.type is ActionEnum.ORDER and action.position in self._buildings:
+        elif action.type is ActionEnum.ORDER and action.position.hash() in self._buildings:
             name = 'Target'
-            param = self._buildings[action.position]
+            param = self._buildings[action.position.hash()]
         elif action.type is ActionEnum.GATHER_POINT:
             if action.payload['target_id'] in self._gaia:
                 param = self._gaia[action.payload['target_id']]
-            elif action.position  in self._buildings:
+            elif action.position.hash() in self._buildings:
                 if len(action.payload['object_ids']) == 1 and action.payload['object_ids'][0] == action.payload['target_id']:
                     name = 'Spawn'
-                param = self._buildings[action.position]
+                param = self._buildings[action.position.hash()]
         elif action.type in (ActionEnum.BUY, ActionEnum.SELL):
             action.payload['amount'] *= 100
         elif action.type is ActionEnum.BUILD:
             param = action.payload['building']
-            if action.position in self._buildings:
-                if self._buildings[action.position] == 'Farm' and action.payload['building'] == 'Farm':
+            if action.position.hash() in self._buildings:
+                if self._buildings[action.position.hash()] == 'Farm' and action.payload['building'] == 'Farm':
                     name = 'Reseed'
-            self._buildings[action.position] = action.payload['building']
+            self._buildings[action.position.hash()] = action.payload['building']
         elif action.type in (ActionEnum.QUEUE, ActionEnum.DE_QUEUE):
             param = action.payload['unit']
         elif action.type is ActionEnum.RESEARCH:

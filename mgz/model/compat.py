@@ -121,7 +121,8 @@ class ModelSummary:
             ladder=None,
             rated=None,
             ratings=None,
-            lobby_name=self.match.lobby
+            lobby_name=self.match.lobby,
+            spec_delay=int(self.match.spec_delay.total_seconds())
         )
 
     def get_language(self):
@@ -137,7 +138,7 @@ class ModelSummary:
         return self.match.completed
 
     def get_restored(self):
-        return False, False
+        return self.match.restored, self.match.restored_at.total_seconds() * 1000
 
     def has_achievements(self):
         return False
@@ -150,6 +151,12 @@ class ModelSummary:
             self.match.log_version,
             self.match.build_version
         )
+
+    def get_played(self):
+        return self.match.timestamp.timestamp() if self.match.timestamp else None
+
+    def get_postgame(self):
+        return None
 
     def get_dataset(self):
         return dict(
