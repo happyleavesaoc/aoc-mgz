@@ -15,7 +15,6 @@ class SummaryStub:
             version, game, save, log = parse_version(header, data)
             data.seek(0)
             supported = (version is Version.DE and save > 13.34) # or version is Version.USERPATCH15
-            print(supported, fallback, supported and not fallback)
         except zlib.error:
             supported = False
         if supported and not fallback:
