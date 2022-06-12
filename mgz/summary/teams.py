@@ -12,7 +12,7 @@ def get_teams_data(header):
             if player.resolved_team_id > 1:
                 by_team[player.resolved_team_id].append(id + 1)
             elif player.resolved_team_id == 1:
-                by_team[id].append(id + 1)
+                by_team[id + 9].append(id + 1)
         return set([frozenset(s) for s in by_team.values()])
     allies = {}
     for number, player in enumerate(header.initial.players[1:]):

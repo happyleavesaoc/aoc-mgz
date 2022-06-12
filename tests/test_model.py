@@ -22,7 +22,7 @@ class TestModel(unittest.TestCase):
         players = self.match.players
         self.assertEqual(len(players), 2)
         self.assertEqual(players[0].name, '[Heresy]LaaaaaN')
-        self.assertEqual(players[0].number, 2)
+        self.assertEqual(players[0].number, 1)
         self.assertEqual(players[0].color, 'Red')
         self.assertEqual(players[0].civilization, 'Malians')
         self.assertFalse(players[0].winner)

@@ -183,7 +183,7 @@ def parse_match(handle):
             if player['team_id'] > 1:
                 by_team[player['team_id']].append(number)
             elif player['team_id'] == 1:
-                by_team[number].append(number)
+                by_team[number + 9].append(number)
         team_ids = by_team.values()
     else:
         team_ids = set([frozenset(s) for s in allies.values()])
@@ -327,8 +327,8 @@ def parse_match(handle):
         data['save_version'],
         data['log_version'],
         data['de']['build'] if data['version'] is Version.DE else None,
-        datetime.fromtimestamp(data['de']['timestamp']) if data['de']['timestamp'] else None,
-        timedelta(seconds=data['de']['spec_delay']),
+        datetime.fromtimestamp(data['de']['timestamp']) if data['version'] is Version.DE and data['de']['timestamp'] else None,
+        timedelta(seconds=data['de']['spec_delay']) if data['version'] is Version.DE else None,
         get_hash(data),
         actions,
         inputs.inputs
