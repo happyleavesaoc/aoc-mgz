@@ -459,6 +459,10 @@ def parse_players(header, num_players, version):
     header.seek(cur + anchor - num_players - 43)
     mod = parse_mod(header, num_players, version)
     players = [parse_player(header, number, num_players) for number in range(num_players)]
+    cur = header.tell()
+    points_version = header.read().find(b'\x00\x00\x00@')
+    header.seek(cur)
+    header.read(points_version)
     for _ in range(num_players):
         version = unpack('<f', header)
         entries = unpack('<i', header)
@@ -494,8 +498,8 @@ def parse(data):
         players, mod = parse_players(header, num_players, version)
         scenario = parse_scenario(header, num_players, version, save)
         lobby = parse_lobby(header, version, save)
-    except (struct.error, zlib.error, AssertionError, MemoryError, ValueError):
-        raise RuntimeError("could not parse")
+    except (struct.error, zlib.error, AssertionError, MemoryError, ValueError) as e:
+        raise RuntimeError(f"could not parse: {e}")
     return dict(
         version=version,
         game_version=game,

@@ -235,7 +235,7 @@ def parse_match(handle):
                 chat = parse_chat(op_data, encoding, timestamp, pd, diplomacy_type, 'game')
                 if chat['type'] == ChatEnum.MESSAGE:
                     chats.append(Chat(
-                        timedelta(milliseconds=chat['timestamp']),
+                        timedelta(milliseconds=chat['timestamp'] + data['map']['restore_time']),
                         chat['message'],
                         chat['origination'],
                         chat['audience'],
@@ -259,8 +259,9 @@ def parse_match(handle):
     # Compute winner(s)
     for team in teams:
         winner = not any([player for player in team if player in resigned])
-        for player in team:
-            player.winner = winner
+        if resigned:
+            for player in team:
+                player.winner = winner
 
     handle.seek(body_pos)
     file_bytes = handle.read()
@@ -318,7 +319,7 @@ def parse_match(handle):
         get_lock_speed(data),
         get_all_technologies(data),
         True if data['version'] is Version.DE else None,
-        timedelta(milliseconds=timestamp),
+        timedelta(milliseconds=timestamp + data['map']['restore_time']),
         diplomacy_type,
         bool(resigned),
         data['version'],
