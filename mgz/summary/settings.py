@@ -103,4 +103,5 @@ def get_settings_data(postgame, header):
         'lock_speed': _get_lock_speed(postgame, header.de),
         'lock_teams': header.lobby.lock_teams if hasattr(header.replay, 'lock_teams') else True,
         'multiqueue': True if header.de is not None else None,
+        'hidden_civs': header.de.hidden_civs if header.de is not None else None
     }

@@ -102,7 +102,8 @@ class ModelSummary:
             ending_age=(3, 'Imperial'),
             victory_condition=(1, 'Conquest'),
             treaty_length=None,
-            multiqueue=self.match.multiqueue
+            multiqueue=self.match.multiqueue,
+            hidden_civs=self.match.hidden_civs
         )
 
     def get_file_hash(self):
@@ -122,7 +123,9 @@ class ModelSummary:
             rated=None,
             ratings=None,
             lobby_name=self.match.lobby,
-            spec_delay=int(self.match.spec_delay.total_seconds())
+            spec_delay=int(self.match.spec_delay.total_seconds()),
+            allow_specs=self.match.allow_specs,
+            private=self.match.private
         )
 
     def get_language(self):

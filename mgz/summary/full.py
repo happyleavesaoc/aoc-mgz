@@ -284,7 +284,6 @@ class FullSummary: # pylint: disable=too-many-public-methods
             'lobby_name': lobby_name,
             'allow_specs': self._header.de.allow_specs if self._header.de else None,
             'spec_delay': self._header.de.spec_delay if self._header.de else None,
-            'hidden_civs': self._header.de.hidden_civs if self._header.de else None,
             'private': self._header.de.lobby_visibility == 2 if self._header.de else None,
         }
 

@@ -179,6 +179,9 @@ class Match:
     build_version: int
     timestamp: datetime
     spec_delay: timedelta
+    allow_specs: bool
+    hidden_civs: bool
+    private: bool
     hash: str
     actions: list
     inputs: list

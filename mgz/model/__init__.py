@@ -329,6 +329,9 @@ def parse_match(handle):
         data['de']['build'] if data['version'] is Version.DE else None,
         datetime.fromtimestamp(data['de']['timestamp']) if data['version'] is Version.DE and data['de']['timestamp'] else None,
         timedelta(seconds=data['de']['spec_delay']) if data['version'] is Version.DE else None,
+        data['de']['allow_specs'] if data['version'] is Version.DE else None,
+        data['de']['hidden_civs'] if data['version'] is Version.DE else None,
+        data['de']['visibility_id'] == 2 if data['version'] is Version.DE else None,
         get_hash(data),
         actions,
         inputs.inputs

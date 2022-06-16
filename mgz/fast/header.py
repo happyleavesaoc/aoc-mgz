@@ -325,7 +325,11 @@ def parse_de(data, version, save, skip=False):
                 civilization_id=civilization_id,
                 prefer_random=prefer_random == 1
             ))
-    data.read(24)
+    data.read(17)
+    allow_specs = unpack('b', data)
+    visibility = unpack('<I', data)
+    hidden_civs = unpack('b', data)
+    data.read(1)
     spec_delay = unpack('<I', data)
     data.read(5)
     for _ in range(23):
@@ -377,7 +381,10 @@ def parse_de(data, version, save, skip=False):
         lock_speed=bool(lock_speed),
         build=build,
         timestamp=timestamp,
-        spec_delay=spec_delay
+        spec_delay=spec_delay,
+        allow_specs=bool(allow_specs),
+        hidden_civs=bool(hidden_civs),
+        visibility_id=visibility
     )
 
 
