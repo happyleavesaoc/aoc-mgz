@@ -202,7 +202,7 @@ def parse_match(handle):
     chats = []
     for c in data['lobby']['chat']:
         chat = parse_chat(c, encoding, 0, pd, diplomacy_type, 'lobby')
-        if chat['player_number'] not in players:
+        if chat['type'] == ChatEnum.DISCARD or chat['player_number'] not in players:
             continue
         chats.append(Chat(
             timedelta(milliseconds=chat['timestamp']),
@@ -311,7 +311,7 @@ def parse_match(handle):
         data['lobby']['game_type_id'],
         consts['map_reveal_choices'][str(data['lobby']['reveal_map_id'])],
         data['lobby']['reveal_map_id'],
-        consts['difficulties'][str(get_difficulty(data))],
+        consts['difficulties'].get(str(get_difficulty(data))),
         get_difficulty(data),
         consts['starting_ages'].get(str(get_starting_age(data))),
         get_starting_age(data),
