@@ -278,6 +278,7 @@ def parse_match(handle):
             consts['map_sizes'][str(map_data['dimension'])],
             map_data['custom'],
             map_data['seed'],
+            data['de']['rms_mod_id'] if data['version'] is Version.DE else None,
             map_data['name'].startswith('ZR@'),
             map_data['modes'],
             [

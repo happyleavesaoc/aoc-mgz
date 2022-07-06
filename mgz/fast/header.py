@@ -332,8 +332,9 @@ def parse_de(data, version, save, skip=False):
     data.read(1)
     spec_delay = unpack('<I', data)
     data.read(5)
+    strings = []
     for _ in range(23):
-        de_string(data)
+        strings.append(de_string(data).decode('utf-8').split(':'))
         c = unpack('<I', data)
         while c in [3, 21, 23, 42, 44, 45, 46, 47]:
             c = unpack('<I', data)
@@ -368,6 +369,10 @@ def parse_de(data, version, save, skip=False):
     if not skip:
         de_string(data)
         data.read(8)
+    rms_mod_id = None
+    for s in strings:
+        if s[0] == 'SUBSCRIBEDMODS' and s[1] == 'RANDOM_MAPS':
+            rms_mod_id = s[3].split('_')[0]
     return dict(
         players=players,
         guid=str(uuid.UUID(bytes=guid)),
@@ -384,7 +389,8 @@ def parse_de(data, version, save, skip=False):
         spec_delay=spec_delay,
         allow_specs=bool(allow_specs),
         hidden_civs=bool(hidden_civs),
-        visibility_id=visibility
+        visibility_id=visibility,
+        rms_mod_id=rms_mod_id
     )
 
 

@@ -104,6 +104,7 @@ class Map:
     size: str
     custom: bool
     seed: int
+    mod_id: int
     zr: bool
     modes: dict
     tiles: list

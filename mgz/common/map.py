@@ -166,7 +166,15 @@ def get_water_percent(tiles, dataset_id):
     return count/len(tiles)
 
 
-def get_map_data(map_id, instructions, dimension, version, dataset_id, reference, tiles, de_seed=None):
+def get_mod_id(strings):
+    """Extract RMS mod id."""
+    for obj in strings:
+        s = obj.string.value.decode('utf-8').split(':')
+        if s[0] == 'SUBSCRIBEDMODS' and s[1] == 'RANDOM_MAPS':
+            return s[3].split('_')[0]
+
+
+def get_map_data(map_id, instructions, dimension, version, dataset_id, reference, tiles, de_seed=None, de_strings=[]):
     """Get the map metadata."""
     if instructions == b'\x00':
         raise ValueError('empty instructions')
@@ -182,6 +190,7 @@ def get_map_data(map_id, instructions, dimension, version, dataset_id, reference
         'size': mgz.const.MAP_SIZES.get(dimension),
         'dimension': dimension,
         'seed': de_seed if de_seed else seed,
+        'mod_id': get_mod_id(de_strings),
         'modes': modes,
         'custom': custom,
         'zr': name.startswith('ZR@'),

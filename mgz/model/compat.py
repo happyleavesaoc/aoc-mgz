@@ -254,6 +254,7 @@ class ModelSummary:
             dimension=self.match.map.dimension,
             custom=self.match.map.custom,
             seed=self.match.map.seed,
+            mod_id=self.match.map.mod_id,
             modes=self.match.map.modes,
             zr=self.match.map.zr,
             water=None,
