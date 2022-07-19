@@ -190,7 +190,7 @@ def get_map_data(map_id, instructions, dimension, version, dataset_id, reference
         'size': mgz.const.MAP_SIZES.get(dimension),
         'dimension': dimension,
         'seed': de_seed if de_seed else seed,
-        'mod_id': get_mod_id(de_strings),
+        'mod_id': get_mod_id(de_strings) if custom else None,
         'modes': modes,
         'custom': custom,
         'zr': name.startswith('ZR@'),
