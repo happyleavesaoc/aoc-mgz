@@ -49,7 +49,8 @@ ENCODING_MARKERS = [
     ['Vị trí: ', 'utf-8', 'vi'],
     ['위치: ', 'utf-8', 'kr'],
     ['Τύπος Χάρτη: ', 'utf-8', 'gr'],
-    ['Emplacement: ', 'utf-8', 'fr']
+    ['Emplacement: ', 'utf-8', 'fr'],
+    ['Mapa: ', 'utf-8', 'cs'],
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
