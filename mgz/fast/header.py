@@ -286,7 +286,9 @@ def parse_de(data, version, save, skip=False):
     data.read(dlc_count * 4)
     data.read(4)
     difficulty_id = unpack('<I', data)
-    data.read(20)
+    data.read(4)
+    rms_map_id = unpack('<I', data)
+    data.read(12)
     starting_age_id = unpack('<I', data)
     data.read(46)
     random_positions, all_technologies = unpack('<bb', data)
@@ -370,9 +372,11 @@ def parse_de(data, version, save, skip=False):
         de_string(data)
         data.read(8)
     rms_mod_id = None
+    rms_filename = None
     for s in strings:
         if s[0] == 'SUBSCRIBEDMODS' and s[1] == 'RANDOM_MAPS':
             rms_mod_id = s[3].split('_')[0]
+            rms_filename = s[2]
     return dict(
         players=players,
         guid=str(uuid.UUID(bytes=guid)),
@@ -390,7 +394,9 @@ def parse_de(data, version, save, skip=False):
         allow_specs=bool(allow_specs),
         hidden_civs=bool(hidden_civs),
         visibility_id=visibility,
-        rms_mod_id=rms_mod_id
+        rms_mod_id=rms_mod_id,
+        rms_map_id=rms_map_id,
+        rms_filename=rms_filename
     )
 
 
