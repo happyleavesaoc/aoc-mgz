@@ -269,7 +269,9 @@ class GotoObjectsEnd(Construct):
             marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
             marker_hd = read_bytes.find(b"\xae\x47\xa1\x3f")
-            if save_version >= 26.16:
+            if save_version >= 26.21:
+                marker_de = read_bytes.find(b"\xf6\x28\xbc\x3f")
+            elif save_version >= 26.16:
                 marker_de = read_bytes.find(b"\x48\xe1\xba\x3f")
             elif save_version >= 25.06:
                 marker_de = read_bytes.find(b"\x9a\x99\xb9\x3f")
