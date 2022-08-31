@@ -170,6 +170,7 @@ def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, r
         imperial_time = ach(achievements, ['technology', 'imperial_time_int'])
         name = player.attributes.player_name.decode(encoding)
         out.append({
+            'id': i,
             'name': name,
             'civilization': get_civilization(header, i),
             'human': header.scenario.game_settings.player_info[i + 1].type == 'human',
