@@ -78,6 +78,15 @@ def get_starting_age(data):
         return data['de']['starting_age_id']
     return None
 
+
+def get_map_id(data):
+    if data['version'] is Version.HD:
+        return data['hd']['map_id']
+    if data['version'] is Version.DE:
+        return data['de']['rms_map_id']
+    return data['scenario']['map_id']
+
+
 def get_hash(data):
     if data['version'] is Version.DE:
         return data['de']['hash']
@@ -96,7 +105,7 @@ def parse_match(handle):
     consts = get_consts()
 
     dataset_id, dataset = get_dataset(data['version'], data['mod'])
-    map_id = data['hd']['map_id'] if data['version'] is Version.HD else data['scenario']['map_id']
+    map_id = get_map_id(data)
     try:
             map_data, encoding, language = get_map_data(
             map_id,

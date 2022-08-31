@@ -33,12 +33,12 @@ scenario_header = "scenario_header"/Struct(
 
 # Scenarios have intro text, a bitmap, and cinematics.
 messages = "messages"/Struct(
-    "instruction_id"/Int32ul,
-    "hints_id"/Int32ul,
-    "victory_id"/Int32ul,
-    "defeat_id"/Int32ul,
-    "history_id"/Int32ul,
-    "scouts_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32ul),
+    "instruction_id"/Int32sl,
+    "hints_id"/Int32sl,
+    "victory_id"/Int32sl,
+    "defeat_id"/Int32sl,
+    "history_id"/Int32sl,
+    "scouts_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32sl),
     "instructions_length"/Int16ul,
     "instructions"/Bytes(lambda ctx: ctx.instructions_length),
     "hints"/PascalString(lengthfield="hints_length"/Int16ul),
@@ -129,11 +129,11 @@ game_settings = "game_settings"/Struct(
             If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(1)),
             If(lambda ctx: find_save_version(ctx) >= 20.16, Padding(4)),
             If(lambda ctx: find_save_version(ctx) >= 25.02, Padding(4*16)),
-            If(lambda ctx: find_save_version(ctx) >= 25.06, Padding(4))
+            If(lambda ctx: 26.21 > find_save_version(ctx) >= 25.06, Padding(4))
         )
     ),
     Array(9, "player_info"/Struct(
-        "data_ref"/Int32ul,
+        "slot"/Int32sl,
         PlayerTypeEnum("type"/Int32ul),
         "name"/PascalString(lengthfield="name_length"/Int32ul)
     )),
@@ -145,7 +145,8 @@ game_settings = "game_settings"/Struct(
             If(lambda ctx: 25.06 > find_save_version(ctx) >= 13.34, Find(struct.pack('<d', 2.4), None)),
             If(lambda ctx: 25.22 > find_save_version(ctx) >= 25.06, Find(struct.pack('<d', 2.5), None)),
             If(lambda ctx: 26.16 > find_save_version(ctx) >= 25.22, Find(struct.pack('<d', 2.6), None)),
-            If(lambda ctx: find_save_version(ctx) >= 26.16, Find(struct.pack('<d', 3.0), None))
+            If(lambda ctx: 26.21 > find_save_version(ctx) >= 26.16, Find(struct.pack('<d', 3.0), None)),
+            If(lambda ctx: find_save_version(ctx) >= 26.21, Find(struct.pack('<d', 3.2), None))
         ),
         "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
     )
