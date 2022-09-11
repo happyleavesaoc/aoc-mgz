@@ -50,6 +50,7 @@ ENCODING_MARKERS = [
     ['위치: ', 'utf-8', 'kr'],
     ['Τύπος Χάρτη: ', 'utf-8', 'gr'],
     ['Emplacement: ', 'utf-8', 'fr'],
+    ['Local: ', 'utf-8', 'pt'],
     ['Mapa: ', 'utf-8', 'cs'],
 ]
 LANGUAGE_MARKERS = [
@@ -78,8 +79,9 @@ def extract_from_instructions(instructions):
         test_encoding = pair[1]
         e_m = marker.encode(test_encoding)
         for line in instructions.split(b'\n'):
-            pos = line.find(e_m)
-            if pos > -1:
+            has = line.startswith(e_m)
+            if has:
+                pos = 0
                 encoding = test_encoding
                 name = line[pos+len(e_m):].decode(encoding).replace('.rms', '')
                 language = pair[2]
