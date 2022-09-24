@@ -104,7 +104,9 @@ def lookup_name(map_id, name, version, reference):
     custom = True
     is_de = version == Version.DE
     is_hd = version == Version.HD
-    if (map_id != 44 and not (is_de or is_hd)) or (map_id != 59 and (is_de or is_hd)):
+    # 59: RM custom
+    # 138: DM custom
+    if (map_id != 44 and not (is_de or is_hd)) or (map_id not in [59, 138] and (is_de or is_hd)):
         map_keys = [int(k) for k in reference['maps'].keys()]
         if map_id in map_keys:
             name = reference['maps'][str(map_id)]
