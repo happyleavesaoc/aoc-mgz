@@ -75,7 +75,7 @@ async def extract_rec(playback, path, select=None):
 def print_info(path):
     """Print basic info."""
     with open(path, 'rb') as handle:
-        summary = Summary(handle, fallback=True)
+        summary = Summary(handle)
         dataset = summary.get_dataset()
         print('-------------')
         print(tabulate([

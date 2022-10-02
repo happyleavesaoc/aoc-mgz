@@ -44,9 +44,9 @@ player = Struct(
 )
 
 string_block = Struct(
-    "strings"/RepeatUntil(lambda x, lst, ctx: lst[-1].crc == 47, Struct(
+    "strings"/RepeatUntil(lambda x, lst, ctx: 255 > lst[-1].crc > 0, Struct(
         "crc"/Int32ul,
-        "string"/If(lambda ctx: ctx.crc != 47, de_string)
+        "string"/If(lambda ctx: ctx.crc == 0 or ctx.crc > 255, de_string)
     ))
 )
 
@@ -112,7 +112,7 @@ de = "de"/Struct(
     "lobby_visibility"/Int32ul,
     "hidden_civs"/Flag,
     "matchmaking"/Flag,
-    "spec_delay"/Int32ul,
+    "spec_delay"/If(lambda ctx: find_save_version(ctx) >= 13.13, Int32ul),
     "scenario_civ"/If(lambda ctx: find_save_version(ctx) >= 13.13, Byte),
     "rms_strings"/string_block,
     Bytes(8),

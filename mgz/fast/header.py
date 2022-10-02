@@ -278,7 +278,7 @@ def string_block(data):
     strings = []
     while True:
         crc = unpack("<I", data)
-        if crc == 47:
+        if 255 > crc > 0:
             break
         strings.append(de_string(data).decode('utf-8').split(':'))
     return strings
