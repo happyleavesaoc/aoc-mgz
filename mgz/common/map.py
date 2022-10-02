@@ -105,8 +105,9 @@ def lookup_name(map_id, name, version, reference):
     is_de = version == Version.DE
     is_hd = version == Version.HD
     # 59: RM custom
+    # 137: custom map pool
     # 138: DM custom
-    if (map_id != 44 and not (is_de or is_hd)) or (map_id not in [59, 138] and (is_de or is_hd)):
+    if (map_id != 44 and not (is_de or is_hd)) or (map_id not in [59, 137, 138] and (is_de or is_hd)):
         map_keys = [int(k) for k in reference['maps'].keys()]
         if map_id in map_keys:
             name = reference['maps'][str(map_id)]
@@ -174,6 +175,8 @@ def get_water_percent(tiles, dataset_id):
 def get_mod_id(strings):
     """Extract RMS mod id."""
     for obj in strings:
+        if not obj.string:
+            continue
         s = obj.string.value.decode('utf-8').split(':')
         if s[0] == 'SUBSCRIBEDMODS' and s[1] == 'RANDOM_MAPS':
             return s[3].split('_')[0]

@@ -316,7 +316,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
         if self._header.hd:
             return self._header.hd.selected_map_id
         if self._header.de:
-            return self._header.de.selected_map_id
+            return self._header.de.resolved_map_id
         return self._header.scenario.game_settings.map_id
 
     def get_map(self):
