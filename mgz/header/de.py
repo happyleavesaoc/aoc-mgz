@@ -43,6 +43,13 @@ player = Struct(
     If(lambda ctx: find_save_version(ctx) >= 25.06, "handicap"/Bytes(8)),
 )
 
+string_block = Struct(
+    "strings"/RepeatUntil(lambda x, lst, ctx: lst[-1].crc == 47, Struct(
+        "crc"/Int32ul,
+        "string"/If(lambda ctx: ctx.crc != 47, de_string)
+    ))
+)
+
 de = "de"/Struct(
     "build"/If(lambda ctx: find_save_version(ctx) >= 25.22, Int32ul),
     "timestamp"/If(lambda ctx: find_save_version(ctx) >= 26.16, Int32ul),
@@ -107,15 +114,10 @@ de = "de"/Struct(
     "matchmaking"/Flag,
     "spec_delay"/Int32ul,
     "scenario_civ"/If(lambda ctx: find_save_version(ctx) >= 13.13, Byte),
-    "rms_crc"/If(lambda ctx: find_save_version(ctx) >= 13.13, Bytes(4)),
-    "strings"/Array(23,
-        Struct(
-            "string"/de_string,
-            "nums"/RepeatUntil(lambda x, lst, ctx: lst[-1] not in [3, 21, 23, 42, 44, 45, 46, 47], Int32ul)
-        )
-    ),
-    # There's probably a right way to do this, but this is not it.
-    "num_sn"/Computed(lambda ctx: ctx.strings[22].nums[1]),
+    "rms_strings"/string_block,
+    Bytes(8),
+    "other_strings"/Array(20, string_block),
+    "num_sn"/Int32ul,
     "strategic_numbers"/Array(lambda ctx: ctx.num_sn if find_save_version(ctx) >= 25.22 else 59, Int32sl),
     "num_ai_files"/Int64ul,
     "ai_files"/Array(lambda ctx: ctx.num_ai_files, Struct(

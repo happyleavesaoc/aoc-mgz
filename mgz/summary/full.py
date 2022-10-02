@@ -332,7 +332,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
                 self.reference,
                 tiles,
                 de_seed=self._header.lobby.de.map_seed if self._header.lobby.de else None,
-                de_strings=self._header.de.strings if self._header.de else []
+                de_strings=self._header.de.rms_strings.strings if self._header.de else []
             )
         return self._cache['map']
 

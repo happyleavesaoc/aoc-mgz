@@ -273,6 +273,17 @@ def parse_scenario(data, num_players, version, save):
     )
 
 
+def string_block(data):
+    """Parse DE header string block."""
+    strings = []
+    while True:
+        crc = unpack("<I", data)
+        if crc == 47:
+            break
+        strings.append(de_string(data).decode('utf-8').split(':'))
+    return strings
+
+
 def parse_de(data, version, save, skip=False):
     """Parse DE-specific header."""
     if version is not Version.DE:
@@ -335,13 +346,12 @@ def parse_de(data, version, save, skip=False):
     hidden_civs = unpack('b', data)
     data.read(1)
     spec_delay = unpack('<I', data)
-    data.read(5)
-    strings = []
-    for _ in range(23):
-        strings.append(de_string(data).decode('utf-8').split(':'))
-        c = unpack('<I', data)
-        while c in [3, 21, 23, 42, 44, 45, 46, 47]:
-            c = unpack('<I', data)
+    data.read(1)
+    strings = string_block(data)
+    data.read(8)
+    for _ in range(20):
+        strings += string_block(data)
+    data.read(4)
     if save < 25.22:
         data.read(236)
     if save >= 25.22:
