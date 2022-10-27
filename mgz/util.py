@@ -332,3 +332,15 @@ def find_postgame(data, size):
             LOGGER.debug("found postgame candidate @ %d with length %d", pos, length)
             return i + LOOKAHEAD, length
     return None, None
+
+
+def unpack(fmt, data, shorten=True):
+    """Unpack bytes according to format string."""
+    output = struct.unpack(fmt, data.read(struct.calcsize(fmt)))
+    if len(output) == 1 and shorten:
+        return output[0]
+    return output
+
+
+def as_hex(d):
+    return " ".join(["{:02x}".format(x) for x in d])

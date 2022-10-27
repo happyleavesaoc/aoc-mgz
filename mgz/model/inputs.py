@@ -38,6 +38,8 @@ class Inputs:
             name = action.payload['order']
         elif action.type is ActionEnum.GAME:
             name = action.payload['command']
+            if name == 'Speed':
+                param = action.payload['speed']
         elif action.type is ActionEnum.STANCE:
             name = 'Stance'
             param = action.payload['stance']

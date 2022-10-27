@@ -6,7 +6,7 @@ import struct
 import uuid
 import zlib
 
-from mgz.util import get_version, Version
+from mgz.util import get_version, unpack, Version
 
 ZLIB_WBITS = -15
 CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50']
@@ -26,14 +26,6 @@ def _compile_object_search():
 
 
 _compile_object_search()
-
-
-def unpack(fmt, data):
-    """Unpack bytes according to format string."""
-    output = struct.unpack(fmt, data.read(struct.calcsize(fmt)))
-    if len(output) == 1:
-        return output[0]
-    return output
 
 
 def aoc_string(data):

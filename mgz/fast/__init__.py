@@ -1,91 +1,13 @@
 """Fast(er) parsing for situations requiring speed."""
 import io
 import struct
-from enum import Enum
 
-from mgz.util import check_flags
+from mgz.fast.enums import Operation, Action, Postgame
+from mgz.fast.actions import parse_action_71094
+from mgz.util import check_flags, unpack
+
 
 CHECKSUM_INTERVAL = 500
-
-
-class Operation(Enum):
-    """Operation types."""
-    ACTION = 1
-    SYNC = 2
-    VIEWLOCK = 3
-    CHAT = 4
-    START = 5
-    POSTGAME = 6
-    SAVE = 7
-
-
-class Action(Enum):
-    """Action types."""
-    ORDER = 0
-    STOP = 1
-    WORK = 2
-    MOVE = 3
-    CREATE = 4
-    ADD_ATTRIBUTE = 5
-    GIVE_ATTRIBUTE = 6
-    AI_ORDER = 10
-    RESIGN = 11
-    SPECTATE = 15
-    ADD_WAYPOINT = 16
-    STANCE = 18
-    GUARD = 19
-    FOLLOW = 20
-    PATROL = 21
-    FORMATION = 23
-    SAVE = 27
-    GROUP_MULTI_WAYPOINTS = 31
-    CHAPTER = 32
-    DE_ATTACK_MOVE = 33
-    HD_UNKNOWN_34 = 34
-    DE_UNKNOWN_35 = 35
-    DE_UNKNOWN_37 = 37
-    DE_AUTOSCOUT = 38
-    DE_UNKNOWN_39 = 39
-    DE_UNKNOWN_40 = 40
-    DE_UNKNOWN_41 = 41
-    DE_UNKNOWN_43 = 43
-    AI_COMMAND = 53
-    DE_UNKNOWN_80 = 80
-    MAKE = 100
-    RESEARCH = 101
-    BUILD = 102
-    GAME = 103
-    WALL = 105
-    DELETE = 106
-    ATTACK_GROUND = 107
-    TRIBUTE = 108
-    DE_UNKNOWN_109 = 109
-    REPAIR = 110
-    UNGARRISON = 111
-    MULTIQUEUE = 112
-    GATE = 114
-    FLARE = 115
-    SPECIAL = 117
-    QUEUE = 119
-    GATHER_POINT = 120
-    SELL = 122
-    BUY = 123
-    DROP_RELIC = 126
-    TOWN_BELL = 127
-    BACK_TO_WORK = 128
-    DE_QUEUE = 129
-    DE_UNKNOWN_130 = 130
-    DE_UNKNOWN_131 = 131
-    DE_UNKNOWN_135 = 135
-    DE_UNKNOWN_138 = 138
-    DE_TRIBUTE = 196
-    POSTGAME = 255
-
-
-class Postgame(Enum):
-    """Postgame types."""
-    WORLD_TIME = 1
-    LEADERBOARDS = 2
 
 
 def sync(data):
@@ -112,6 +34,9 @@ def viewlock(data):
 
 def parse_action(action_type, data):
     """Parse player, objects, and coordinates from actions."""
+    player_id, length = struct.unpack_from('<bh', data)
+    if len(data) == length + 3:
+        return parse_action_71094(action_type, player_id, data[3:])
     if action_type == Action.RESIGN:
         return dict(player_id=data[0])
     if action_type == Action.TRIBUTE:
@@ -280,17 +205,22 @@ def parse_action(action_type, data):
     return dict()
 
 
-def action(data):
+def action(data, sequence=None):
     """Handle actions."""
     length, = struct.unpack('<I', data.read(4))
     action_id = int.from_bytes(data.read(1), 'little')
     action_bytes = data.read(length - 1)
-    data.read(4)
+    if sequence is None:
+       sequence, = struct.unpack('<I', data.read(4))
     action_type = Action(action_id)
     if action_type == Action.POSTGAME:
         payload = dict(bytes=action_bytes + data.read())
     else:
-        payload = parse_action(action_type, action_bytes)
+        try:
+            payload = parse_action(action_type, action_bytes)
+        except struct.error:
+            return Action.ERROR, {}
+    payload["sequence"] = sequence
     return action_type, payload
 
 
