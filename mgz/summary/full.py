@@ -1,6 +1,7 @@
 """MGZ Summary."""
 
 import asyncio
+import collections
 import hashlib
 import logging
 import os
@@ -67,6 +68,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
             'duration': None,
             'extraction': None
         }
+        self._eapm = collections.Counter()
 
         try:
             start = time.time()
@@ -108,6 +110,8 @@ class FullSummary: # pylint: disable=too-many-public-methods
                     if payload[1] and len(checksums) < CHECKSUMS:
                         checksums.append(payload[1].to_bytes(8, 'big', signed=True))
                 elif operation == fast.Operation.ACTION:
+                    if 'player_id' in payload[1]:
+                        self._eapm[payload[1]['player_id']] += 1
                     self._actions.append((duration, *payload))
                     if payload[0] == fast.Action.POSTGAME:
                         self._cache['postgame'] = mgz.body.actions.postgame.parse(payload[1]['bytes'])
@@ -242,6 +246,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
             self.get_profile_ids(),
             self.get_ratings(),
             self.get_encoding(),
+            {id_:int(round(v/((self.get_duration()/1000)/60))) for id_, v in self._eapm.items() if self.get_duration() and v}
         )
         if self._cache['extraction']:
             enrich_de_player_data(data, self._cache['extraction'])

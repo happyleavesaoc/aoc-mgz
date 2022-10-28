@@ -156,7 +156,7 @@ def get_prefer_random(header, index):
     return None
 
 
-def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, ratings, encoding): # pylint: disable=too-many-arguments, too-many-locals
+def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, ratings, encoding, eapm): # pylint: disable=too-many-arguments, too-many-locals
     """Get basic player info."""
     out = []
     for i, player in enumerate(header.initial.players[1:]):
@@ -185,6 +185,7 @@ def get_players_data(header, postgame, teams, resigned, cheaters, profile_ids, r
             'user_id': profile_ids.get(i + 1),
             'cheater': (i + 1) in cheaters,
             'prefer_random': get_prefer_random(header, i),
+            'eapm': eapm.get(i + 1),
             'achievements': {
                 'military': {
                     'score': ach(achievements, ['military', 'score']),

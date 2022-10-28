@@ -199,6 +199,7 @@ class ModelSummary:
                 cheater=None,
                 achievements=empty_achievements(),
                 prefer_random=p.prefer_random,
+                eapm=p.eapm
             ) for p in self.match.players
         ]
 

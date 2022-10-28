@@ -229,6 +229,7 @@ def parse_match(handle):
     resigned = []
     actions = []
     viewlocks = []
+    eapm = collections.Counter()
     last_viewlock = None
     while True:
         try:
@@ -258,6 +259,7 @@ def parse_match(handle):
                 if action_type is fast.Action.RESIGN:
                     resigned.append(players[action_data['player_id']])
                 if 'player_id' in action_data and action_data['player_id'] in players:
+                    eapm[action_data['player_id']] += 1
                     action.player = players[action_data['player_id']]
                     del action.payload['player_id']
                 enrich_action(action, action_data, dataset, consts)
@@ -272,6 +274,10 @@ def parse_match(handle):
         if resigned:
             for player in team:
                 player.winner = winner
+
+    # Compute eAPM
+    for player_id, action_count in eapm.items():
+        players[player_id].eapm = int(round(eapm[player_id] / ((timestamp/1000)/60)))
 
     handle.seek(body_pos)
     file_bytes = handle.read()
@@ -359,7 +365,7 @@ def serialize(obj):
 
     def impl(obj):
         """Recursive serialization implementation."""
-        if dataclasses.is_dataclass(obj) and isinstance(obj, collections.Hashable):
+        if dataclasses.is_dataclass(obj) and isinstance(obj, collections.abc.Hashable):
             if obj in seen:
                 return hash(obj)
             seen.add(obj)

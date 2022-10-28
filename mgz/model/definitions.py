@@ -45,6 +45,7 @@ class Player:
     prefer_random: bool = None
     team: list = None
     winner: bool = False
+    eapm: int = None
 
     def __repr__(self):
         return self.name
