@@ -55,9 +55,9 @@ def parse_action_71094(action_type, player_id, raw):
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
         payload = dict(stance_id=stance_id, object_ids=object_ids)
     if action_type is Action.SPECIAL:
-        selected, target_id, x, y, order_id = unpack('<Iiff8xH', data)
+        selected, target_id, x, y, slot_id, order_id = unpack('<Iiff4xh2xh2x', data)
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
-        payload = dict(order_id=order_id, target_id=target_id, x=x, y=y, object_ids=object_ids)
+        payload = dict(order_id=order_id, slot_id=slot_id, target_id=target_id, x=x, y=y, object_ids=object_ids)
     if action_type is Action.FORMATION:
         selected, formation_id = unpack('<II', data)
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
@@ -120,7 +120,7 @@ def parse_action_71094(action_type, player_id, raw):
         data.read(16)
         unk1, unk2, unk3, target_id = unpack('<Ihhb', data)
         payload = dict(target_player_id=target_id, food=food, wood=wood, stone=stone, gold=gold)
-    if action_type is Action.GATE:
+    if action_type in [Action.GATE, Action.DROP_RELIC]:
         object_id = unpack('<I', data)
         payload = dict(object_ids=[object_id])
     if action_type in [Action.DE_AUTOSCOUT, Action.RATHA_ABILITY]:

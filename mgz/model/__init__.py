@@ -26,10 +26,11 @@ TC_IDS = [71, 109, 141, 142]
 
 def enrich_action(action, action_data, dataset, consts):
     """Enrich action data with lookups."""
-    if 'x' in action_data and 'y' in action_data:
-        action.position = Position(action_data['x'], action_data['y'])
-        del action.payload['x']
-        del action.payload['y']
+    if 'x' in action_data and 'y' in action_data and action_data['x'] >=0 and action_data['y'] >= 0:
+        if action.type != fast.Action.SPECIAL or action_data['target_id'] > 0:
+            action.position = Position(action_data['x'], action_data['y'])
+            del action.payload['x']
+            del action.payload['y']
     if 'technology_id' in action_data:
         action.payload['technology'] = dataset['technologies'].get(str(action_data['technology_id']))
     if 'formation_id' in action_data:
