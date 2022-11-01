@@ -187,6 +187,9 @@ def _parse_help(data, line):
 
 def _parse_chat(data, line, players, diplomacy_type):
     """Parse in-game chat message."""
+    if not line or len(line) < 5:
+        data['type'] = Chat.DISCARD
+        return
     player_start = line.find('#') + 2
     if line[4] == ' ':
         player_start = line.find(' ') + 1

@@ -55,7 +55,7 @@ class Inputs:
         elif action.type is ActionEnum.GATHER_POINT:
             if action.payload['target_id'] in self._gaia:
                 param = self._gaia[action.payload['target_id']]
-            elif action.position.hash() in self._buildings:
+            elif action.position and action.position.hash() in self._buildings:
                 if len(action.payload['object_ids']) == 1 and action.payload['object_ids'][0] == action.payload['target_id']:
                     name = 'Spawn'
                 param = self._buildings[action.position.hash()]
