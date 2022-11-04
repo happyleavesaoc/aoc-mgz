@@ -52,6 +52,7 @@ ENCODING_MARKERS = [
     ['Emplacement: ', 'utf-8', 'fr'],
     ['Local: ', 'utf-8', 'pt'],
     ['Mapa: ', 'utf-8', 'cs'],
+    ['Plats: ', 'utf-8', 'se']
 ]
 LANGUAGE_MARKERS = [
     ['Dostepne', 'ISO-8859-2', 'pl'],
