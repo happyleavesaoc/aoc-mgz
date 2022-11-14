@@ -34,6 +34,7 @@ from mgz.summary.objects import get_objects_data
 LOGGER = logging.getLogger(__name__)
 CHECKSUMS = 4
 MAX_SYNCS = 2000
+AI_ACTIONS = [fast.Action.AI_ORDER]
 
 
 class FullSummary: # pylint: disable=too-many-public-methods
@@ -110,7 +111,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
                     if payload[1] and len(checksums) < CHECKSUMS:
                         checksums.append(payload[1].to_bytes(8, 'big', signed=True))
                 elif operation == fast.Operation.ACTION:
-                    if 'player_id' in payload[1]:
+                    if 'player_id' in payload[1] and payload[0] not in AI_ACTIONS:
                         self._eapm[payload[1]['player_id']] += 1
                     self._actions.append((duration, *payload))
                     if payload[0] == fast.Action.POSTGAME:

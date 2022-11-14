@@ -22,6 +22,7 @@ from mgz.util import Version
 
 
 TC_IDS = [71, 109, 141, 142]
+AI_ACTIONS = [ActionEnum.AI_ORDER]
 
 
 def enrich_action(action, action_data, dataset, consts):
@@ -256,10 +257,11 @@ def parse_match(handle):
             elif op_type is fast.Operation.ACTION:
                 action_type, action_data = op_data
                 action = Action(timedelta(milliseconds=timestamp), action_type, action_data)
-                if action_type is fast.Action.RESIGN:
+                if action_type is fast.Action.RESIGN and action_data['player_id'] in players:
                     resigned.append(players[action_data['player_id']])
                 if 'player_id' in action_data and action_data['player_id'] in players:
-                    eapm[action_data['player_id']] += 1
+                    if action_type not in AI_ACTIONS:
+                        eapm[action_data['player_id']] += 1
                     action.player = players[action_data['player_id']]
                     del action.payload['player_id']
                 enrich_action(action, action_data, dataset, consts)
