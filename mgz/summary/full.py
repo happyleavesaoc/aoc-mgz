@@ -118,7 +118,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
                         self._cache['postgame'] = mgz.body.actions.postgame.parse(payload[1]['bytes'])
                     elif payload[0] == fast.Action.RESIGN:
                         self._cache['resigned'].add(payload[1]['player_id'])
-                    elif payload[0] == fast.Action.TRIBUTE and payload[1]['player_id_to'] == 0:
+                    elif payload[0] == fast.Action.TRIBUTE and 'player_id_to' in payload[1] and payload[1]['player_id_to'] == 0:
                         self._cache['cheaters'].add(payload[1]['player_id'])
                     elif payload[0] == fast.Action.TRIBUTE and payload[1]['player_id'] == 0:
                         self._cache['cheaters'].add(payload[1]['player_id_to'])
