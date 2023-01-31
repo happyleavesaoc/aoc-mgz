@@ -11,7 +11,6 @@ from collections import defaultdict
 
 from construct.core import ConstructError
 from tabulate import tabulate
-import tqdm
 
 import mgz
 import mgz.const
@@ -23,8 +22,6 @@ from mgz.util import find_postgame, LOOKAHEAD
 
 
 LOGGER = logging.getLogger(__name__)
-CMD_PLAY = 'play'
-CMD_EXTRACT = 'extract'
 CMD_INFO = 'info'
 CMD_CHAT = 'chat'
 CMD_VALIDATE = 'validate'
@@ -32,44 +29,6 @@ CMD_DUMP = 'dump'
 CMD_MERGE = 'merge'
 CMD_HISTOGRAM = 'histogram'
 CMD_PAD = 'pad'
-
-
-class TqdmStream: # pylint: disable=too-few-public-methods
-    """Log handler for TQDM."""
-
-    @classmethod
-    def write(cls, msg):
-        """Handle progress bars and logs."""
-        tqdm.tqdm.write(msg, end='')
-
-
-async def play_rec(playback, path):
-    """Play a recorded game."""
-    if not playback:
-        raise RuntimeError('playback not supported')
-    from mgz.playback import Client, progress_bar
-    with open(path, 'rb') as handle:
-        summary = Summary(handle)
-        client = await Client.create(
-            playback, path, summary.get_start_time(), summary.get_duration()
-        )
-        async for _, _, _ in progress_bar(client.sync(), client.duration):
-            pass
-
-
-async def extract_rec(playback, path, select=None):
-    """Extract data from a recorded game."""
-    with open(path, 'rb') as handle:
-        summary = Summary(handle, playback=playback)
-        data = await summary.async_extract(30000)
-        print('version: {}, runtime: {}'.format(data['version'], data['runtime']))
-        for key, records in data.items():
-            if select and key != select:
-                continue
-            print(key)
-            print('-------------')
-            for record in records:
-                print(record)
 
 
 def print_info(path):
@@ -215,13 +174,7 @@ def print_histogram(path):
 
 async def run(args): # pylint: disable=too-many-branches
     """Entry point."""
-    if args.cmd == CMD_PLAY:
-        for rec in args.rec_path:
-            await play_rec(args.playback.split(',')[0], rec)
-    elif args.cmd == CMD_EXTRACT:
-        for rec in args.rec_path:
-            await extract_rec(args.playback.split(',')[0], rec, args.select)
-    elif args.cmd == CMD_INFO:
+    if args.cmd == CMD_INFO:
         for rec in args.rec_path:
             print_info(rec)
     elif args.cmd == CMD_CHAT:
@@ -247,19 +200,12 @@ async def run(args): # pylint: disable=too-many-branches
 def get_args():
     """Get arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--playback',
-                        default=os.environ.get('AOC_PLAYBACK', ''))
     subparsers = parser.add_subparsers(dest='cmd')
     subparsers.required = True
     info = subparsers.add_parser(CMD_INFO)
     info.add_argument('rec_path', nargs='+')
     chat = subparsers.add_parser(CMD_CHAT)
     chat.add_argument('rec_path', nargs='+')
-    play = subparsers.add_parser(CMD_PLAY)
-    play.add_argument('rec_path', nargs='+')
-    extract = subparsers.add_parser(CMD_EXTRACT)
-    extract.add_argument('-s', '--select')
-    extract.add_argument('rec_path', nargs='+')
     validate = subparsers.add_parser(CMD_VALIDATE)
     validate.add_argument('rec_path', nargs='+')
     dump = subparsers.add_parser(CMD_DUMP)

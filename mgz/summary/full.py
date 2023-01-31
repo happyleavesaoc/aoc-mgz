@@ -43,12 +43,11 @@ class FullSummary: # pylint: disable=too-many-public-methods
     Access match summary data.
     """
 
-    def __init__(self, handle, playback=None):
+    def __init__(self, handle):
         """Initialize."""
         self.size = len(handle.read())
         handle.seek(0)
         self._handle = handle
-        self._playback = playback
         self._cache = {
             'dataset': None,
             'teams': None,
@@ -86,9 +85,6 @@ class FullSummary: # pylint: disable=too-many-public-methods
             self.body_pos = body_pos
         except (construct.core.ConstructError, zlib.error, ValueError) as e:
             raise RuntimeError("invalid mgz file: {}".format(e))
-
-        if isinstance(self._playback, io.TextIOWrapper):
-            self.extract()
 
     def _process_body(self): # pylint: disable=too-many-locals, too-many-statements, too-many-branches
         """Process rec body."""
@@ -373,46 +369,3 @@ class FullSummary: # pylint: disable=too-many-public-methods
     def get_played(self):
         if self._header.de:
             return self._header.de.timestamp
-
-    def can_playback(self):
-        """Indicate whether playback is possible."""
-        return self._playback
-
-    async def async_extract(self, interval=1000):
-        """Full extraction."""
-        if not self.can_playback():
-            raise RuntimeError('extraction not supported')
-
-        from mgz.summary.extract import get_extracted_data
-
-        temp = tempfile.NamedTemporaryFile()
-        self._handle.seek(0)
-        temp.write(self._handle.read())
-
-        return await get_extracted_data(
-            self.get_start_time(),
-            self.get_duration(),
-            self._playback,
-            temp, interval,
-            self.get_objects()['objects'],
-            self.get_players(),
-            self.get_teams()
-        )
-
-    def extract(self, interval=1000):
-        """Async wrapper around full extraction."""
-        if not self._cache['extraction']:
-            if isinstance(self._playback, io.TextIOWrapper):
-                from mgz.summary.extract import external_extracted_data
-
-                self._cache['extraction'] = external_extracted_data(
-                    json.loads(self._playback.read()),
-                    self.get_objects()['objects'],
-                    self.get_players(),
-                    self.get_teams(),
-                    self._actions
-                )
-            else:
-                loop = asyncio.get_event_loop()
-                self._cache['extraction'] = loop.run_until_complete(self.async_extract(interval))
-        return self._cache['extraction']

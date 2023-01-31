@@ -55,7 +55,7 @@ def empty_achievements():
 class ModelSummary:
     """Compatibility layer between Model and Summary classes."""
 
-    def __init__(self, handle, playback=None):
+    def __init__(self, handle):
         self.match = parse_match(handle)
         self.size = self.match.file.size
 
@@ -268,6 +268,3 @@ class ModelSummary:
                 ) for t in self.match.map.tiles
             ]
         )
-
-    def can_playback(self):
-        return False
