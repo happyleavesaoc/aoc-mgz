@@ -77,8 +77,10 @@ static = "static"/Struct(
     "current_damage"/Byte,
     "damaged_lately_timer"/Byte,
     "under_attack"/Byte,
-    "pathing_group_len"/Int32ul,
-    "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul),
+    If(lambda ctx: find_save_version(ctx) < 37, Struct(
+        "pathing_group_len"/Int32ul,
+        "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul)
+    )),
     "group_id"/Int32sl,
     "roo_already_called"/Byte,
     "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
@@ -165,10 +167,12 @@ base_moving = "base_moving"/Struct(
     "de_move_byte"/If(lambda ctx: find_save_version(ctx) >= 20.16, Byte),
     "angle"/Float32l,
     "turn_towards_time"/Int32ul,
-    "turn_timer"/Int32ul,
-    "continue_counter"/Int32ul,
-    "current_terrain_exception_1"/Int32sl,
-    "current_terrain_exception_2"/Int32sl,
+    If(lambda ctx: find_save_version(ctx) < 37, Struct(
+        "turn_timer"/Int32ul,
+        "continue_counter"/Int32ul,
+        "current_terrain_exception_1"/Int32sl,
+        "current_terrain_exception_2"/Int32sl,
+    )),
     "waiting_to_move"/Byte,
     "wait_delays_count"/Byte,
     "on_ground"/Byte,
@@ -194,7 +198,8 @@ moving = "moving"/Struct(
     Embedded(base_moving),
     "hd_moving"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(1)),
     "de_moving"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
-    If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(8))
+    "ver2616"/If(lambda ctx: 37 > find_save_version(ctx) >= 26.16, Bytes(8)),
+    "ver37"/If(lambda ctx: find_save_version(ctx) >= 37, Bytes(5)),
 )
 
 move_to = "move_to"/Struct(
@@ -388,7 +393,8 @@ unit_ai = "ai"/Struct(
 
 combat = "combat"/Struct(
     Embedded(base_combat),
-    "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(18)),
+    "de_pre"/If(lambda ctx: find_version(ctx) == Version.DE and find_save_version(ctx) < 37, Bytes(4)),
+    "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(14)),
     "de_2"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(16)),
     "de_3"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(1)),
     "next_volley"/Byte,

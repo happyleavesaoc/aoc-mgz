@@ -225,7 +225,7 @@ def get_args():
 
 def main():
     """Entry point."""
-    logging.basicConfig(level='INFO', stream=TqdmStream)
+    logging.basicConfig(level='INFO')
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run(get_args()))
 

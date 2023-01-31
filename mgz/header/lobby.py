@@ -12,7 +12,8 @@ from mgz.util import Version, find_save_version
 lobby = "lobby"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(5)),
     If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(9)),
-    If(lambda ctx: ctx._.save_version >= 26.16, Bytes(5)),
+    If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(5)),
+    If(lambda ctx: find_save_version(ctx) >= 37, Bytes(8)),
     Array(8, "teams"/Byte), # team number selected by each player
     If(lambda ctx: ctx._.version not in (Version.DE, Version.HD),
         Padding(1),
@@ -34,8 +35,8 @@ lobby = "lobby"/Struct(
         Struct(
             "treaty_length"/Byte,
             "cheat_codes_used"/Int32ul,
-            If(lambda ctx: ctx._._.save_version >= 13.13, Padding(4)),
-            If(lambda ctx: ctx._._.save_version >= 25.22, Padding(1)),
+            If(lambda ctx: find_save_version(ctx) >= 13.13, Padding(4)),
+            If(lambda ctx: find_save_version(ctx) >= 25.22, Padding(1)),
         )
     ),
     Embedded(If(lambda ctx: ctx._.version != Version.AOK,
@@ -53,9 +54,10 @@ lobby = "lobby"/Struct(
     )),
     "de"/If(lambda ctx: ctx._.version == Version.DE,
         Struct(
-            "map_seed"/If(lambda ctx: ctx._._.save_version >= 13.08, Int32sl),
+            "map_seed"/If(lambda ctx: find_save_version(ctx) >= 13.08, Int32sl),
             Bytes(10),
-            If(lambda ctx: ctx._._.save_version >= 26.16, Bytes(4)),
+            If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4)),
+            If(lambda ctx: find_save_version(ctx) >= 37, Bytes(4))
         )
     )
 )

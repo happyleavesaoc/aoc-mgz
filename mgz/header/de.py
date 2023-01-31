@@ -101,11 +101,24 @@ de = "de"/Struct(
     "battle_royale_time"/If(lambda ctx: find_save_version(ctx) >= 13.34, Int32ul),
     "handicap"/If(lambda ctx: find_save_version(ctx) >= 25.06, Flag),
     separator,
-    "players"/Array(8, player),
+    "players"/Array(lambda ctx: ctx.num_players if find_save_version(ctx) >= 37 else 8, player),
     Bytes(9),
     "fog_of_war"/Flag,
     "cheat_notifications"/Flag,
     "colored_chat"/Flag,
+    "empty_slots"/If(lambda ctx: find_save_version(ctx) >= 37, Array(lambda ctx: 8 - ctx.num_players, Struct(
+        "i0x"/Int32ul,
+        "i0a"/Int32ul,
+        "i0b"/Int32ul,
+        "s1"/de_string,
+        "a2"/Bytes(1),
+        "s2"/de_string,
+        "s3"/de_string,
+        "a3"/Bytes(22),
+        "i1"/Int32ul,
+        "i2"/Int32ul,
+        "a4"/Bytes(8),
+    ))),
     separator,
     "ranked"/Flag,
     "allow_specs"/Flag,
@@ -138,6 +151,7 @@ de = "de"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 25.06, Bytes(21)),
     If(lambda ctx: find_save_version(ctx) >= 25.22, Bytes(4)),
     If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(8)),
+    If(lambda ctx: find_save_version(ctx) >= 37, Bytes(3)),
     de_string,
     Bytes(5),
     If(lambda ctx: find_save_version(ctx) >= 13.13, Byte),
@@ -147,4 +161,8 @@ de = "de"/Struct(
         Bytes(4), # usually zero
     )),
     If(lambda ctx: find_save_version(ctx) >= 13.17, Bytes(2)),
+    "ver37"/If(lambda ctx: find_save_version(ctx) >= 37, Struct(
+        Int32ul,
+        Int32ul
+    ))
 )
