@@ -18,6 +18,7 @@ The core functionality of `mgz` is a parser that produces a Python data structur
 ### Parsers
 
 `mgz` offers two parsers, `fast` and `full`. The `fast` parser skips data that is rarely needed, while the `full` parser tries to parse as much as possible. Naturally, the `fast` parser is faster than the `full` parser.
+The `full` parser can do just about everything, the `fast` only maybe 80-90%. The `summary` will automatically try the `fast` parser and fall back to the `full` parser if needed.
 
 ### Abstractions
 
