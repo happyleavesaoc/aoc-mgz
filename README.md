@@ -34,23 +34,10 @@ Abstractions take parser output as input and return an object with normalized da
 | HD Edition >= 4.6 | | ✓ | | ✓ | ✓ | ✓ |
 | HD Edition 5.8 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Definitive Edition <= 13.34 (`.aoe2record`) | | ✓ | | ✓ | ✓ | ✓ |
-| Definitive Edition > 13.34 (`.aoe2record`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Definitive Edition > 13.34, <= 26.21 (`.aoe2record`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Definitive Edition > 26.21 (`.aoe2record`) | ✓ | ✓ | ✓ | ✓ | ✓ | |
 
 ## Examples
-
-### Full Parser
-
-```python
-import os
-from mgz import header, body
-
-with open('/path/to/file', 'rb') as data:
-    eof = os.fstat(data.fileno()).st_size
-    header.parse_stream(data)
-    body.meta.parse_stream(data)
-    while data.tell() < eof:
-        body.operation.parse_stream(data)
-```
 
 #### Full Parser (header) + Fast Parser (body)
 

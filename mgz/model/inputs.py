@@ -49,7 +49,7 @@ class Inputs:
         elif action.type is ActionEnum.ORDER and action.payload['target_id'] in self._gaia:
             name = 'Gather'
             param = self._gaia[action.payload['target_id']]
-        elif action.type is ActionEnum.ORDER and action.position.hash() in self._buildings:
+        elif action.type is ActionEnum.ORDER and action.position and action.position.hash() in self._buildings:
             name = 'Target'
             param = self._buildings[action.position.hash()]
         elif action.type is ActionEnum.GATHER_POINT:
