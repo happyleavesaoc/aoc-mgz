@@ -21,7 +21,7 @@ def _compile_object_search():
     """Compile regular expressions for object searching."""
     class_or = b'(' + b'|'.join(CLASSES) + b')'
     for i in range(9):
-        expr = class_or + struct.pack('b', i) + b'[^\x00][\x00-\xff]{3}\xff\xff\xff\xff[^\xff]'
+        expr = class_or + struct.pack('b', i) + b'[^\x00][\x00-\x80]{3}\xff\xff\xff\xff[^\xff]'
         REGEXES[i] = re.compile(expr)
 
 
@@ -51,8 +51,6 @@ def hd_string(data):
 def parse_object(data, offset):
     """Parse an object."""
     class_id, object_id, instance_id, pos_x, pos_y = struct.unpack_from('<bxH14xIxff', data, offset)
-    if object_id >= 65535:
-        raise RuntimeError("bad object parse")
     return dict(
         class_id=class_id,
         object_id=object_id,
