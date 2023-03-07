@@ -21,7 +21,7 @@ def _compile_object_search():
     """Compile regular expressions for object searching."""
     class_or = b'(' + b'|'.join(CLASSES) + b')'
     for i in range(9):
-        expr = class_or + struct.pack('b', i) + b'[^\x00][\x00-\x80]{3}\xff\xff\xff\xff[^\xff]'
+        expr = class_or + struct.pack('b', i) + b'(?!\xff\xff)(?!\x00\x00)[\x00-\xff]{4}\xff\xff\xff\xff[^\xff]'
         REGEXES[i] = re.compile(expr)
 
 
@@ -111,7 +111,10 @@ def parse_player(header, player_number, num_players, save):
     offset = header.tell()
     data = header.read()
     # Skips thousands of bytes that are not easy to parse.
-    start = re.search(b'\x0b\x00.\x00\x00\x00\x02\x00\x00', data).end()
+    object_start = re.search(b'\x0b\x00.\x00\x00\x00\x02\x00\x00', data)
+    if not object_start:
+        raise RuntimeError("could not find object start")
+    start = object_start.end()
     objects, end = object_block(data, start, player_number, 0)
     sleeping, end = object_block(data, end, player_number, 1)
     doppel, end = object_block(data, end, player_number, 2)
