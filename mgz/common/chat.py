@@ -16,7 +16,9 @@ AGE_MARKERS = [
     'avançou para a Idade',
     'wkroczyło w Erę',
     '升級至',
-    'passaggio'
+    'passaggio',
+    'geÃ§ti',
+    '進化し'
 ]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',
