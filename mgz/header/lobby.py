@@ -57,7 +57,8 @@ lobby = "lobby"/Struct(
             "map_seed"/If(lambda ctx: find_save_version(ctx) >= 13.08, Int32sl),
             Bytes(10),
             If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4)),
-            If(lambda ctx: find_save_version(ctx) >= 37, Bytes(4))
+            If(lambda ctx: find_save_version(ctx) >= 37, Bytes(4)),
+            If(lambda ctx: find_save_version(ctx) >= 51, Bytes(1)),
         )
     )
 )

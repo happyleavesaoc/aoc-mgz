@@ -71,7 +71,7 @@ class ZlibCompressed(Tunnel):
 def get_save_version(old_version, new_version):
     """Get the save version."""
     if old_version == -1:
-        return new_version
+        return new_version/(1<<24)
     return old_version
 
 
@@ -276,7 +276,9 @@ class GotoObjectsEnd(Construct):
             marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
             marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
             marker_hd = read_bytes.find(b"\xae\x47\xa1\x3f")
-            if save_version >= 37:
+            if save_version >= 38:
+                marker_de = read_bytes.find(b"\xa4\x70\xbd\x3f")
+            elif save_version >= 37:
                 marker_de = read_bytes.find(b"\xf6\x28\xbc\x3f")
             elif save_version >= 26.21:
                 marker_de = read_bytes.find(b"\xf6\x28\xbc\x3f")

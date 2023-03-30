@@ -2,7 +2,7 @@
 
 # pylint: disable=invalid-name,no-name-in-module
 
-from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, If, Computed, this, Peek, Bytes)
+from construct import (Struct, CString, Const, Int32ul, Embedded, Float32l, Terminated, If, Computed, this, Peek, Bytes, Int32ub)
 from mgz.util import MgzPrefixed, ZlibCompressed, Version, VersionAdapter, get_version, get_save_version
 from mgz.header.ai import ai
 from mgz.header.replay import replay
@@ -19,7 +19,7 @@ compressed_header = Struct(
     "game_version"/CString(encoding='latin1'),
     "checker"/Peek(Float32l),
     "old_save_version"/VersionAdapter(Float32l),
-    "new_save_version"/If(lambda ctx: ctx.old_save_version == -1, Int32ul),
+    "new_save_version"/If(lambda ctx: ctx.old_save_version == -1, Int32ub),
     "save_version"/Computed(lambda ctx: get_save_version(ctx.old_save_version, ctx.new_save_version)),
     "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, None)),
     "hd"/If(lambda ctx: ctx.version == Version.HD and ctx.save_version > 12.34, hd),

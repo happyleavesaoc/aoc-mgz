@@ -311,6 +311,8 @@ def parse_de(data, version, save, skip=False):
     data.read(20)
     if save >= 25.06:
         data.read(1)
+    if save > 51:
+        data.read(1)
     players = []
     for _ in range(num_players if save >= 37 else 8):
         data.read(4)
@@ -392,6 +394,8 @@ def parse_de(data, version, save, skip=False):
         data.read(8)
     if save >= 37:
         data.read(3)
+    if save > 51:
+        data.read(8)
     if not skip:
         de_string(data)
         data.read(8)
@@ -493,7 +497,7 @@ def parse_version(header, data):
     log = unpack('<I', data)
     game, save = unpack('<7sxf', header)
     if save == -1:
-        save = unpack('<I', header)
+        save = unpack('>I', header)/(1<<24)
     version = get_version(game.decode('ascii'), round(save, 2), log)
     return version, game.decode('ascii'), round(save, 2), log
 
