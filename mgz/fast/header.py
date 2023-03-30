@@ -497,7 +497,11 @@ def parse_version(header, data):
     log = unpack('<I', data)
     game, save = unpack('<7sxf', header)
     if save == -1:
-        save = unpack('>I', header)/(1<<24)
+        save = unpack('>I', header)
+        if save == 9472:
+            save = 37.0
+        else:
+            save /= (1<<24)
     version = get_version(game.decode('ascii'), round(save, 2), log)
     return version, game.decode('ascii'), round(save, 2), log
 

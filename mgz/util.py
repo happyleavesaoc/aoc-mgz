@@ -71,6 +71,8 @@ class ZlibCompressed(Tunnel):
 def get_save_version(old_version, new_version):
     """Get the save version."""
     if old_version == -1:
+        if new_version == 9472:
+            return 37.0
         return new_version/(1<<24)
     return old_version
 
