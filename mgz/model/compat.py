@@ -195,7 +195,7 @@ class ModelSummary:
                 position=(p.position.x, p.position.y),
                 mvp=None,
                 score=None,
-                rate_snapshot=None,
+                rate_snapshot=p.rate_snapshot,
                 cheater=None,
                 achievements=empty_achievements(),
                 prefer_random=p.prefer_random,
