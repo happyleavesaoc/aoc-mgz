@@ -268,10 +268,9 @@ def parse_match(handle):
                 actions.append(action)
                 inputs.add_action(action)
             elif op_type is fast.Operation.POSTGAME:
-                # Write down the rating of each player after the game ended.
-                players_data: list = op_data["leaderboards"][0]["players"]
-                for player, player_data in zip(players.values(), players_data):
-                    player.rate_snapshot = player_data["rating"]
+                by_number = {x["number"]: x["rating"] for x in op_data["leaderboards"][0]["players"]}
+                for player in players.values():
+                    player.rate_snapshot = by_number.get(player.number - 1)
         except EOFError:
             break
 

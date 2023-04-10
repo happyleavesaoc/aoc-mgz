@@ -46,6 +46,7 @@ class Player:
     team: list = None
     winner: bool = False
     eapm: int = None
+    rate_snapshot: int = None
 
     def __repr__(self):
         return self.name
