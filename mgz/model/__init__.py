@@ -297,7 +297,7 @@ def parse_match(handle):
             map_id,
             map_data['name'],
             map_data['dimension'],
-            consts['map_sizes'][str(map_data['dimension'])],
+            consts['map_sizes'].get(str(map_data['dimension'])),
             map_data['custom'],
             map_data['seed'],
             data['de']['rms_mod_id'] if data['version'] is Version.DE and map_data['custom'] else None,
