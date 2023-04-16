@@ -123,10 +123,12 @@ def parse_match(handle):
         raise RuntimeError("could not get map data")
 
     # Handle DE-specific data
+    rated = None
     if data['de']:
         de_players = {player['number']: player for player in data['de']['players']}
         lobby = data['de']['lobby']
         guid = data['de']['guid']
+        rated = data['de']['rated']
     else:
         de_players = dict()
         lobby = None
@@ -329,6 +331,7 @@ def parse_match(handle):
         chats,
         guid,
         lobby,
+        rated,
         dataset['dataset']['name'],
         consts['game_types'][str(data['lobby']['game_type_id'])],
         data['lobby']['game_type_id'],

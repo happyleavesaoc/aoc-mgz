@@ -159,6 +159,7 @@ class Match:
     chat: list
     guid: str
     lobby: str
+    rated: bool
     dataset: str
     type: str
     type_id: int

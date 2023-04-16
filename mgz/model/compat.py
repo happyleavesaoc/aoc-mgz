@@ -120,7 +120,7 @@ class ModelSummary:
             platform_id='de',
             platform_match_id=self.match.guid,
             ladder=None,
-            rated=None,
+            rated=self.match.rated,
             ratings=None,
             lobby_name=self.match.lobby,
             spec_delay=int(self.match.spec_delay.total_seconds()),

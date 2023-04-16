@@ -352,7 +352,8 @@ def parse_de(data, version, save, skip=False):
             de_string(data)
             de_string(data)
             data.read(38)
-    data.read(5)
+    data.read(4)
+    rated = unpack('b', data)
     allow_specs = unpack('b', data)
     visibility = unpack('<I', data)
     hidden_civs = unpack('b', data)
@@ -421,6 +422,7 @@ def parse_de(data, version, save, skip=False):
         build=build,
         timestamp=timestamp,
         spec_delay=spec_delay,
+        rated=rated == 1,
         allow_specs=bool(allow_specs),
         hidden_civs=bool(hidden_civs),
         visibility_id=visibility,
