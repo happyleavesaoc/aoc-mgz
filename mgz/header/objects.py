@@ -472,7 +472,8 @@ building = "building"/Struct(
     "de_flag_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Byte),
     "de_unk_2"/If(lambda ctx: find_save_version(ctx) >= 20.16, Int16ul),
     "de_unk_3"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte),
-    "de_unk_4"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4))
+    "de_unk_4"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4)),
+    "de_unk_5"/If(lambda ctx: find_save_version(ctx) >= 102, Bytes(4)),
 )
 
 
