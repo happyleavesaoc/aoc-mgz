@@ -26,7 +26,7 @@ class Inputs:
 
     def add_action(self, action):
         """Add action input."""
-        if action.type in (ActionEnum.DE_UNKNOWN_41, ActionEnum.POSTGAME):
+        if action.type in (ActionEnum.DE_TRANSFORM, ActionEnum.POSTGAME):
             return
         name = ACTION_TRANSLATE.get(action.type, action.type.name).replace('_', ' ').title()
         param = None

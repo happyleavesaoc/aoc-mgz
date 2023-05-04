@@ -22,8 +22,9 @@ def parse_action_71094(action_type, player_id, raw):
             source_player, target_player, mode_float, mode = unpack('<2xhhfb', data)
             payload.update(dict(target_player_id=target_player, diplomacy_mode=mode))
         elif command_id == 1:
-            speed = unpack('<6xf', data)
-            payload.update(dict(speed=speed))
+            payload['speed'] = unpack('<6xf', data)
+        elif command_id in [13, 14, 17, 18]:
+            payload['number'] = unpack('<4xh', data)
     if action_type is Action.DE_QUEUE:
         selected, building_type, unit_id, amount, *object_ids = unpack('<h4xhhh', data)
         object_ids = list(unpack(f'<{selected}I', data, shorten=False))
@@ -65,7 +66,7 @@ def parse_action_71094(action_type, player_id, raw):
     if action_type in [Action.BUY, Action.SELL]:
         resource_id, amount, object_id = unpack('<hhI', data)
         payload = dict(resource_id=resource_id, amount=amount, object_ids=[object_id])
-    if action_type is Action.DE_UNKNOWN_41:
+    if action_type is Action.DE_TRANSFORM:
         # autoscout enable?
         object_id, y = unpack('<II', data)
         payload = dict(object_ids=[object_id])
@@ -117,8 +118,9 @@ def parse_action_71094(action_type, player_id, raw):
         payload = dict(object_ids=object_ids, target_id=target_id)
     if action_type is Action.DE_TRIBUTE:
         wood, food, gold, stone = unpack('<ffff', data)
-        data.read(16)
-        unk1, unk2, unk3, target_id = unpack('<Ihhb', data)
+        data.read(16) # cost[4]
+        data.read(8) # attribute id[4]
+        target_id = data.read(1)
         payload = dict(target_player_id=target_id, food=food, wood=wood, stone=stone, gold=gold)
     if action_type in [Action.GATE, Action.DROP_RELIC]:
         object_id = unpack('<I', data)
