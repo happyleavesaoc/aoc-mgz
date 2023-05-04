@@ -19,7 +19,7 @@ compressed_header = Struct(
     "game_version"/CString(encoding='latin1'),
     "checker"/Peek(Float32l),
     "old_save_version"/VersionAdapter(Float32l),
-    "new_save_version"/If(lambda ctx: ctx.old_save_version == -1, Int32ub),
+    "new_save_version"/If(lambda ctx: ctx.old_save_version == -1, Int32ul),
     "save_version"/Computed(lambda ctx: get_save_version(ctx.old_save_version, ctx.new_save_version)),
     "version"/Computed(lambda ctx: get_version(ctx.game_version, ctx.save_version, None)),
     "hd"/If(lambda ctx: ctx.version == Version.HD and ctx.save_version > 12.34, hd),

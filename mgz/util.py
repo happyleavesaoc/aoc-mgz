@@ -20,7 +20,7 @@ SEARCH_MAX_BYTES = 3000
 POSTGAME_LENGTH = 2096
 LOOKAHEAD = 9
 DE_MARKERS = {
-    38: b"\xa4\x70\xbd\x3f",
+    50: b"\xa4\x70\xbd\x3f",
     37: b"\xf6\x28\xbc\x3f",
     26.21: b"\xf6\x28\xbc\x3f",
     26.16: b"\x48\xe1\xba\x3f",
@@ -86,9 +86,9 @@ class ZlibCompressed(Tunnel):
 def get_save_version(old_version, new_version):
     """Get the save version."""
     if old_version == -1:
-        if new_version == 9472:
+        if new_version == 37:
             return 37.0
-        return new_version/(1<<24)
+        return round(new_version / (1<<16), 2)
     return old_version
 
 

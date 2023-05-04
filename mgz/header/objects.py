@@ -428,7 +428,7 @@ combat = "combat"/Struct(
     "de_unknown2"/If(lambda ctx: find_save_version(ctx) >= 25.01, Int32ul),
     "de_unknown3"/If(lambda ctx: 26.18 > find_save_version(ctx) >= 26.16, Bytes(5)),
     "de_unknown4"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(4)),
-    "de_unknown5"/If(lambda ctx: find_save_version(ctx) >= 51, Bytes(48)),
+    "de_unknown5"/If(lambda ctx: find_save_version(ctx) >= 50, Bytes(48)),
 )
 
 production_queue = "production_queue"/Struct(
@@ -473,7 +473,7 @@ building = "building"/Struct(
     "de_unk_2"/If(lambda ctx: find_save_version(ctx) >= 20.16, Int16ul),
     "de_unk_3"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte),
     "de_unk_4"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4)),
-    "de_unk_5"/If(lambda ctx: find_save_version(ctx) >= 102, Bytes(4)),
+    "de_unk_5"/If(lambda ctx: find_save_version(ctx) >= 50.4, Bytes(4)),
 )
 
 
