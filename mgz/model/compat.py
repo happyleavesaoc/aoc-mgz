@@ -162,6 +162,12 @@ class ModelSummary:
         return None
 
     def get_dataset(self):
+        if self.match.dataset_id == 101:
+            return dict(
+                id=101,
+                name='Return of Rome',
+                version=None
+            )
         return dict(
             id=100,
             name='Definitive Edition',

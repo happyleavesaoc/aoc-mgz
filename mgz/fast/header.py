@@ -294,8 +294,9 @@ def parse_de(data, version, save, skip=False):
     if save >= 26.16 and not skip:
         timestamp = unpack('<I', data)  # missing on console (?)
     data.read(12)
-    dlc_count = unpack('<I', data)
-    data.read(dlc_count * 4)
+    dlc_ids = []
+    for i in range(0, unpack('<I', data)):
+        dlc_ids.append(unpack('<I', data))
     data.read(4)
     difficulty_id = unpack('<I', data)
     data.read(4)
@@ -428,7 +429,8 @@ def parse_de(data, version, save, skip=False):
         visibility_id=visibility,
         rms_mod_id=rms_mod_id,
         rms_map_id=rms_map_id,
-        rms_filename=rms_filename
+        rms_filename=rms_filename,
+        dlc_ids=dlc_ids
     )
 
 
@@ -566,7 +568,7 @@ def parse(data):
         map=map_,
         de=de,
         hd=hd,
-        mod=mod,
+        mod=de.get('dlc_ids') if de else mod,
         metadata=metadata,
         scenario=scenario,
         lobby=lobby

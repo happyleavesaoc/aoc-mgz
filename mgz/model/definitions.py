@@ -176,6 +176,7 @@ class Match:
     duration: timedelta
     diplomacy_type: str
     completed: bool
+    dataset_id: int
     version: Version
     game_version: str
     save_version: float

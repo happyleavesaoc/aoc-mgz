@@ -348,6 +348,7 @@ def parse_match(handle):
         timedelta(milliseconds=timestamp + data['map']['restore_time']),
         diplomacy_type,
         bool(resigned),
+        dataset_id,
         data['version'],
         data['game_version'],
         data['save_version'],

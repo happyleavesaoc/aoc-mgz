@@ -25,10 +25,18 @@ def get_dataset_data(header):
     """Get dataset."""
     sample = header.initial.players[0].attributes.player_stats
     mod = None
+    if header.de:
+        mod = header.de.dlc_ids
     if 'mod' in sample:
         mod = (sample.mod.get('id'), sample.mod.get('version'))
     _, ref = get_dataset(header.version, mod)
     if header.version == Version.DE:
+        if 11 in header.de.dlc_ids:
+            return {
+                'id': 101,
+                'name': 'Return of Rome',
+                'version': None
+            }, ref
         return {
             'id': 100,
             'name': 'Definitive Edition',
