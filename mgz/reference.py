@@ -11,7 +11,7 @@ REF_PACKAGE = 'aocref'
 def get_dataset(version, mod):
     """Fetch dataset reference data."""
     if version is Version.DE:
-        if 11 in mod:
+        if isinstance(mod, list) and 11 in mod:
             dataset_id = 101
         else:
             dataset_id = 100
