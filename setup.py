@@ -11,7 +11,7 @@ setup(
     author_email='happyleaves.tfr@gmail.com',
     packages=find_packages(),
     install_requires=[
-        'aocref>=2.0.11',
+        'aocref>=2.0.12',
         'construct==2.8.16',
         'dataclasses==0.8; python_version < "3.7"',
         'tabulate>=0.9.0',
