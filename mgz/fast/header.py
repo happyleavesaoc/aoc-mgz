@@ -347,9 +347,9 @@ def parse_de(data, version, save, skip=False):
         civilization_id = unpack('<I', data)
         de_string(data)
         data.read(1)
-        de_string(data)
+        ai_name = de_string(data)
         name = de_string(data)
-        data.read(4)
+        type = unpack('<I', data)
         profile_id, number = unpack('<I4xi', data)
         if save < 25.22:
             data.read(8)
@@ -357,16 +357,18 @@ def parse_de(data, version, save, skip=False):
         data.read(1)
         if save >= 25.06:
             data.read(8)
-        if name:
-            players.append(dict(
-                number=number,
-                color_id=color_id,
-                team_id=team_id,
-                name=name,
-                profile_id=profile_id,
-                civilization_id=civilization_id,
-                prefer_random=prefer_random == 1
-            ))
+
+        players.append(dict(
+            number=number,
+            color_id=color_id,
+            team_id=team_id,
+            ai_name=ai_name,
+            name=name,
+            type=type,
+            profile_id=profile_id,
+            civilization_id=civilization_id,
+            prefer_random=prefer_random == 1
+        ))
     data.read(12)
     if save >= 37:
         for _ in range(8 - num_players):
