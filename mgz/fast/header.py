@@ -301,15 +301,30 @@ def parse_de(data, version, save, skip=False):
     difficulty_id = unpack('<I', data)
     data.read(4)
     rms_map_id = unpack('<I', data)
-    data.read(12)
+    data.read(4)
+    victory_type_id = unpack('<I', data)
+    starting_resources_id = unpack('<I', data)
     starting_age_id = unpack('<I', data)
-    data.read(28)
+    ending_age_id = unpack('<I', data)
+    data.read(8)
+    speed = unpack('<d', data)
+    treaty_length = unpack('<I', data)
+    population_limit = unpack('<I', data)
     num_players = unpack('<I', data)
     data.read(14)
     random_positions, all_technologies = unpack('<bb', data)
-    data.read(2)
+    data.read(1)
+    lock_teams = unpack('<b', data)
     lock_speed = unpack('<b', data)
-    data.read(20)
+    multiplayer = unpack('<b', data)
+    cheats = unpack('<b', data)
+    record_game = unpack('<b', data)
+    animals_enabled = unpack('<b', data)
+    predators_enabled = unpack('<b', data)
+    turbo_enabled = unpack('<b', data)
+    shared_exploration = unpack('<b', data)
+    team_positions = unpack('<b', data)
+    data.read(12)
     if save >= 25.06:
         data.read(1)
     if save > 50:
@@ -416,10 +431,25 @@ def parse_de(data, version, save, skip=False):
         lobby=lobby.decode('utf-8'),
         mod=mod.decode('utf-8'),
         difficulty_id=difficulty_id,
+        victory_type_id=victory_type_id,
+        starting_resources_id=starting_resources_id,
         starting_age_id=starting_age_id - 2 if starting_age_id > 0 else 0,
+        ending_age_id=ending_age_id - 2 if ending_age_id > 0 else 0,
+        speed=speed,
+        population_limit=population_limit,
+        treaty_length=treaty_length,
         team_together=not bool(random_positions),
         all_technologies=bool(all_technologies),
+        lock_teams=bool(lock_teams),
         lock_speed=bool(lock_speed),
+        multiplayer=bool(multiplayer),
+        cheats=bool(cheats),
+        record_game=bool(record_game),
+        animals_enabled=bool(animals_enabled),
+        predators_enabled=bool(predators_enabled),
+        turbo_enabled=bool(turbo_enabled),
+        shared_exploration=bool(shared_exploration),
+        team_positions=bool(team_positions),
         build=build,
         timestamp=timestamp,
         spec_delay=spec_delay,
