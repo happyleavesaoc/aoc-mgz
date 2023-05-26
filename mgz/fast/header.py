@@ -569,11 +569,25 @@ def parse_players(header, num_players, version, save):
     return players, mod
 
 
-def parse_metadata(header):
+def parse_metadata(header, skip_ai=True):
     """Parse recorded game metadata."""
-    ai, game_speed, owner_id, num_players, cheats = unpack('<I24xf17xhbxb', header)
+    ai = unpack('<I', header)
+
     if ai > 0:
-        raise RuntimeError("don't know how to parse ai")
+        if not skip_ai:
+            raise RuntimeError("don't know how to parse ai")
+
+        offset = header.tell()
+        data = header.read()
+        # Jump to the end of ai data
+        ai_end = re.search(
+            b'\00' * 4096,
+            data)
+        if not ai_end:
+            raise RuntimeError("could not find ai end")
+        header.seek(offset + ai_end.end())
+
+    game_speed, owner_id, num_players, cheats = unpack('<24xf17xhbxb', header)
     return dict(
         speed=game_speed,
         owner_id=owner_id,
