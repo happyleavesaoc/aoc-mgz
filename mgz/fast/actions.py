@@ -129,4 +129,7 @@ def parse_action_71094(action_type, player_id, raw):
         selected = unpack('<I', data)
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
         payload = dict(object_ids=object_ids)
+    if action_type is Action.MAKE:
+        building_id, unit_id = unpack('<H6xh', data)
+        payload = dict(building_id=building_id, unit_id=unit_id)
     return dict(player_id=player_id, **payload)

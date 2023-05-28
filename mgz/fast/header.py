@@ -123,8 +123,16 @@ def parse_player(header, player_number, num_players, save):
     if data[end:end + 2] == BLOCK_END:
         end += 2
     header.seek(offset + end)
+
     if save >= 37:
-        header.read(26)
+        offset = header.tell()
+        data = header.read()
+        # Jump to the end of player data
+        player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data)
+        if not player_end:
+            raise RuntimeError("could not find player end")
+        header.seek(offset + player_end.end())
+
     return dict(
         number=player_number,
         type=type_,
@@ -301,15 +309,30 @@ def parse_de(data, version, save, skip=False):
     difficulty_id = unpack('<I', data)
     data.read(4)
     rms_map_id = unpack('<I', data)
-    data.read(12)
+    data.read(4)
+    victory_type_id = unpack('<I', data)
+    starting_resources_id = unpack('<I', data)
     starting_age_id = unpack('<I', data)
-    data.read(28)
+    ending_age_id = unpack('<I', data)
+    data.read(8)
+    speed = unpack('<d', data)
+    treaty_length = unpack('<I', data)
+    population_limit = unpack('<I', data)
     num_players = unpack('<I', data)
     data.read(14)
     random_positions, all_technologies = unpack('<bb', data)
-    data.read(2)
+    data.read(1)
+    lock_teams = unpack('<b', data)
     lock_speed = unpack('<b', data)
-    data.read(20)
+    multiplayer = unpack('<b', data)
+    cheats = unpack('<b', data)
+    record_game = unpack('<b', data)
+    animals_enabled = unpack('<b', data)
+    predators_enabled = unpack('<b', data)
+    turbo_enabled = unpack('<b', data)
+    shared_exploration = unpack('<b', data)
+    team_positions = unpack('<b', data)
+    data.read(12)
     if save >= 25.06:
         data.read(1)
     if save > 50:
@@ -324,9 +347,9 @@ def parse_de(data, version, save, skip=False):
         civilization_id = unpack('<I', data)
         de_string(data)
         data.read(1)
-        de_string(data)
+        ai_name = de_string(data)
         name = de_string(data)
-        data.read(4)
+        type = unpack('<I', data)
         profile_id, number = unpack('<I4xi', data)
         if save < 25.22:
             data.read(8)
@@ -334,16 +357,18 @@ def parse_de(data, version, save, skip=False):
         data.read(1)
         if save >= 25.06:
             data.read(8)
-        if name:
-            players.append(dict(
-                number=number,
-                color_id=color_id,
-                team_id=team_id,
-                name=name,
-                profile_id=profile_id,
-                civilization_id=civilization_id,
-                prefer_random=prefer_random == 1
-            ))
+
+        players.append(dict(
+            number=number,
+            color_id=color_id,
+            team_id=team_id,
+            ai_name=ai_name,
+            name=name,
+            type=type,
+            profile_id=profile_id,
+            civilization_id=civilization_id,
+            prefer_random=prefer_random == 1
+        ))
     data.read(12)
     if save >= 37:
         for _ in range(8 - num_players):
@@ -416,10 +441,25 @@ def parse_de(data, version, save, skip=False):
         lobby=lobby.decode('utf-8'),
         mod=mod.decode('utf-8'),
         difficulty_id=difficulty_id,
+        victory_type_id=victory_type_id,
+        starting_resources_id=starting_resources_id,
         starting_age_id=starting_age_id - 2 if starting_age_id > 0 else 0,
+        ending_age_id=ending_age_id - 2 if ending_age_id > 0 else 0,
+        speed=speed,
+        population_limit=population_limit,
+        treaty_length=treaty_length,
         team_together=not bool(random_positions),
         all_technologies=bool(all_technologies),
+        lock_teams=bool(lock_teams),
         lock_speed=bool(lock_speed),
+        multiplayer=bool(multiplayer),
+        cheats=bool(cheats),
+        record_game=bool(record_game),
+        animals_enabled=bool(animals_enabled),
+        predators_enabled=bool(predators_enabled),
+        turbo_enabled=bool(turbo_enabled),
+        shared_exploration=bool(shared_exploration),
+        team_positions=bool(team_positions),
         build=build,
         timestamp=timestamp,
         spec_delay=spec_delay,
@@ -531,11 +571,25 @@ def parse_players(header, num_players, version, save):
     return players, mod
 
 
-def parse_metadata(header):
+def parse_metadata(header, skip_ai=True):
     """Parse recorded game metadata."""
-    ai, game_speed, owner_id, num_players, cheats = unpack('<I24xf17xhbxb', header)
+    ai = unpack('<I', header)
+
     if ai > 0:
-        raise RuntimeError("don't know how to parse ai")
+        if not skip_ai:
+            raise RuntimeError("don't know how to parse ai")
+
+        offset = header.tell()
+        data = header.read()
+        # Jump to the end of ai data
+        ai_end = re.search(
+            b'\00' * 4096,
+            data)
+        if not ai_end:
+            raise RuntimeError("could not find ai end")
+        header.seek(offset + ai_end.end())
+
+    game_speed, owner_id, num_players, cheats = unpack('<24xf17xhbxb', header)
     return dict(
         speed=game_speed,
         owner_id=owner_id,
