@@ -126,9 +126,9 @@ def parse_player(header, player_number, num_players, save):
 
     if save >= 37:
         offset = header.tell()
-        data = header.read()
+        data = header.read(100)
         # Jump to the end of player data
-        player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data)
+        player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data)
         if not player_end:
             raise RuntimeError("could not find player end")
         header.seek(offset + player_end.end())

@@ -19,21 +19,6 @@ LOGGER = logging.getLogger(__name__)
 SEARCH_MAX_BYTES = 3000
 POSTGAME_LENGTH = 2096
 LOOKAHEAD = 9
-DE_MARKERS = {
-    50: b"\xa4\x70\xbd\x3f",
-    37: b"\xf6\x28\xbc\x3f",
-    26.21: b"\xf6\x28\xbc\x3f",
-    26.16: b"\x48\xe1\xba\x3f",
-    25.06: b"\x9a\x99\xb9\x3f",
-    25.03: b"\x85\xeb\x91\x3f",
-    25.02: b"\xec\x51\xb8\x3f",
-    25.01: b"\x3d\x0a\xb7\x3f",
-    20.16: b"\x8f\xc2\xb5\x3f",
-    20.06: b"\xe1\x7a\xb4\x3f",
-    13.34: b"\x33\x33\xb3\x3f",
-    13.07: b"\x29\x5c\xaf\x3f",
-    12.97: b"\x7b\x14\xae\x3f"
-}
 
 
 class Version(Enum):
@@ -290,26 +275,13 @@ class GotoObjectsEnd(Construct):
         # Otherwise, this is the last player
         else:
             # Search for the scenario header
-            # TODO: make this section more reliable
-            marker_aok = read_bytes.find(b"\x9a\x99\x99\x3f")
-            marker_up = read_bytes.find(b"\xf6\x28\x9c\x3f")
-            marker_hd = read_bytes.find(b"\xae\x47\xa1\x3f")
-            marker_de = -1
-            for sv, search in DE_MARKERS.items():
-                if save_version >= sv:
-                    marker_de = read_bytes.find(search)
-                    break
-            marker = -1
-            if marker_aok > 0 and version is Version.AOK:
-                marker = marker_aok
-            elif marker_hd > 0 and version is Version.HD:
-                marker = marker_hd
-            elif marker_de > 0 and version is Version.DE:
-                marker = marker_de
-            elif marker_up > 0:
-                marker = marker_up
-            if marker == -1:
-                raise RuntimeError("could not find scenario marker")
+            for i, b in enumerate(read_bytes):
+                if b == 63 and b"\xff\xff\xff\xff\x00\x00\x00\x00" == read_bytes[i-11:i-3]:
+                    flt = struct.unpack("<f", read_bytes[i-3:i+1])[0]
+                    # scenario header version is something like 1.x
+                    if flt > 1.0 and flt < 2.0:
+                        marker = i - 3
+                        break
             # Backtrack through the achievements and initial structure footer
             backtrack = ((1817 * (num_players - 1)) + 4 + 19)
         # Seek to the position we found

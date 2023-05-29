@@ -28,7 +28,7 @@ AI_ACTIONS = [ActionEnum.AI_ORDER]
 def enrich_action(action, action_data, dataset, consts):
     """Enrich action data with lookups."""
     if 'x' in action_data and 'y' in action_data and action_data['x'] >=0 and action_data['y'] >= 0:
-        if action.type != fast.Action.SPECIAL or action_data['target_id'] > 0:
+        if action.type != fast.Action.SPECIAL or ('target_id' in action_data and action_data['target_id'] > 0):
             action.position = Position(action_data['x'], action_data['y'])
             del action.payload['x']
             del action.payload['y']
