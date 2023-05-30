@@ -313,6 +313,10 @@ class FullSummary: # pylint: disable=too-many-public-methods
             self.get_map()
         return self._cache['language']
 
+    def get_device(self):
+        """Get device."""
+        return None
+
     def get_map_id(self):
         """Get map ID."""
         if self._header.hd:

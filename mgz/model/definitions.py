@@ -122,6 +122,7 @@ class File:
     language: str
     hash: str
     size: int
+    device_type: int
     perspective: Player
     viewlocks: list
 

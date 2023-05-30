@@ -50,6 +50,7 @@ def print_info(path):
             ['Match Hash', summary.get_hash().hexdigest() if summary.get_hash() else None],
             ['Encoding', summary.get_encoding()],
             ['Language', summary.get_language()],
+            ['Device', summary.get_device()],
             ['Map', '{} ({}, {})'.format(summary.get_map()['name'], summary.get_map()['seed'], summary.get_map()['mod_id'])] # pylint: disable=unsubscriptable-object
         ], tablefmt='plain'))
 

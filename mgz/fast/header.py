@@ -6,7 +6,7 @@ import struct
 import uuid
 import zlib
 
-from mgz.util import get_version, unpack, Version
+from mgz.util import get_version, unpack, Version, as_hex
 
 ZLIB_WBITS = -15
 CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50']
@@ -124,6 +124,7 @@ def parse_player(header, player_number, num_players, save):
         end += 2
     header.seek(offset + end)
 
+    device = 0
     if save >= 37:
         offset = header.tell()
         data = header.read(100)
@@ -131,6 +132,7 @@ def parse_player(header, player_number, num_players, save):
         player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data)
         if not player_end:
             raise RuntimeError("could not find player end")
+        device = data[8]
         header.seek(offset + player_end.end())
 
     return dict(
@@ -145,7 +147,7 @@ def parse_player(header, player_number, num_players, save):
             x=start_x,
             y=start_y
         )
-    )
+    ), device
 
 
 def parse_lobby(data, version, save):
@@ -568,7 +570,7 @@ def parse_players(header, num_players, version, save):
         header.read(5 + (entries * 44))
         points = unpack('<i', header)
         header.read(8 + (points * 32))
-    return players, mod
+    return [p[0] for p in players], mod, players[0][1]
 
 
 def parse_metadata(header, skip_ai=True):
@@ -608,7 +610,7 @@ def parse(data):
         hd = parse_hd(header, version, save)
         metadata, num_players = parse_metadata(header)
         map_ = parse_map(header, version)
-        players, mod = parse_players(header, num_players, version, save)
+        players, mod, device = parse_players(header, num_players, version, save)
         scenario = parse_scenario(header, num_players, version, save)
         lobby = parse_lobby(header, version, save)
     except (struct.error, zlib.error, AssertionError, MemoryError, ValueError) as e:
@@ -625,5 +627,6 @@ def parse(data):
         mod=de.get('dlc_ids') if de else mod,
         metadata=metadata,
         scenario=scenario,
-        lobby=lobby
+        lobby=lobby,
+        device=device
     )
