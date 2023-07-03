@@ -186,7 +186,6 @@ def parse_match(handle):
                 for obj in player['objects']
             ],
             player.get('profile_id'),
-            None,
             player.get('prefer_random')
         )
 

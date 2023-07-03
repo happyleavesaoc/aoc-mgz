@@ -42,9 +42,9 @@ class Player:
     position: Position
     objects: list
     profile_id: int
-    team_id: int
     prefer_random: bool = None
     team: list = None
+    team_id: int = None
     winner: bool = False
     eapm: int = None
     rate_snapshot: int = None
