@@ -131,6 +131,9 @@ class ModelSummary:
     def get_language(self):
         return self.match.file.language
 
+    def get_device(self):
+        return self.match.file.device_type
+
     def get_owner(self):
         return self.match.file.perspective.number
 

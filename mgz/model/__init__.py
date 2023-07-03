@@ -320,6 +320,7 @@ def parse_match(handle):
             language,
             file_hash,
             file_size,
+            data['device'],
             players[data['metadata']['owner_id']],
             viewlocks
         ),
