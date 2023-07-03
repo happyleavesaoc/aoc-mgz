@@ -186,6 +186,7 @@ def parse_match(handle):
                 for obj in player['objects']
             ],
             player.get('profile_id'),
+            None,
             player.get('prefer_random')
         )
 
@@ -205,6 +206,7 @@ def parse_match(handle):
         t = [players[x] for x in team]
         for x in team:
             players[x].team = t
+            players[x].team_id = team
         teams.append(t)
 
     # Compute diplomacy
