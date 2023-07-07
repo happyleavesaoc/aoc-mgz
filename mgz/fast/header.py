@@ -229,8 +229,11 @@ def parse_map(data, version):
 def parse_scenario(data, num_players, version, save):
     """Parse scenario section."""
     data.read(4455)
+    scenario_filename = None
     if version is Version.DE:
-        data.read(128)
+        data.read(102)
+        scenario_filename = aoc_string(data)
+        data.read(24)
     instructions = aoc_string(data)
     for _ in range(0, 9):
         aoc_string(data)
@@ -278,7 +281,8 @@ def parse_scenario(data, num_players, version, save):
     return dict(
         map_id=map_id,
         difficulty_id=difficulty_id,
-        instructions=instructions
+        instructions=instructions,
+        scenario_filename=scenario_filename,
     )
 
 
