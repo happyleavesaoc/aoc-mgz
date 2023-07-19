@@ -34,6 +34,12 @@ def aoc_string(data):
     return data.read(length)
 
 
+def int_prefixed_string(data):
+    """Read length prefixed (4 byte) string."""
+    length = unpack('<I', data)
+    return data.read(length)
+
+
 def de_string(data):
     """Read DE string."""
     assert data.read(2) == b'\x60\x0a'
@@ -273,11 +279,40 @@ def parse_scenario(data, num_players, version, save):
             settings_version = 2.4
         else:
             settings_version = 2.2
-        end = remainder.find(struct.pack('<d', settings_version))
-        end += 1045
+        end = remainder.find(struct.pack('<d', settings_version)) + 8
     else:
         end = remainder.find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f') + 13
     data.seek(end - len(remainder), 1)
+
+    if version is Version.DE:
+        data.read(1)
+        n_triggers = unpack("<I", data)
+
+        for _ in range(n_triggers):
+            data.read(22)
+            data.read(4)
+
+            description = int_prefixed_string(data)
+            name = int_prefixed_string(data)
+            short_description = int_prefixed_string(data)
+
+            n_effects = unpack("<I", data)
+
+            for _ in range(n_effects):
+                data.read(216)
+
+                text = int_prefixed_string(data)
+                sound = int_prefixed_string(data)
+
+            data.read(n_effects * 4)
+            n_condition = unpack("<I", data)
+
+            data.read(n_condition * 125)
+
+        trigger_list_order = unpack(f"<{n_triggers}I", data)
+
+        data.read(1032)  # default!
+
     return dict(
         map_id=map_id,
         difficulty_id=difficulty_id,
