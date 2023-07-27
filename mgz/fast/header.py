@@ -128,18 +128,22 @@ def parse_player(header, player_number, num_players, save):
         end += 10
     if data[end:end + 2] == BLOCK_END:
         end += 2
-    header.seek(offset + end)
 
     device = 0
     if save >= 37:
+        # sometimes the object parsing is a bit buggy and i can't figure out why, so we skip back before the object
+        # block and search from there for `player_end`.
+        header.seek(offset)
         offset = header.tell()
-        data = header.read(100)
+        data = header.read()
         # Jump to the end of player data
         player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data)
         if not player_end:
             raise RuntimeError("could not find player end")
         device = data[8]
         header.seek(offset + player_end.end())
+    else:
+        header.seek(offset + end)
 
     return dict(
         number=player_number,
