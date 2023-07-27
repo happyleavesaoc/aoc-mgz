@@ -42,6 +42,36 @@ class TestFastDE(unittest.TestCase):
         self.assertEqual(self.data['lobby']['seed'], -1970180596)
 
 
+class TestFastDEScenario(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        with open('tests/recs/de-50.6-scenario.aoe2record', 'rb') as handle:
+            cls.data = parse(handle)
+
+    def test_version(self):
+        self.assertEqual(self.data['version'], Version.DE)
+
+    def test_players(self):
+        players = self.data.get('players')
+        self.assertEqual(len(players), 3)
+
+
+class TestFastDEScenarioWithTriggers(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        with open('tests/recs/de-50.6-scenario-with-triggers.aoe2record', 'rb') as handle:
+            cls.data = parse(handle)
+
+    def test_version(self):
+        self.assertEqual(self.data['version'], Version.DE)
+
+    def test_players(self):
+        players = self.data.get('players')
+        self.assertEqual(len(players), 3)
+
+
 class TestFastHD(unittest.TestCase):
 
     @classmethod
