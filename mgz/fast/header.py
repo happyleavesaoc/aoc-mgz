@@ -117,7 +117,7 @@ def parse_player(header, player_number, num_players, save):
     offset = header.tell()
     data = header.read()
     # Skips thousands of bytes that are not easy to parse.
-    object_start = re.search(b'\x0b\x00.\x00\x00\x00\x02\x00\x00', data)
+    object_start = re.search(b'\x0b\x00.\x00\x00\x00\x02\x00\x00', data, re.DOTALL)
     if not object_start:
         raise RuntimeError("could not find object start")
     start = object_start.end()
@@ -129,13 +129,12 @@ def parse_player(header, player_number, num_players, save):
     if data[end:end + 2] == BLOCK_END:
         end += 2
     header.seek(offset + end)
-
     device = 0
     if save >= 37:
         offset = header.tell()
         data = header.read(100)
         # Jump to the end of player data
-        player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data)
+        player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data, re.DOTALL)
         if not player_end:
             raise RuntimeError("could not find player end")
         device = data[8]

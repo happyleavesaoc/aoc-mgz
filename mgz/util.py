@@ -209,7 +209,7 @@ class Find(Construct):
             read_bytes = stream.read()
         candidates = []
         for f in self.find:
-            match = re.search(f, read_bytes)
+            match = re.search(f, read_bytes, re.DOTALL)
             if not match:
                 continue
             candidates.append(match.end())
