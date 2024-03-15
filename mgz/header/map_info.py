@@ -3,7 +3,7 @@
 from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
                        Int32ul, Padding, Struct, Int16sl, If, Peek)
 
-from mgz.util import Version
+from mgz.util import Version, find_save_version
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -35,6 +35,8 @@ map_info = "map_info"/Struct(
     "size_x"/Int32ul,
     "size_y"/Int32ul,
     "tile_num"/Computed(lambda ctx: ctx.size_x * ctx.size_y),
+)
+x = (
     "zone_num"/Int32ul,
     Array(lambda ctx: ctx.zone_num, Struct(
         IfThenElse(lambda ctx: ctx._._.version in (Version.DE, Version.HD),
@@ -59,4 +61,5 @@ map_info = "map_info"/Struct(
     "size_x_2"/Int32ul,
     "size_y_2"/Int32ul,
     Padding(lambda ctx: ctx.tile_num * 4), # visibility
+    If(lambda ctx: find_save_version(ctx) >= 61.5, Padding(lambda ctx: ctx.tile_num * 4))
 )

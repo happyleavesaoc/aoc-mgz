@@ -112,7 +112,8 @@ static = "static"/Struct(
             If(lambda ctx: find_save_version(ctx) >= 25.22 and find_type(ctx) == 10, Bytes(1)),
             If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
             If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
-        ))
+        )),
+        "x"/Bytes(14)
     )),
     "hd_extension"/If(lambda ctx: find_version(ctx) == Version.HD and find_save_version(ctx) > 12.36, Struct(
         "flag"/Flag,
@@ -429,6 +430,15 @@ combat = "combat"/Struct(
     "de_unknown3"/If(lambda ctx: 26.18 > find_save_version(ctx) >= 26.16, Bytes(5)),
     "de_unknown4"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(4)),
     "de_unknown5"/If(lambda ctx: find_save_version(ctx) >= 50, Bytes(48)),
+    #"nn"/Find(b'\x46', 1000)
+    "de_unknown6"/If(lambda ctx: find_save_version(ctx) >= 61.5, Struct(
+        "a"/Bytes(40),
+        "b"/Bytes(40),
+        "c"/Bytes(40),
+        "d"/Bytes(40),
+        "e"/Bytes(40),
+        "f"/Bytes(8)
+    )) #Bytes(208)),
 )
 
 production_queue = "production_queue"/Struct(
