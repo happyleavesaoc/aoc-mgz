@@ -3,7 +3,7 @@
 from construct import (Array, Byte, Computed, Embedded, Flag, IfThenElse,
                        Int32ul, Padding, Struct, Int16sl, If, Peek)
 
-from mgz.util import Version
+from mgz.util import Version, find_save_version
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -13,6 +13,7 @@ tile = "tile"/Struct(
     "terrain_type"/Byte,
     Embedded(IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         Embedded(Struct(
+            If(lambda ctx: ctx._._._.save_version >= 62.0, Byte),
             Padding(1), # copy of previous byte
             "elevation"/Byte,
             "unk0"/Int16sl,
@@ -59,4 +60,5 @@ map_info = "map_info"/Struct(
     "size_x_2"/Int32ul,
     "size_y_2"/Int32ul,
     Padding(lambda ctx: ctx.tile_num * 4), # visibility
+    If(lambda ctx: find_save_version(ctx) >= 61.5, Padding(lambda ctx: ctx.tile_num * 4))
 )

@@ -14,8 +14,10 @@ from mgz.util import Find, Version, find_save_version, find_version
 scenario_header = "scenario_header"/Struct(
     "next_uid"/Int32ul,
     "scenario_version"/Float32l,
+    If(lambda ctx: find_save_version(ctx) >= 61.5, Padding(8)),
     Array(16, "names"/String(256)),
     Array(16, "player_ids"/Int32ul),
+    If(lambda ctx: find_save_version(ctx) >= 61.5, Padding(64)),
     Array(16, "player_data"/Struct(
         "active"/Int32ul,
         "human"/Int32ul,
@@ -147,7 +149,8 @@ game_settings = "game_settings"/Struct(
             If(lambda ctx: 26.16 > find_save_version(ctx) >= 25.22, Find(struct.pack('<d', 2.6), None)),
             If(lambda ctx: 26.21 > find_save_version(ctx) >= 26.16, Find(struct.pack('<d', 3.0), None)),
             If(lambda ctx: 37 > find_save_version(ctx) >= 26.21, Find(struct.pack('<d', 3.2), None)),
-            If(lambda ctx: find_save_version(ctx) >= 37, Find(struct.pack('<d', 3.5), None))
+            If(lambda ctx: 61.5 > find_save_version(ctx) >= 37, Find(struct.pack('<d', 3.5), None)),
+            If(lambda ctx: find_save_version(ctx) >= 61.5, Find(struct.pack('<d', 3.6), None))
         ),
         "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
     )

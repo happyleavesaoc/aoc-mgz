@@ -8,12 +8,12 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
 from mgz.header.objects import existing_object
 from mgz.header.playerstats import player_stats
-from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version
+from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version, find_save_version
 
 # Player attributes.
 attributes = "attributes"/Struct(
     Array(lambda ctx: ctx._._._.replay.num_players, TheirDiplomacyEnum("their_diplomacy"/Byte)),
-    Array(9, MyDiplomacyEnum("my_diplomacy"/Int32sl)),
+    Array(lambda ctx: ctx._._._.replay.num_players if find_save_version(ctx) >= 61.5 else 9, MyDiplomacyEnum("my_diplomacy"/Int32sl)),
     "allied_los"/Int32ul,
     "allied_victory"/Flag,
     "player_name_length"/Int16ul,

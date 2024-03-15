@@ -271,7 +271,10 @@ class GotoObjectsEnd(Construct):
                 marker -= 1
                 count += 1
             # Backtrack through the rest of the next player structure
-            backtrack = 43 + num_players
+            offset = 9 * 4
+            if save_version >= 61.5:
+                offset = num_players * 4
+            backtrack = 7 + num_players + offset
         # Otherwise, this is the last player
         else:
             # Search for the scenario header

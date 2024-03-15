@@ -112,7 +112,9 @@ static = "static"/Struct(
             If(lambda ctx: find_save_version(ctx) >= 25.22 and find_type(ctx) == 10, Bytes(1)),
             If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
             If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
-        ))
+        )),
+        If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(14)),
+        If(lambda ctx: find_save_version(ctx) >= 62.0, Bytes(4))
     )),
     "hd_extension"/If(lambda ctx: find_version(ctx) == Version.HD and find_save_version(ctx) > 12.36, Struct(
         "flag"/Flag,
@@ -397,6 +399,7 @@ combat = "combat"/Struct(
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(14)),
     "de_2"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(16)),
     "de_3"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(1)),
+    "de_4"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(4)),
     "next_volley"/Byte,
     "using_special_animation"/Byte,
     "own_base"/Byte,
@@ -429,6 +432,7 @@ combat = "combat"/Struct(
     "de_unknown3"/If(lambda ctx: 26.18 > find_save_version(ctx) >= 26.16, Bytes(5)),
     "de_unknown4"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(4)),
     "de_unknown5"/If(lambda ctx: find_save_version(ctx) >= 50, Bytes(48)),
+    "de_unknown6"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(44))
 )
 
 production_queue = "production_queue"/Struct(
@@ -474,6 +478,7 @@ building = "building"/Struct(
     "de_unk_3"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte),
     "de_unk_4"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4)),
     "de_unk_5"/If(lambda ctx: find_save_version(ctx) >= 50.4, Bytes(4)),
+    "de_unk_6"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(12)),
 )
 
 

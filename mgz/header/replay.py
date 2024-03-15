@@ -2,7 +2,7 @@
 
 from construct import Array, Byte, Flag, Float32l, Int16ul, Int32sl, Int32ul, Padding, Struct, If, Embedded
 
-from mgz.util import Version
+from mgz.util import Version, find_save_version
 
 # pylint: disable=invalid-name
 
@@ -35,6 +35,6 @@ replay = "replay"/Struct(
     "king_campaign_player"/Byte,
     "king_campaign_scenario"/Byte,
     "player_turn"/Int32ul,
-    "player_time_delta"/Array(9, "turn"/Int32ul),
+    "player_time_delta"/Array(lambda obj: obj.num_players if find_save_version(obj) >= 61.5 else 9, "turn"/Int32ul),
     If(lambda ctx: ctx._.version == Version.DE, Padding(8))
 )

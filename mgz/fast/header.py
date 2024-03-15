@@ -110,7 +110,10 @@ def parse_mod(header, num_players, version):
 
 def parse_player(header, player_number, num_players, save):
     """Parse a player (and objects)."""
-    type_, *diplomacy, name_length = unpack(f'<bx{num_players}x9i5xh', header)
+    rep = 9
+    if save >= 61.5:
+        rep = num_players
+    type_, *diplomacy, name_length = unpack(f'<bx{num_players}x{rep}i5xh', header)
     name, resources = unpack(f'<{name_length - 1}s2xIx', header)
     header.read(resources * 4)
     start_x, start_y, civilization_id, color_id = unpack('<xff9xb3xbx', header)
@@ -133,12 +136,16 @@ def parse_player(header, player_number, num_players, save):
     if save >= 37:
         offset = header.tell()
         data = header.read(100)
+        device = data[8]
         # Jump to the end of player data
         player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data, re.DOTALL)
         if not player_end:
-            raise RuntimeError("could not find player end")
-        device = data[8]
-        header.seek(offset + player_end.end())
+            # only a failure if this is not the last player, since we seek to the next block anyway
+            # this issue happens on restored games
+            if player_number < num_players - 1:
+                raise RuntimeError("could not find player end")
+        else:
+            header.seek(offset + player_end.end())
 
     return dict(
         number=player_number,
@@ -194,12 +201,13 @@ def parse_lobby(data, version, save):
     )
 
 
-def parse_map(data, version):
+def parse_map(data, version, save):
     """Parse map."""
-    data.read(60)
     tile_format = '<xbbx'
     if version is Version.DE:
         tile_format = '<bxb6x'
+        if save >= 62.0:
+            tile_format = '<bxxb6x'
         data.read(8)
     size_x, size_y, zone_num = unpack('<III', data)
     tile_num = size_x * size_y
@@ -220,6 +228,8 @@ def parse_map(data, version):
         data.read(num_obs * 8)
     x2, y2 = unpack('<II', data)
     data.read(x2 * y2 * 4)
+    if save >= 61.5:
+        data.read(x2 * y2 * 4)
     restore_time = unpack('<I', data)
     #if restore_time > 0:
     #    raise RuntimeError("restored matches can't be parsed yet")
@@ -233,7 +243,10 @@ def parse_map(data, version):
 
 def parse_scenario(data, num_players, version, save):
     """Parse scenario section."""
-    data.read(4455)
+    next_uid, scenario_version = unpack('<II', data)
+    if save >= 61.5:
+        data.read(72)
+    data.read(4447)
     scenario_filename = None
     if version is Version.DE:
         data.read(102)
@@ -264,7 +277,9 @@ def parse_scenario(data, num_players, version, save):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
-        if save >= 37:
+        if save >= 61.5:
+            settings_version = 3.6
+        elif save >= 37:
             settings_version = 3.5
         elif save >= 26.21:
             settings_version = 3.2
@@ -346,7 +361,10 @@ def parse_de(data, version, save, skip=False):
     for i in range(0, unpack('<I', data)):
         dlc_ids.append(unpack('<I', data))
     data.read(4)
-    difficulty_id = unpack('<I', data)
+    if save >= 61.5:
+        map_dimension = unpack('<I', data)
+    else:
+        difficulty_id = unpack('<I', data)
     data.read(4)
     rms_map_id = unpack('<I', data)
     data.read(4)
@@ -354,12 +372,15 @@ def parse_de(data, version, save, skip=False):
     starting_resources_id = unpack('<I', data)
     starting_age_id = unpack('<I', data)
     ending_age_id = unpack('<I', data)
-    data.read(8)
-    speed = unpack('<d', data)
+    data.read(12)
+    speed = unpack('<f', data)
     treaty_length = unpack('<I', data)
     population_limit = unpack('<I', data)
     num_players = unpack('<I', data)
     data.read(14)
+    if save >= 61.5:
+        # not sure if this is difficulty under 61.5 or not
+        difficulty_id = unpack('<B', data)
     random_positions, all_technologies = unpack('<bb', data)
     data.read(1)
     lock_teams = unpack('<b', data)
@@ -385,6 +406,8 @@ def parse_de(data, version, save, skip=False):
         team_id = unpack('<b', data)
         data.read(9)
         civilization_id = unpack('<I', data)
+        if save >= 61.5:
+            data.read(4)
         de_string(data)
         data.read(1)
         ai_name = de_string(data)
@@ -412,6 +435,8 @@ def parse_de(data, version, save, skip=False):
     data.read(12)
     if save >= 37:
         for _ in range(8 - num_players):
+            if save >= 61.5:
+                data.read(4)
             data.read(12)
             de_string(data)
             data.read(1)
@@ -463,6 +488,8 @@ def parse_de(data, version, save, skip=False):
         data.read(3)
     if save > 50:
         data.read(8)
+    if save >= 61.5:
+        data.read(1)
     if not skip:
         de_string(data)
         data.read(8)
@@ -595,11 +622,17 @@ def parse_players(header, num_players, version, save):
     cur = header.tell()
     gaia = b'Gaia' if version in (Version.DE, Version.HD) else b'GAIA'
     anchor = header.read().find(b'\x05\x00' + gaia + b'\x00')
-    header.seek(cur + anchor - num_players - 43)
+    rev = 43
+    if save >= 61.5:
+        rev = 7 + (num_players * 4)
+    header.seek(cur + anchor - num_players - rev)
     mod = parse_mod(header, num_players, version)
     players = [parse_player(header, number, num_players, save) for number in range(num_players)]
     cur = header.tell()
-    points_version = header.read().find(b'\x00\x00\x00@')
+    pv = b'\x00\x00\x00@'
+    if save >= 61.5:
+        pv = b'\x66\x66\x06\x40'
+    points_version = header.read().find(pv)
     header.seek(cur)
     header.read(points_version)
     for _ in range(num_players):
@@ -611,7 +644,7 @@ def parse_players(header, num_players, version, save):
     return [p[0] for p in players], mod, players[0][1]
 
 
-def parse_metadata(header, skip_ai=True):
+def parse_metadata(header, save, skip_ai=True):
     """Parse recorded game metadata."""
     ai = unpack('<I', header)
 
@@ -630,6 +663,12 @@ def parse_metadata(header, skip_ai=True):
         header.seek(offset + ai_end.end())
 
     game_speed, owner_id, num_players, cheats = unpack('<24xf17xhbxb', header)
+
+    if save < 61.5:
+        header.read(60)
+    else:
+        header.read(24 + (num_players * 4))
+
     return dict(
         speed=game_speed,
         owner_id=owner_id,
@@ -646,8 +685,8 @@ def parse(data):
             raise RuntimeError(f"{version} not supported")
         de = parse_de(header, version, save)
         hd = parse_hd(header, version, save)
-        metadata, num_players = parse_metadata(header)
-        map_ = parse_map(header, version)
+        metadata, num_players = parse_metadata(header, save)
+        map_ = parse_map(header, version, save)
         players, mod, device = parse_players(header, num_players, version, save)
         scenario = parse_scenario(header, num_players, version, save)
         lobby = parse_lobby(header, version, save)

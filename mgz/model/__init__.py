@@ -119,8 +119,8 @@ def parse_match(handle):
             data['map']['tiles'],
             de_seed=data['lobby']['seed']
         )
-    except ValueError:
-        raise RuntimeError("could not get map data")
+    except ValueError as e:
+        raise RuntimeError(f"could not get map data: {e}")
 
     # Handle DE-specific data
     rated = None
