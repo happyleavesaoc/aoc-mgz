@@ -44,6 +44,7 @@ class Action(Enum):
     DE_UNKNOWN_40 = 40
     DE_TRANSFORM = 41
     RATHA_ABILITY = 43
+    DE_UNKNOWN_44 = 44
     AI_COMMAND = 53
     DE_UNKNOWN_80 = 80
     MAKE = 100
@@ -74,6 +75,7 @@ class Action(Enum):
     DE_UNKNOWN_135 = 135
     DE_UNKNOWN_136 = 136
     DE_UNKNOWN_138 = 138
+    DE_UNKNOWN_140 = 140
     DE_TRIBUTE = 196
     POSTGAME = 255
 
