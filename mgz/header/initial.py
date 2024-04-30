@@ -8,13 +8,12 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
 from mgz.header.objects import existing_object
 from mgz.header.playerstats import player_stats
-from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version
+from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version, find_save_version
 
 # Player attributes.
 attributes = "attributes"/Struct(
-    "FF"/Bytes(12),
     Array(lambda ctx: ctx._._._.replay.num_players, TheirDiplomacyEnum("their_diplomacy"/Byte)),
-    #Array(9, Int32sl), #MyDiplomacyEnum("my_diplomacy"/Int32sl)),
+    Array(lambda ctx: ctx._._._.replay.num_players if find_save_version(ctx) >= 61.5 else 9, MyDiplomacyEnum("my_diplomacy"/Int32sl)),
     "allied_los"/Int32ul,
     "allied_victory"/Flag,
     "player_name_length"/Int16ul,
@@ -59,10 +58,6 @@ player = "players"/Struct(
     attributes,
     "end_of_attr"/Tell,
     "start_of_objects"/Find([b'\x0b\x00.\x00\x00\x00\x02\x00\x00'], None),
-    "objects"/Array(600, existing_object),
-    "next"/Bytes(40)
-)
-x = (
     Embedded(IfThenElse(lambda ctx: ctx._.restore_time == 0,
         Struct(
             "objects"/RepeatUpTo(b'\x00', existing_object),
@@ -101,11 +96,6 @@ initial = "initial"/Struct(
     "num_particles"/Int32ul,
     "particles"/Bytes(lambda ctx: ctx.num_particles * 27),
     "identifier"/Int32ul,
-    Array(1, player),
-    "next"/Bytes(40),
-    #player,
-)
-x = (
-    #Array(lambda ctx: ctx._.replay.num_players, player),
-    #Padding(21),
+    Array(lambda ctx: ctx._.replay.num_players, player),
+    Padding(21),
 )

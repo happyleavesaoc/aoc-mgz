@@ -13,6 +13,7 @@ tile = "tile"/Struct(
     "terrain_type"/Byte,
     Embedded(IfThenElse(lambda ctx: ctx._._.version == Version.DE,
         Embedded(Struct(
+            If(lambda ctx: ctx._._._.save_version >= 62.0, Byte),
             Padding(1), # copy of previous byte
             "elevation"/Byte,
             "unk0"/Int16sl,
@@ -35,8 +36,6 @@ map_info = "map_info"/Struct(
     "size_x"/Int32ul,
     "size_y"/Int32ul,
     "tile_num"/Computed(lambda ctx: ctx.size_x * ctx.size_y),
-)
-x = (
     "zone_num"/Int32ul,
     Array(lambda ctx: ctx.zone_num, Struct(
         IfThenElse(lambda ctx: ctx._._.version in (Version.DE, Version.HD),
