@@ -105,7 +105,8 @@ def GameTypeEnum(ctx):
         CaptureTheRelic=10,
         SuddenDeath=11,
         BattleRoyale=12,
-        EmpireWars=13
+        EmpireWars=13,
+        CoOpCampaign=15
     )
 
 def ObjectTypeEnum(ctx):
