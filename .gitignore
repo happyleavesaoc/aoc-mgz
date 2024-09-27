@@ -1,4 +1,5 @@
 dist/
+build/
 mgz.egg-info/
 venv/
 .tox/
