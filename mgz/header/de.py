@@ -35,7 +35,7 @@ player = Struct(
     "name"/de_string,
     "type"/PlayerTypeEnum(Int32ul),
     "profile_id"/Int32ul,
-    Const(b"\x00\x00\x00\x00"),
+    "ai_unknown" / Int32sl, # Often 0, sometimes -1 for AI players
     "player_number"/Int32sl,
     "hd_rm_elo"/If(lambda ctx: find_save_version(ctx) < 25.22, Int32ul),
     "hd_dm_elo"/If(lambda ctx: find_save_version(ctx) < 25.22, Int32ul),
