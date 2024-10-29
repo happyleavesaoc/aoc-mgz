@@ -61,14 +61,16 @@ player = "players"/Struct(
     Embedded(IfThenElse(lambda ctx: ctx._.restore_time == 0,
         Struct(
             "objects"/RepeatUpTo(b'\x00', existing_object),
-            Const(b'\x00\x0b'),
+            Find(b'\x00\x0b', None), # Some additional data was added in 63.0, so the separator is not aligned anymore. Since we don't know what this data represents, we skip it.
+            # Const(b'\x00\x0b'),
             # Skip Gaia trees for performance reasons
             Embedded(IfThenElse(this._.type != 2,
                 Struct(
                     "s_size"/Int32ul,
                     "s_grow"/Int32ul,
                     "sleeping_objects"/RepeatUpTo(b'\x00', existing_object),
-                    Const(b'\x00\x0b'),
+                    Find(b'\x00\x0b', None), # Some additional data was added in 63.0, so the separator is not aligned anymore. Since we don't know what this data represents, we skip it.
+                    # Const(b'\x00\x0b'),
                     "d_size"/Int32ul,
                     "d_grow"/Int32ul,
                     "doppleganger_objects"/RepeatUpTo(b'\x00', existing_object),

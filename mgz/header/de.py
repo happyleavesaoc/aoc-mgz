@@ -158,6 +158,7 @@ de = "de"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 37, Bytes(3)),
     If(lambda ctx: find_save_version(ctx) >= 50, Bytes(8)),
     If(lambda ctx: find_save_version(ctx) >= 61.5, Flag),
+    If(lambda ctx: find_save_version(ctx) >= 63, Bytes(5)),
     de_string,
     Bytes(5),
     If(lambda ctx: find_save_version(ctx) >= 13.13, Byte),

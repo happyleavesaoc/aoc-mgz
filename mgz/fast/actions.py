@@ -51,6 +51,9 @@ def parse_action_71094(action_type, player_id, raw):
         selected, x, y, target_id, target_type = unpack('<h2xffii', data)
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
         payload = dict(target_id=target_id, target_type=target_type, x=x, y=y, object_ids=object_ids)
+    if action_type is Action.DE_MULTI_GATHERPOINT:
+        target_id, x, y = unpack('<iff', data) # This is a best guess. There is other unknown data in the payload.
+        payload = dict(target_id=target_id, x=x, y=y)
     if action_type is Action.STANCE:
         selected, stance_id = unpack('<II', data)
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
