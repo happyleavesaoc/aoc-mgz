@@ -443,7 +443,7 @@ combat = "combat"/Struct(
                 "de_unknown9"/Bytes(4)
             ),
             Struct(
-                "de_unknown8"/Bytes(2)
+                "de_unknown8"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(2))
             )
         )
     ),
