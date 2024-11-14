@@ -8,7 +8,7 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
 from mgz.header.objects import existing_object
 from mgz.header.playerstats import player_stats
-from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version, find_save_version
+from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version, find_save_version, find_version
 
 # Player attributes.
 attributes = "attributes"/Struct(
@@ -63,7 +63,7 @@ player = "players"/Struct(
             "objects"/RepeatUpTo(b'\x00', existing_object),
             Const(b'\x00\x0b'),
             # Skip Gaia trees for performance reasons
-            Embedded(IfThenElse(this._.type != 2,
+            Embedded(IfThenElse(lambda ctx: ctx._.type != 2 or find_version(ctx).value < 10,
                 Struct(
                     "s_size"/Int32ul,
                     "s_grow"/Int32ul,

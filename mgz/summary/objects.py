@@ -5,6 +5,7 @@ from collections import defaultdict
 TC_IDS = [71, 109, 141, 142]
 STONE_WALL_ID = 117
 PALISADE_WALL_ID = 72
+CLIFFS = [264, 265, 266, 267, 268, 269, 270, 271, 272, 273]
 
 
 def get_objects_data(header):
@@ -15,7 +16,12 @@ def get_objects_data(header):
     palisade_walls = {}
     annexes = set()
     for player in header.initial.players:
-        for o in player.objects + player.sleeping_objects:
+        sleeping = []
+        for o in player.sleeping_objects:
+            if player.type == 2 and o.object_type not in CLIFFS:
+                continue
+            sleeping.append(o)
+        for o in player.objects + sleeping:
             # static, moving, unit, and buildings only
             if o.type not in [10, 30, 70, 80]:
                 continue
