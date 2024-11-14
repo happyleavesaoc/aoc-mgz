@@ -277,6 +277,8 @@ def parse_scenario(data, num_players, version, save):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
+        if save >= 63:
+            settings_version = 3.9
         if save >= 61.5:
             settings_version = 3.6
         elif save >= 37:
@@ -406,8 +408,13 @@ def parse_de(data, version, save, skip=False):
         team_id = unpack('<b', data)
         data.read(9)
         civilization_id = unpack('<I', data)
+        custom_civ_selection = None
         if save >= 61.5:
-            data.read(4)
+            custom_civ_count = unpack('<I', data)
+            if save >= 63.0 and custom_civ_count > 0:
+                custom_civ_selection = []
+                for _ in range(custom_civ_count):
+                    custom_civ_selection.append(unpack('<I', data))
         de_string(data)
         data.read(1)
         ai_name = de_string(data)
@@ -430,6 +437,7 @@ def parse_de(data, version, save, skip=False):
             type=type,
             profile_id=profile_id,
             civilization_id=civilization_id,
+            custom_civ_selection=custom_civ_selection,
             prefer_random=prefer_random == 1
         ))
     data.read(12)
@@ -490,6 +498,8 @@ def parse_de(data, version, save, skip=False):
         data.read(8)
     if save >= 61.5:
         data.read(1)
+    if save >= 63:
+        data.read(5)
     if not skip:
         de_string(data)
         data.read(8)

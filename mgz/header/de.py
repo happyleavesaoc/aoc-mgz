@@ -3,7 +3,7 @@
 from construct import (
     Struct, Int32ul, Float32l, Array, Padding, Flag, If,
     Byte, Int16ul, Bytes, Int32sl, Peek, Const, RepeatUntil,
-    Int64ul, Computed
+    Int64ul, Computed, IfThenElse
 )
 
 from mgz.enums import VictoryEnum, ResourceLevelEnum, AgeEnum, PlayerTypeEnum, DifficultyEnum
@@ -28,7 +28,8 @@ player = Struct(
     "dat_crc"/Bytes(8),
     "mp_game_version"/Byte,
     "civ_id"/Int32ul,
-    "unk"/If(lambda ctx: find_save_version(ctx) >= 61.5, Int32ul),
+    "custom_civ_count"/IfThenElse(lambda ctx: find_save_version(ctx) >= 61.5, Int32ul, Computed(lambda _: 0)),
+    "custom_civ_ids"/Array(lambda ctx: ctx.custom_civ_count, Int32ul),
     "ai_type"/de_string,
     "ai_civ_name_index"/Byte,
     "ai_name"/de_string,
@@ -158,6 +159,7 @@ de = "de"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 37, Bytes(3)),
     If(lambda ctx: find_save_version(ctx) >= 50, Bytes(8)),
     If(lambda ctx: find_save_version(ctx) >= 61.5, Flag),
+    If(lambda ctx: find_save_version(ctx) >= 63, Bytes(5)),
     de_string,
     Bytes(5),
     If(lambda ctx: find_save_version(ctx) >= 13.13, Byte),

@@ -21,7 +21,7 @@ active_sprite = "active_sprite"/Struct(
 )
 
 animated_sprite = "animated_sprite"/Struct(
-    "animate_interval"/Int32ul,
+    "animate_interval"/Float32l,
     "animate_last"/Int32ul,
     "last_frame"/Int16ul,
     "frame_changed"/Byte,
@@ -109,7 +109,7 @@ static = "static"/Struct(
         # not the right way to do this, needs improvement
         If(lambda ctx: find_save_version(ctx) >= 20.16, Struct(
             "peek"/Peek(Bytes(6)),
-            If(lambda ctx: find_save_version(ctx) >= 25.22 and find_type(ctx) == 10, Bytes(1)),
+            If(lambda ctx: find_save_version(ctx) >= 25.22 and (find_type(ctx) == 10 or find_save_version(ctx) >= 63.0), Bytes(1)),
             If(lambda ctx: find_save_version(ctx) < 25.22 and find_type(ctx) == 10 and ctx.peek[0] == 0 and ctx.peek[0:2] != b"\x00\x0b", Bytes(1)),
             If(lambda ctx: find_type(ctx) == 20 and ctx.peek[4] == 0 and ctx.peek[4:6] != b"\x00\x0b", Bytes(1)),
         )),
@@ -193,7 +193,7 @@ base_moving = "base_moving"/Struct(
     "user_defined_waypoints"/Array(lambda ctx: ctx.num_user_defined_waypoints, vector),
     "has_substitute_position"/Int32ul,
     "substitute_position"/vector,
-    "consecutive_subsitute_count"/Int32ul
+    "consecutive_substitute_count"/Int32ul
 )
 
 moving = "moving"/Struct(
@@ -201,7 +201,8 @@ moving = "moving"/Struct(
     "hd_moving"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(1)),
     "de_moving"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
     "ver2616"/If(lambda ctx: 37 > find_save_version(ctx) >= 26.16, Bytes(8)),
-    "ver37"/If(lambda ctx: find_save_version(ctx) >= 37, Bytes(5)),
+    "ver37"/If(lambda ctx: 63 > find_save_version(ctx) >= 37, Bytes(5)),
+    "ver63"/If(lambda ctx: find_save_version(ctx) >= 63, Bytes(4)),
 )
 
 move_to = "move_to"/Struct(
@@ -389,7 +390,8 @@ unit_ai = "ai"/Struct(
     "best_unit_to_attack"/Int32sl,
     "formation_type"/Byte,
     "de_unk"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(4)),
-    "de_unk_byte"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte)
+    "de_unk_byte"/If(lambda ctx: find_save_version(ctx) >= 25.22, Byte),
+    "de_unknown_2"/If(lambda ctx: find_save_version(ctx) >= 63.0 and ctx._.has_ai in (15, 17), Bytes(4))
 )
 
 
@@ -398,7 +400,7 @@ combat = "combat"/Struct(
     "de_pre"/If(lambda ctx: find_version(ctx) == Version.DE and find_save_version(ctx) < 37, Bytes(4)),
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(14)),
     "de_2"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(16)),
-    "de_3"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(1)),
+    "de_3"/If(lambda ctx: 63 > find_save_version(ctx) >= 26.18, Bytes(1)),
     "de_4"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(4)),
     "next_volley"/Byte,
     "using_special_animation"/Byte,
@@ -432,7 +434,19 @@ combat = "combat"/Struct(
     "de_unknown3"/If(lambda ctx: 26.18 > find_save_version(ctx) >= 26.16, Bytes(5)),
     "de_unknown4"/If(lambda ctx: find_save_version(ctx) >= 26.18, Bytes(4)),
     "de_unknown5"/If(lambda ctx: find_save_version(ctx) >= 50, Bytes(48)),
-    "de_unknown6"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(44))
+    "de_unknown6"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(40)),
+    "de_unknown7"/If(lambda ctx: find_save_version(ctx) >= 61.5, Int16ul),
+    Embedded(
+        IfThenElse(lambda ctx: find_save_version(ctx) >= 63.0 and ctx.has_ai == 15,
+            Struct(
+                "de_unknown8"/Float32l,
+                "de_unknown9"/Bytes(4)
+            ),
+            Struct(
+                "de_unknown8"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(2))
+            )
+        )
+    ),
 )
 
 production_queue = "production_queue"/Struct(
