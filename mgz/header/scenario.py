@@ -151,9 +151,10 @@ game_settings = "game_settings"/Struct(
             If(lambda ctx: 37 > find_save_version(ctx) >= 26.21, Find(struct.pack('<d', 3.2), None)),
             If(lambda ctx: 61.5 > find_save_version(ctx) >= 37, Find(struct.pack('<d', 3.5), None)),
             If(lambda ctx: 63 > find_save_version(ctx) >= 61.5, Find(struct.pack('<d', 3.6), None)),
-            If(lambda ctx: find_save_version(ctx) >= 63, Find(struct.pack('<d', 3.9), None)),
+            If(lambda ctx: 64.3 > find_save_version(ctx) >= 63, Find(struct.pack('<d', 3.9), None)),
+            If(lambda ctx: find_save_version(ctx) >= 64.3, Find(struct.pack('<d', 4.1), None)),
         ),
-        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None)
+        "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None),
     )
 )
 

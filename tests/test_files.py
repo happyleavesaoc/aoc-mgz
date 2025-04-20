@@ -1,6 +1,7 @@
 import glob
 import unittest
 from mgz import header, body, fast
+from mgz.summary import ModelSummary, FullSummary
 
 
 def parse_file_full(path):
@@ -24,6 +25,10 @@ def parse_file_fast(path):
         while f.tell() < eof:
             fast.operation(f)
 
+def parse_file_summary(path, summary_class):
+    with open(path, 'rb') as f:
+        summary_class(f)
+
 
 class TestFiles(unittest.TestCase):
 
@@ -39,3 +44,11 @@ class TestFiles(unittest.TestCase):
             if path in skip:
                 continue
             parse_file_fast(path)
+
+    @unittest.skip("This test is meant to be run manually when debugging issues in a specific rec")
+    def test_single_rec(self):
+        rec = "tests/recs/de-64.3.aoe2record"
+        parse_file_fast(rec)
+        parse_file_summary(rec, FullSummary)
+        parse_file_summary(rec, ModelSummary)
+

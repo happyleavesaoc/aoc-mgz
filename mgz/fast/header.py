@@ -277,9 +277,11 @@ def parse_scenario(data, num_players, version, save):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
-        if save >= 63:
+        if save >= 64.3:
+            settings_version = 4.1
+        elif save >= 63:
             settings_version = 3.9
-        if save >= 61.5:
+        elif save >= 61.5:
             settings_version = 3.6
         elif save >= 37:
             settings_version = 3.5
@@ -427,6 +429,8 @@ def parse_de(data, version, save, skip=False):
         data.read(1)
         if save >= 25.06:
             data.read(8)
+        if save >= 64.3:
+            data.read(4)
 
         players.append(dict(
             number=number,
@@ -451,6 +455,8 @@ def parse_de(data, version, save, skip=False):
             de_string(data)
             de_string(data)
             data.read(38)
+            if save >= 64.3:
+                data.read(4)
     data.read(4)
     rated = unpack('b', data)
     allow_specs = unpack('b', data)
