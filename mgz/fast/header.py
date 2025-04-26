@@ -74,7 +74,7 @@ def object_block(data, pos, player_number, index):
     offset = None
     while True:
         if not offset:
-            match = REGEXES[player_number].search(data, pos)
+            match = REGEXES[player_number].search(data, pos, pos + 10000)
             end = data.find(BLOCK_END, pos) - pos + len(BLOCK_END)
             if match is None:
                 break
@@ -115,7 +115,8 @@ def parse_player(header, player_number, num_players, save):
         rep = num_players
     type_, *diplomacy, name_length = unpack(f'<bx{num_players}x{rep}i5xh', header)
     name, resources = unpack(f'<{name_length - 1}s2xIx', header)
-    header.read(resources * 4)
+    resources_len = 8 if save >= 63 else 4
+    header.read(resources * resources_len)
     start_x, start_y, civilization_id, color_id = unpack('<xff9xb3xbx', header)
     offset = header.tell()
     data = header.read()
