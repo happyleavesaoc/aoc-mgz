@@ -173,6 +173,8 @@ def parse_lobby(data, version, save):
             data.read(5)
         if save >= 37:
             data.read(8)
+        if save >= 64.3:
+            data.read(16)
     data.read(8)
     if version not in (Version.DE, Version.HD):
         data.read(1)
