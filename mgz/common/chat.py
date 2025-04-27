@@ -24,6 +24,7 @@ AGE_MARKERS = [
     'avanzó a Edad',
     'avanzado a la Edad',
     'ha raggiunto',
+    'avanzó a Ed'
 ]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',
