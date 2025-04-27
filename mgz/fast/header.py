@@ -9,7 +9,7 @@ import zlib
 from mgz.util import get_version, unpack, Version, as_hex
 
 ZLIB_WBITS = -15
-CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50']
+CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50', b'\x14']
 BLOCK_END = b'\x00\x0b'
 REGEXES = {}
 SKIP_OBJECTS = [
