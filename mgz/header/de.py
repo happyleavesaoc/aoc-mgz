@@ -43,6 +43,7 @@ player = Struct(
     "prefer_random"/Flag,
     "custom_ai"/Flag,
     If(lambda ctx: find_save_version(ctx) >= 25.06, "handicap"/Bytes(8)),
+    If(lambda ctx: find_save_version(ctx) >= 64.3, "unknown_de_64_3" / Int32ul),
 )
 
 string_block = Struct(
@@ -123,6 +124,7 @@ de = "de"/Struct(
         "i1"/Int32ul,
         "i2"/Int32ul,
         "a4"/Bytes(8),
+        If(lambda ctx: find_save_version(ctx) >= 64.3, "unknown_de_64_3" / Int32ul),
     ))),
     separator,
     "ranked"/Flag,

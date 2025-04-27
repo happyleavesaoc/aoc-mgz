@@ -9,7 +9,7 @@ import zlib
 from mgz.util import get_version, unpack, Version, as_hex
 
 ZLIB_WBITS = -15
-CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50']
+CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50', b'\x14']
 BLOCK_END = b'\x00\x0b'
 REGEXES = {}
 SKIP_OBJECTS = [
@@ -74,7 +74,7 @@ def object_block(data, pos, player_number, index):
     offset = None
     while True:
         if not offset:
-            match = REGEXES[player_number].search(data, pos)
+            match = REGEXES[player_number].search(data, pos, pos + 10000)
             end = data.find(BLOCK_END, pos) - pos + len(BLOCK_END)
             if match is None:
                 break
@@ -115,7 +115,8 @@ def parse_player(header, player_number, num_players, save):
         rep = num_players
     type_, *diplomacy, name_length = unpack(f'<bx{num_players}x{rep}i5xh', header)
     name, resources = unpack(f'<{name_length - 1}s2xIx', header)
-    header.read(resources * 4)
+    resources_len = 8 if save >= 63 else 4
+    header.read(resources * resources_len)
     start_x, start_y, civilization_id, color_id = unpack('<xff9xb3xbx', header)
     offset = header.tell()
     data = header.read()
@@ -172,6 +173,8 @@ def parse_lobby(data, version, save):
             data.read(5)
         if save >= 37:
             data.read(8)
+        if save >= 64.3:
+            data.read(16)
     data.read(8)
     if version not in (Version.DE, Version.HD):
         data.read(1)
@@ -277,9 +280,11 @@ def parse_scenario(data, num_players, version, save):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
-        if save >= 63:
+        if save >= 64.3:
+            settings_version = 4.1
+        elif save >= 63:
             settings_version = 3.9
-        if save >= 61.5:
+        elif save >= 61.5:
             settings_version = 3.6
         elif save >= 37:
             settings_version = 3.5
@@ -427,6 +432,8 @@ def parse_de(data, version, save, skip=False):
         data.read(1)
         if save >= 25.06:
             data.read(8)
+        if save >= 64.3:
+            data.read(4)
 
         players.append(dict(
             number=number,
@@ -451,6 +458,8 @@ def parse_de(data, version, save, skip=False):
             de_string(data)
             de_string(data)
             data.read(38)
+            if save >= 64.3:
+                data.read(4)
     data.read(4)
     rated = unpack('b', data)
     allow_specs = unpack('b', data)
