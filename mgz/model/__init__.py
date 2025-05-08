@@ -4,14 +4,12 @@ import codecs
 import collections
 import _hashlib
 import hashlib
-from datetime import timedelta, datetime
 from enum import Enum
 
 import dataclasses
 
 from mgz import fast
 from mgz.reference import get_consts, get_dataset
-from mgz.fast import Action as ActionEnum
 from mgz.fast.header import parse
 from mgz.model.definitions import *
 from mgz.model.inputs import Inputs
@@ -153,7 +151,7 @@ def parse_match(handle):
     players = dict()
     allies = dict()
     for player in data['players'][1:]:
-        allies[player['number']] = set([player['number']])
+        allies[player['number']] = {player['number']}
         for i, stance in enumerate(player['diplomacy']):
             if stance == 2:
                 allies[player['number']].add(i)
@@ -240,6 +238,7 @@ def parse_match(handle):
             op_type, op_data = fast.operation(handle)
             if op_type is fast.Operation.SYNC:
                 timestamp += op_data[0]
+                assert op_data[1] is None or timestamp == op_data[1]["current_time"]
             elif op_type is fast.Operation.VIEWLOCK:
                 if op_data == last_viewlock:
                     continue
