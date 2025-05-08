@@ -1,14 +1,8 @@
 """MGZ Summary."""
 
-import asyncio
 import collections
 import hashlib
 import logging
-import os
-import io
-import json
-import struct
-import tempfile
 import time
 import uuid
 import zlib
@@ -32,7 +26,6 @@ from mgz.summary.objects import get_objects_data
 
 
 LOGGER = logging.getLogger(__name__)
-CHECKSUMS = 4
 MAX_SYNCS = 2000
 AI_ACTIONS = [fast.Action.AI_ORDER]
 
@@ -90,7 +83,6 @@ class FullSummary: # pylint: disable=too-many-public-methods
         """Process rec body."""
         start_time = time.time()
         ratings = {}
-        checksums = []
         ladder = None
         voobly = False
         rated = None
@@ -104,8 +96,8 @@ class FullSummary: # pylint: disable=too-many-public-methods
                 if operation == fast.Operation.SYNC:
                     i += 1
                     duration += payload[0]
-                    if payload[1] and len(checksums) < CHECKSUMS:
-                        checksums.append(payload[1].to_bytes(8, 'big', signed=True))
+                    assert payload[0] <= MAX_SYNCS
+                    assert payload[1] is None or duration == payload[1]["current_time"]
                 elif operation == fast.Operation.ACTION:
                     if 'player_id' in payload[1] and payload[0] not in AI_ACTIONS:
                         self._eapm[payload[1]['player_id']] += 1
@@ -151,8 +143,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
         elif self._header.version == Version.HD and self._header.save_version >= 12.49:
             self._cache['hash'] = hashlib.sha1(self._header.hd.guid)
         else:
-            self._cache['hash'] = hashlib.sha1(b''.join(checksums)) \
-                if len(checksums) == CHECKSUMS else None
+            self._cache['hash'] = None
         if self._header.de:
             rated = self._header.de.ranked
         self._cache['from_voobly'] = voobly
@@ -327,7 +318,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
 
     def get_map(self):
         """Get map."""
-        tiles = tiles = [(tile.terrain_type, tile.elevation) for tile in self._header.map_info.tile]
+        tiles = [(tile.terrain_type, tile.elevation) for tile in self._header.map_info.tile]
         if not self._cache['map']:
             self._cache['map'], self._cache['encoding'], self._cache['language'] = get_map_data(
                 self.get_map_id(),
