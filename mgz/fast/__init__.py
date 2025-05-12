@@ -4,26 +4,56 @@ import struct
 
 from mgz.fast.enums import Operation, Action, Postgame
 from mgz.fast.actions import parse_action_71094
-from mgz.util import check_flags, unpack
+from mgz.util import check_flags, Version
 
 
-CHECKSUM_INTERVAL = 500
+# constants for aoe2record
+MAX_PLAYERS = 8
+SYNC_LEN_PER_PLAYER = 11  # uint32
 
 
-def sync(data):
+def sync(data, version):
     """Handle synchronizations."""
-    increment, marker = struct.unpack('<II', data.read(8))
-    data.seek(-4, 1)
-    checksum = None
+    increment, marker = struct.unpack('<II', data.read(8))  # increment: interval since last sync
     if marker == 0:
-        data.read(8)
-        checksum, = struct.unpack('<I', data.read(4))
-        data.read(4)
-        seq, = struct.unpack('<I', data.read(4))
-        if seq > 0:
-            data.read(332)
-        data.read(8)
-    return increment, checksum
+        if version != Version.DE:
+            data.read(12)
+            seq, = struct.unpack('<I', data.read(4))
+            if seq > 0:
+                data.read(340)
+            else:
+                data.read(8)
+            return increment, None
+
+        values = struct.unpack(f'<{MAX_PLAYERS * SYNC_LEN_PER_PLAYER}I', data.read(4 * MAX_PLAYERS * SYNC_LEN_PER_PLAYER))
+        """
+        These values are just guesses, so they might be incorrect.
+        
+        val  0: unknown. It seems this value is always 0.
+        val  1: total resources(wood + food + gold + stone), probably round down
+        val  2: unknown
+        val  3: number of displayable objects, objects*2(with shadow?) + bodies + projectile, etc. exclude building foundations
+        val  4: displayable object TTL in seconds + resource on villagers (there is sometime an object with 100 TTL and never die)
+        val  5: unknown. It seems this value is always 0.
+        val  6: number of objects (include foundation), when a unit is lost, this counter updates after its displayable objects(body) dies
+        val  7: unknown
+        val  8: player ID, from 1 to 8
+        val  9: unknown
+        val 10: unknown
+        """
+        current_time, = struct.unpack('<I', data.read(4))  # duration from beginning in ms
+        payload = {"current_time": current_time}
+        for ptr in range(0, MAX_PLAYERS * SYNC_LEN_PER_PLAYER, SYNC_LEN_PER_PLAYER):
+            if values[ptr + 1]:
+                payload[values[ptr + 8]] = {
+                    'total_res': values[ptr + 1],
+                    'dp_obj_count': values[ptr + 3],
+                    'dp_obj_ttl': values[ptr + 4],
+                    'obj_count': values[ptr + 6],
+                }
+        return increment, payload
+    data.seek(-4, 1)
+    return increment, None
 
 
 def viewlock(data):
@@ -301,7 +331,7 @@ def meta(data):
         raise ValueError("insufficient meta received")
 
 
-def operation(data):
+def operation(data, version):
     """Handle body operations."""
     try:
         op_id, = struct.unpack('<I', data.read(4))
@@ -312,7 +342,7 @@ def operation(data):
         if op_type == Operation.ACTION:
             return op_type, action(data)
         if op_type == Operation.SYNC:
-            return op_type, sync(data)
+            return op_type, sync(data, version)
         if op_type == Operation.VIEWLOCK:
             return op_type, viewlock(data)
         if op_type == Operation.CHAT:

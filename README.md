@@ -48,10 +48,10 @@ from mgz import header, fast
 
 with open('/path/to/file', 'rb') as data:
     eof = os.fstat(data.fileno()).st_size
-    header.parse_stream(data)
+    h = header.parse_stream(data)
     fast.meta(data)
     while data.tell() < eof:
-        fast.operation(data)
+        fast.operation(data, h.version)
 ```
 
 ### Summary
