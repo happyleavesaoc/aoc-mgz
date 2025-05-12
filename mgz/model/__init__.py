@@ -235,7 +235,7 @@ def parse_match(handle):
     last_viewlock = None
     while True:
         try:
-            op_type, op_data = fast.operation(handle)
+            op_type, op_data = fast.operation(handle, data["version"])
             if op_type is fast.Operation.SYNC:
                 timestamp += op_data[0]
                 assert op_data[1] is None or timestamp == op_data[1]["current_time"]

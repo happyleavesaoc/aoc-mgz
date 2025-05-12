@@ -92,7 +92,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
         self._actions = []
         while True:
             try:
-                operation, payload = fast.operation(self._handle)
+                operation, payload = fast.operation(self._handle, self._header.version)
                 if operation == fast.Operation.SYNC:
                     i += 1
                     duration += payload[0]

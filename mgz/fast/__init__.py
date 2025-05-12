@@ -4,15 +4,27 @@ import struct
 
 from mgz.fast.enums import Operation, Action, Postgame
 from mgz.fast.actions import parse_action_71094
-from mgz.util import check_flags
+from mgz.util import check_flags, Version
 
+
+# constants for aoe2record
 MAX_PLAYERS = 8
 SYNC_LEN_PER_PLAYER = 11  # uint32
 
-def sync(data):
+
+def sync(data, version):
     """Handle synchronizations."""
     increment, marker = struct.unpack('<II', data.read(8))  # increment: interval since last sync
     if marker == 0:
+        if version != Version.DE:
+            data.read(12)
+            seq, = struct.unpack('<I', data.read(4))
+            if seq > 0:
+                data.read(340)
+            else:
+                data.read(8)
+            return increment, None
+
         values = struct.unpack(f'<{MAX_PLAYERS * SYNC_LEN_PER_PLAYER}I', data.read(4 * MAX_PLAYERS * SYNC_LEN_PER_PLAYER))
         """
         These values are just guesses, so they might be incorrect.
@@ -39,10 +51,9 @@ def sync(data):
                     'dp_obj_ttl': values[ptr + 4],
                     'obj_count': values[ptr + 6],
                 }
-    else:
-        data.seek(-4, 1)
-        payload = None
-    return increment, payload
+        return increment, payload
+    data.seek(-4, 1)
+    return increment, None
 
 
 def viewlock(data):
@@ -320,7 +331,7 @@ def meta(data):
         raise ValueError("insufficient meta received")
 
 
-def operation(data):
+def operation(data, version):
     """Handle body operations."""
     try:
         op_id, = struct.unpack('<I', data.read(4))
@@ -331,7 +342,7 @@ def operation(data):
         if op_type == Operation.ACTION:
             return op_type, action(data)
         if op_type == Operation.SYNC:
-            return op_type, sync(data)
+            return op_type, sync(data, version)
         if op_type == Operation.VIEWLOCK:
             return op_type, viewlock(data)
         if op_type == Operation.CHAT:
