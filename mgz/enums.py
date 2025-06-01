@@ -382,6 +382,7 @@ def ActionEnum(ctx):
         de_queue=129,
         de_unknown_130=130,
         de_unknown_131=131,
+        de_unknown_134=134,
         de_unknown_135=135,
         de_unknown_196=196,
         postgame=255,
