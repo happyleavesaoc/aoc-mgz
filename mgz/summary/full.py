@@ -327,7 +327,7 @@ class FullSummary: # pylint: disable=too-many-public-methods
 
     def get_map(self):
         """Get map."""
-        tiles = tiles = [(tile.terrain_type, tile.elevation) for tile in self._header.map_info.tile]
+        tiles = [(tile.terrain_type, tile.elevation) for tile in self._header.map_info.tile]
         if not self._cache['map']:
             self._cache['map'], self._cache['encoding'], self._cache['language'] = get_map_data(
                 self.get_map_id(),

@@ -41,7 +41,7 @@ class TestFiles(unittest.TestCase):
         skip = {"tests/recs/de-50.6-scenario.aoe2record", "tests/recs/de-50.6-scenario-with-triggers.aoe2record"}
 
         for path in glob.glob('tests/recs/*'):
-            if path in skip:
+            if path.replace("\\", "/") in skip:
                 continue
             parse_file_fast(path)
 
