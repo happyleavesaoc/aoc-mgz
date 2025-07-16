@@ -22,6 +22,7 @@ scenario_header = "scenario_header"/Struct(
         "active"/Int32ul,
         "human"/Int32ul,
         "civilization"/Int32ul,
+        "civ_repeat"/If(lambda ctx: find_save_version(ctx) >= 13.34, Int32ul),
         "constant"/Int32ul, # 0x04 0x00 0x00 0x00
     )),
     Padding(5),
@@ -29,7 +30,7 @@ scenario_header = "scenario_header"/Struct(
     "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),
     If(lambda ctx: ctx._._.version == Version.DE, Struct(
         Padding(64),
-        If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(64))
+        # If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(64)) 4*16 = 64
     ))
 )
 
