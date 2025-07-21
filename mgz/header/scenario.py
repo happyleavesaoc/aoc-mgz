@@ -31,7 +31,7 @@ scenario_header = "scenario_header"/Struct(
         # We should try a record with a determined starting time to see if those byte are before elapsed_time or not
         Padding(64),
         # If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(64)) 4*16 = 64
-    ))
+    )),
     "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),    
 )
 
