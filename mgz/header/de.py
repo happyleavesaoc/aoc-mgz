@@ -162,6 +162,7 @@ de = "de"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 50, Bytes(8)),
     If(lambda ctx: find_save_version(ctx) >= 61.5, Flag),
     If(lambda ctx: find_save_version(ctx) >= 63, Bytes(5)),
+    If(lambda ctx: find_save_version(ctx) >= 64.3 and ctx.game_type == 5, Bytes(1)), # Campaign ?
     de_string,
     Bytes(5),
     If(lambda ctx: find_save_version(ctx) >= 13.13, Byte),
