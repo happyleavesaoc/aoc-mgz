@@ -1,8 +1,8 @@
 """Scenario."""
 
 import struct
-from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
-                       PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
+from construct import (Array, Computed, Float32l, Int16ul, Int32sl, Int32ul, Padding,
+                       PascalString, Peek, RepeatUntil, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
 from mgz.util import Find, Version, find_save_version, find_version
@@ -26,11 +26,9 @@ scenario_header = "scenario_header"/Struct(
         "constant"/Int32ul, # 0x04 0x00 0x00 0x00
     )),
     Padding(5),
-    "elapsed_time"/Float32l,
-    If(lambda ctx: ctx._._.version == Version.DE, Struct(
-        # We should try a record with a determined starting time to see if those byte are before elapsed_time or not
+    "elapsed_time"/Float32l, # We should try a record with a determined starting time to see if those byte are before elapsed_time or not
+    If(lambda ctx: ctx._._.version == Version.DE, Struct(        
         Padding(64),
-        # If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(64)) 4*16 = 64
     )),
     "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),    
 )
@@ -43,8 +41,7 @@ messages = "messages"/Struct(
     "defeat_id"/Int32sl,
     "history_id"/Int32sl,
     "scouts_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32sl),
-    "instructions_length"/Int16ul,
-    "instructions"/Bytes(lambda ctx: ctx.instructions_length),
+    "instructions"/PascalString(lengthfield="instructions_length"/Int16ul),
     "hints"/PascalString(lengthfield="hints_length"/Int16ul),
     "victory"/PascalString(lengthfield="victory_length"/Int16ul),
     "defeat"/PascalString(lengthfield="defeat_length"/Int16ul),
@@ -66,6 +63,7 @@ messages = "messages"/Struct(
 scenario_players = "players"/Struct(
     Array(16, "ai_names"/PascalString(lengthfield="ai_name_length"/Int16ul)),
     Array(16, "ai"/Struct(Padding(8), "file"/PascalString(lengthfield="ai_file_length"/Int32ul))),
+    If(lambda ctx: ctx._._.version == Version.DE, Array(16, Padding(1))), # 16 byte 0x00 or 0x01 I think checking with a coop campaign could help understand those value
     Padding(4),
     Array(16, "resources"/Struct(
         "gold"/Int32ul,
@@ -78,7 +76,7 @@ scenario_players = "players"/Struct(
             "unk2"/Int32ul
         )
     )),
-    Array(16, Padding(1)) # 0x01 x 16
+    If(lambda ctx: ctx._._.version != Version.DE, Array(16, Padding(1))) # 0x01 * 16
 )
 
 # Victory conditions.
@@ -110,14 +108,117 @@ disables = "disables"/Struct(
             Array(16, Array(20, Padding(4))),
         )
     ),
-    If(lambda ctx: ctx._._.version == Version.DE, Bytes(196)),
+    If(lambda ctx: ctx._._.version == Version.DE, 
+       Struct(
+           "unk_bytes"/Bytes(4),
+           # I can't find a nice way to do this with construct feel free to edit it
+           "p1_num_disabled_techs"/Int32ul,
+           "p2_num_disabled_techs"/Int32ul, 
+           "p3_num_disabled_techs"/Int32ul, 
+           "p4_num_disabled_techs"/Int32ul, 
+           "p5_num_disabled_techs"/Int32ul, 
+           "p6_num_disabled_techs"/Int32ul, 
+           "p7_num_disabled_techs"/Int32ul, 
+           "p8_num_disabled_techs"/Int32ul, 
+           "p9_num_disabled_techs"/Int32ul, 
+           "p10_num_disabled_techs"/Int32ul, 
+           "p11_num_disabled_techs"/Int32ul,
+           "p12_num_disabled_techs"/Int32ul,
+           "p13_num_disabled_techs"/Int32ul,
+           "p14_num_disabled_techs"/Int32ul,
+           "p15_num_disabled_techs"/Int32ul,
+           "p16_num_disabled_techs"/Int32ul,
+           "p1_disabled_techs"/Array(lambda ctx: ctx.p1_num_disabled_techs, Int32ul),   
+           "p2_disabled_techs"/Array(lambda ctx: ctx.p2_num_disabled_techs, Int32ul), 
+           "p3_disabled_techs"/Array(lambda ctx: ctx.p3_num_disabled_techs, Int32ul), 
+           "p4_disabled_techs"/Array(lambda ctx: ctx.p4_num_disabled_techs, Int32ul), 
+           "p5_disabled_techs"/Array(lambda ctx: ctx.p5_num_disabled_techs, Int32ul), 
+           "p6_disabled_techs"/Array(lambda ctx: ctx.p6_num_disabled_techs, Int32ul), 
+           "p7_disabled_techs"/Array(lambda ctx: ctx.p7_num_disabled_techs, Int32ul), 
+           "p8_disabled_techs"/Array(lambda ctx: ctx.p8_num_disabled_techs, Int32ul), 
+           "p9_disabled_techs"/Array(lambda ctx: ctx.p9_num_disabled_techs, Int32ul), 
+           "p10_disabled_techs"/Array(lambda ctx: ctx.p10_num_disabled_techs, Int32ul), 
+           "p11_disabled_techs"/Array(lambda ctx: ctx.p11_num_disabled_techs, Int32ul), 
+           "p12_disabled_techs"/Array(lambda ctx: ctx.p12_num_disabled_techs, Int32ul), 
+           "p13_disabled_techs"/Array(lambda ctx: ctx.p13_num_disabled_techs, Int32ul), 
+           "p14_disabled_techs"/Array(lambda ctx: ctx.p14_num_disabled_techs, Int32ul), 
+           "p15_disabled_techs"/Array(lambda ctx: ctx.p15_num_disabled_techs, Int32ul), 
+           "p16_disabled_techs"/Array(lambda ctx: ctx.p16_num_disabled_techs, Int32ul),
+
+           "p1_num_disabled_units"/Int32ul,
+           "p2_num_disabled_units"/Int32ul, 
+           "p3_num_disabled_units"/Int32ul, 
+           "p4_num_disabled_units"/Int32ul, 
+           "p5_num_disabled_units"/Int32ul, 
+           "p6_num_disabled_units"/Int32ul, 
+           "p7_num_disabled_units"/Int32ul, 
+           "p8_num_disabled_units"/Int32ul, 
+           "p9_num_disabled_units"/Int32ul, 
+           "p10_num_disabled_units"/Int32ul, 
+           "p11_num_disabled_units"/Int32ul,
+           "p12_num_disabled_units"/Int32ul,
+           "p13_num_disabled_units"/Int32ul,
+           "p14_num_disabled_units"/Int32ul,
+           "p15_num_disabled_units"/Int32ul,
+           "p16_num_disabled_units"/Int32ul,
+           "p1_disabled_units"/Array(lambda ctx: ctx.p1_num_disabled_units, Int32ul),   
+           "p2_disabled_units"/Array(lambda ctx: ctx.p2_num_disabled_units, Int32ul), 
+           "p3_disabled_units"/Array(lambda ctx: ctx.p3_num_disabled_units, Int32ul), 
+           "p4_disabled_units"/Array(lambda ctx: ctx.p4_num_disabled_units, Int32ul), 
+           "p5_disabled_units"/Array(lambda ctx: ctx.p5_num_disabled_units, Int32ul), 
+           "p6_disabled_units"/Array(lambda ctx: ctx.p6_num_disabled_units, Int32ul), 
+           "p7_disabled_units"/Array(lambda ctx: ctx.p7_num_disabled_units, Int32ul), 
+           "p8_disabled_units"/Array(lambda ctx: ctx.p8_num_disabled_units, Int32ul), 
+           "p9_disabled_units"/Array(lambda ctx: ctx.p9_num_disabled_units, Int32ul), 
+           "p10_disabled_units"/Array(lambda ctx: ctx.p10_num_disabled_units, Int32ul), 
+           "p11_disabled_units"/Array(lambda ctx: ctx.p11_num_disabled_units, Int32ul), 
+           "p12_disabled_units"/Array(lambda ctx: ctx.p12_num_disabled_units, Int32ul), 
+           "p13_disabled_units"/Array(lambda ctx: ctx.p13_num_disabled_units, Int32ul), 
+           "p14_disabled_units"/Array(lambda ctx: ctx.p14_num_disabled_units, Int32ul), 
+           "p15_disabled_units"/Array(lambda ctx: ctx.p15_num_disabled_units, Int32ul), 
+           "p16_disabled_units"/Array(lambda ctx: ctx.p16_num_disabled_units, Int32ul), 
+
+           "p1_num_disabled_buildings"/Int32ul,
+           "p2_num_disabled_buildings"/Int32ul, 
+           "p3_num_disabled_buildings"/Int32ul, 
+           "p4_num_disabled_buildings"/Int32ul, 
+           "p5_num_disabled_buildings"/Int32ul, 
+           "p6_num_disabled_buildings"/Int32ul, 
+           "p7_num_disabled_buildings"/Int32ul, 
+           "p8_num_disabled_buildings"/Int32ul, 
+           "p9_num_disabled_buildings"/Int32ul, 
+           "p10_num_disabled_buildings"/Int32ul, 
+           "p11_num_disabled_buildings"/Int32ul,
+           "p12_num_disabled_buildings"/Int32ul,
+           "p13_num_disabled_buildings"/Int32ul,
+           "p14_num_disabled_buildings"/Int32ul,
+           "p15_num_disabled_buildings"/Int32ul,
+           "p16_num_disabled_buildings"/Int32ul,
+           "p1_disabled_buildings"/Array(lambda ctx: ctx.p1_num_disabled_buildings, Int32ul),   
+           "p2_disabled_buildings"/Array(lambda ctx: ctx.p2_num_disabled_buildings, Int32ul), 
+           "p3_disabled_buildings"/Array(lambda ctx: ctx.p3_num_disabled_buildings, Int32ul), 
+           "p4_disabled_buildings"/Array(lambda ctx: ctx.p4_num_disabled_buildings, Int32ul), 
+           "p5_disabled_buildings"/Array(lambda ctx: ctx.p5_num_disabled_buildings, Int32ul), 
+           "p6_disabled_buildings"/Array(lambda ctx: ctx.p6_num_disabled_buildings, Int32ul), 
+           "p7_disabled_buildings"/Array(lambda ctx: ctx.p7_num_disabled_buildings, Int32ul), 
+           "p8_disabled_buildings"/Array(lambda ctx: ctx.p8_num_disabled_buildings, Int32ul), 
+           "p9_disabled_buildings"/Array(lambda ctx: ctx.p9_num_disabled_buildings, Int32ul), 
+           "p10_disabled_buildings"/Array(lambda ctx: ctx.p10_num_disabled_buildings, Int32ul), 
+           "p11_disabled_buildings"/Array(lambda ctx: ctx.p11_num_disabled_buildings, Int32ul), 
+           "p12_disabled_buildings"/Array(lambda ctx: ctx.p12_num_disabled_buildings, Int32ul), 
+           "p13_disabled_buildings"/Array(lambda ctx: ctx.p13_num_disabled_buildings, Int32ul), 
+           "p14_disabled_buildings"/Array(lambda ctx: ctx.p14_num_disabled_buildings, Int32ul), 
+           "p15_disabled_buildings"/Array(lambda ctx: ctx.p15_num_disabled_buildings, Int32ul), 
+           "p16_disabled_buildings"/Array(lambda ctx: ctx.p16_num_disabled_buildings, Int32ul), 
+           )
+       ),
     If(lambda ctx: ctx._._.version == Version.HD, Bytes(644)),
-    "padding"/Bytes(12)
+    "padding"/Bytes(12),
+    Array(16, AgeEnum("starting_ages"/Int32sl)), # moving this one from game settings
 )
 
 # Game settings.
-game_settings = "game_settings"/Struct(
-    Array(16, AgeEnum("starting_ages"/Int32sl)),
+game_settings = "game_settings"/Struct( 
     "hd"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(16)),
     Padding(4),
     Padding(8),
