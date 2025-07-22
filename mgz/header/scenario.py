@@ -5,6 +5,7 @@ from construct import (Array, Computed, Float32l, Int16ul, Int32sl, Int32ul, Pad
                        PascalString, Peek, RepeatUntil, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
+from mgz.header.objects import de_string
 from mgz.util import Find, Version, find_save_version, find_version
 
 # pylint: disable=invalid-name, bad-continuation
@@ -213,22 +214,25 @@ disables = "disables"/Struct(
            )
        ),
     If(lambda ctx: ctx._._.version == Version.HD, Bytes(644)),
-    "padding"/Bytes(12),
-    Array(16, AgeEnum("starting_ages"/Int32sl)), # moving this one from game settings
+    "padding"/Bytes(12),    
 )
 
 # Game settings.
 game_settings = "game_settings"/Struct( 
+    Array(16, AgeEnum("starting_ages"/Int32sl)), 
     "hd"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(16)),
-    Padding(4),
+    Padding(4), # 0x9d 0xff 0xff 0xff very helpfull const
     Padding(8),
     "map_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32ul),
     Peek("difficulty_id"/Int32ul),
     DifficultyEnum("difficulty"/Int32ul),
     "lock_teams"/Int32ul,
-    If(lambda ctx: ctx._._.version == Version.DE,
+    "de_data"/If(lambda ctx: ctx._._.version == Version.DE,
         Struct(
-            Padding(29),
+            Padding(12),
+            de_string,
+            de_string,
+            Padding(9),
             If(lambda ctx: find_save_version(ctx) >= 13.07, Padding(1)),
             If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(132)),
             If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(1)),
