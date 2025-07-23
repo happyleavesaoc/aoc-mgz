@@ -10,11 +10,12 @@ from mgz.util import Version, find_save_version
 
 # Player inputs in the lobby, and several host settings.
 lobby = "lobby"/Struct(
-    If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(5)),
-    If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(9)),
-    If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(5)),
-    If(lambda ctx: find_save_version(ctx) >= 37, Bytes(8)),
-    If(lambda ctx: find_save_version(ctx) >= 64.3, Bytes(16)),
+    #If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(5)),
+    #If(lambda ctx: find_save_version(ctx) >= 20.06, Padding(9)),
+    #If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(5)),
+    #If(lambda ctx: find_save_version(ctx) >= 37, Bytes(8)),
+    #If(lambda ctx: find_save_version(ctx) >= 64.3, Bytes(16)),
+    # We ignore those previous data for now they were making the GoToLobbyStart more complex without being meaningfull
     Array(8, "teams"/Byte), # team number selected by each player
     If(lambda ctx: ctx._.version not in (Version.DE, Version.HD),
         Padding(1),

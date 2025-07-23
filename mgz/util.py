@@ -292,6 +292,40 @@ class GotoObjectsEnd(Construct):
         stream.seek(end)
         return end
 
+class GoToLobbyStart(Construct):
+    """Find the start of the lobby part or the end of the scenario part
+    
+    Helpfull since triggers are going to be tough to parse
+    """
+
+    def _parse(self, stream, context, path):
+        reveal_map = context._._.de.reveal_map
+        fog_of_war = context._._.de.fog_of_war
+        map_size = context._._.map_info.size_x
+        population_limit = context._._.de.population_limit
+        save_version = context._._.save_version
+        version = find_version(context)
+        start = stream.tell()
+        # Have to read everything to be able to use find()
+        read_bytes = stream.read()
+        spot = -1
+        if save_version >= 62.0:
+            spot = read_bytes.find(struct.pack('<I',int(reveal_map)) + struct.pack('<I', int(fog_of_war)) + struct.pack('<I',int(map_size)) + struct.pack('<I', int(population_limit)))
+        else:
+            spot = read_bytes.find(struct.pack('<I', int(reveal_map)) + struct.pack('<I', int(fog_of_war)) + b'\x00\x00\x00\x00' + struct.pack('<I', int(population_limit)))
+        end = -1
+        if spot > 0: 
+            backtrack = 0
+            if version != Version.DE and version != Version.HD:
+                backtrack += 1
+            backtrack += 8 # Teams                   
+            end = start + spot - backtrack
+            stream.seek(end)
+        else:
+            raise ValueError("Can't find lobby start")
+            # if it doesn't exist we are cooked
+        return end
+
 
 def find_postgame(data, size):
     """Find postgame and grab duration.

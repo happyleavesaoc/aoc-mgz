@@ -43,6 +43,7 @@ class TestFiles(unittest.TestCase):
         for path in glob.glob('tests/recs/*'):
             if path.replace("\\", "/") in skip:
                 continue
+            print("\n" + path)
             parse_file_fast(path)
 
     @unittest.skip("This test is meant to be run manually when debugging issues in a specific rec")

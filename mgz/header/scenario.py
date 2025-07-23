@@ -6,7 +6,7 @@ from construct import (Array, Computed, Float32l, Int16ul, Int32sl, Int32ul, Pad
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
 from mgz.header.objects import de_string
-from mgz.util import Find, Version, find_save_version, find_version
+from mgz.util import Find, GoToLobbyStart,Version, find_save_version, find_version
 
 # pylint: disable=invalid-name, bad-continuation
 
@@ -272,7 +272,9 @@ triggers = "triggers"/Struct(
     "num_triggers"/Int32ul,
     # parse if num > 0
     "de"/If(lambda ctx: ctx._._.version == Version.DE,
-         Padding(1032)
+         #Padding(1032)
+         # We are going to ignore trigger and jump to lobby, we know lobby contains the map size followed by the population limit
+         "end_of_triggers"/GoToLobbyStart()
     )
 )
 
