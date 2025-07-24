@@ -309,7 +309,7 @@ class GoToLobbyStart(Construct):
         # Have to read everything to be able to use find()
         read_bytes = stream.read()
         spot = -1
-        if save_version >= 62.0:
+        if save_version >= 61.5:
             spot = read_bytes.find(struct.pack('<I',int(reveal_map)) + struct.pack('<I', int(fog_of_war)) + struct.pack('<I',int(map_size)) + struct.pack('<I', int(population_limit)))
         else:
             spot = read_bytes.find(struct.pack('<I', int(reveal_map)) + struct.pack('<I', int(fog_of_war)) + b'\x00\x00\x00\x00' + struct.pack('<I', int(population_limit)))
