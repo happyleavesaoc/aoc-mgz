@@ -38,12 +38,11 @@ class TestFiles(unittest.TestCase):
 
     def test_files_fast(self):
         # these files aren't supported by full header parser for now:
-        skip = {"tests/recs/de-13.17.aoe2record","tests/recs/de-50.6-scenario.aoe2record", "tests/recs/de-50.6-scenario-with-triggers.aoe2record", "tests/recs/de-64.3-campaign.aoe2record"}
+        skip = {"tests/recs/de-13.17.aoe2record","tests/recs/de-50.6-scenario.aoe2record", "tests/recs/de-50.6-scenario-with-triggers.aoe2record"}
 
         for path in glob.glob('tests/recs/*'):
             if path.replace("\\", "/") in skip:
                 continue
-            print("\n" + path)
             parse_file_fast(path)
 
     @unittest.skip("This test is meant to be run manually when debugging issues in a specific rec")

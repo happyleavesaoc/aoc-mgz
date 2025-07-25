@@ -1,8 +1,8 @@
 """Scenario."""
 
 import struct
-from construct import (Array, Computed, Float32l, Int16ul, Int32sl, Int32ul, Padding,
-                       PascalString, Peek, RepeatUntil, String, Struct, Bytes, If, IfThenElse)
+from construct import (Array, Float32l, Int16ul, Int32sl, Int32ul, Padding,
+                       PascalString, Peek, String, Struct, Bytes, If, IfThenElse)
 
 from mgz.enums import DifficultyEnum, PlayerTypeEnum, AgeEnum
 from mgz.header.objects import de_string
@@ -64,7 +64,7 @@ messages = "messages"/Struct(
 scenario_players = "players"/Struct(
     Array(16, "ai_names"/PascalString(lengthfield="ai_name_length"/Int16ul)),
     Array(16, "ai"/Struct(Padding(8), "file"/PascalString(lengthfield="ai_file_length"/Int32ul))),
-    If(lambda ctx: ctx._._.version == Version.DE, Array(16, Padding(1))), # 16 byte 0x00 or 0x01 I think checking with a coop campaign could help understand those value
+    If(lambda ctx: ctx._._.version == Version.DE, Array(16, Padding(1))), # 16 byte 0x00 or 0x01 I think checking with a coop campaign could help understand those value, they could be opened slots
     Padding(4),
     Array(16, "resources"/Struct(
         "gold"/Int32ul,
@@ -112,7 +112,7 @@ disables = "disables"/Struct(
     If(lambda ctx: ctx._._.version == Version.DE, 
        Struct(
            "unk_bytes"/Bytes(4),
-           # I can't find a nice way to do this with construct feel free to edit it
+           # I can't find a nice way to do this with construct feel free to edit it, make it nicer
            "p1_num_disabled_techs"/Int32ul,
            "p2_num_disabled_techs"/Int32ul, 
            "p3_num_disabled_techs"/Int32ul, 
@@ -214,14 +214,14 @@ disables = "disables"/Struct(
            )
        ),
     If(lambda ctx: ctx._._.version == Version.HD, Bytes(644)),
-    "padding"/Bytes(12),    
+    "padding"/Bytes(12)
 )
 
 # Game settings.
 game_settings = "game_settings"/Struct( 
     Array(16, AgeEnum("starting_ages"/Int32sl)), 
     "hd"/If(lambda ctx: find_version(ctx) == Version.HD, Bytes(16)),
-    Padding(4), # 0x9d 0xff 0xff 0xff very helpfull const
+    Padding(4), # 0x9d 0xff 0xff 0xff const
     Padding(8),
     "map_id"/If(lambda ctx: ctx._._.version != Version.AOK, Int32ul),
     Peek("difficulty_id"/Int32ul),
@@ -273,7 +273,7 @@ triggers = "triggers"/Struct(
     # parse if num > 0
     "de"/If(lambda ctx: ctx._._.version == Version.DE,
          #Padding(1032)
-         # We are going to ignore trigger and jump to lobby, we know lobby contains the map size followed by the population limit
+         # We ignore trigger and jump to lobby, we know lobby contains repeated data we already have (revealed map, fog of war, map size and population limit)
          "end_of_triggers"/GoToLobbyStart()
     )
 )
