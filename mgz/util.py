@@ -311,8 +311,9 @@ class GoToLobbyStart(Construct):
         spot = -1
         if save_version >= 61.5:
             spot = read_bytes.find(struct.pack('<I',int(reveal_map)) + struct.pack('<I', int(fog_of_war)) + struct.pack('<I',int(map_size)) + struct.pack('<I', int(population_limit)))
-        else:
-            spot = read_bytes.find(struct.pack('<I', int(reveal_map)) + struct.pack('<I', int(fog_of_war)) + b'\x00\x00\x00\x00' + struct.pack('<I', int(population_limit)))
+        else:            
+            pattern = re.search(struct.pack('<I', int(reveal_map)) + struct.pack('<I', int(fog_of_war)) + b'....' + struct.pack('<I', int(population_limit)), read_bytes, re.DOTALL)
+            spot = pattern.start()                               
         end = -1
         if spot > 0: 
             backtrack = 0
