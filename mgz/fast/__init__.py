@@ -2,7 +2,7 @@
 import io
 import struct
 
-from mgz.fast.enums import Operation, Action, Postgame
+from mgz.fast.enums import Operation, Action, Postgame, Age
 from mgz.fast.actions import parse_action_71094
 from mgz.util import check_flags, unpack
 
