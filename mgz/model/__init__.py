@@ -233,6 +233,7 @@ def parse_match(handle):
     resigned = []
     actions = []
     viewlocks = []
+    uptimes = []
     eapm = collections.Counter()
     last_viewlock = None
     while True:
@@ -257,6 +258,14 @@ def parse_match(handle):
                         players[chat['player_number']]
                     ))
                     inputs.add_chat(chats[-1])
+                if chat['type'] == ChatEnum.AGE:
+                    uptimes.append(
+                        Uptime(
+                            timedelta(milliseconds=chat['timestamp'] + data['map']['restore_time']),
+                            chat['age'],
+                            players.get(chat['player_number']),
+                        )
+                    )
             elif op_type is fast.Operation.ACTION:
                 action_type, action_data = op_data
                 action = Action(timedelta(milliseconds=timestamp), action_type, action_data)
@@ -363,7 +372,8 @@ def parse_match(handle):
         data['de']['visibility_id'] == 2 if data['version'] is Version.DE else None,
         get_hash(data),
         actions,
-        inputs.inputs
+        inputs.inputs,
+        uptimes
     )
 
 

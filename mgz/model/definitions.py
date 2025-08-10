@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import timedelta, datetime
 from mgz.fast import Action as ActionEnum
+from mgz.fast import Age as AgeEnum
 from mgz.util import Version
 
 
@@ -141,6 +142,17 @@ class Chat:
     def __repr__(self):
         return f'[{self.timestamp}] {self.player}: {self.message}'
 
+@dataclass
+class Uptime:
+    """Represents an advanced to age event."""
+
+    timestamp: timedelta
+    age: AgeEnum
+    player: Player
+
+    def __repr__(self):
+        return f'[{self.timestamp}] {self.player} -> {self.age}'
+
 
 @dataclass
 class Match:
@@ -192,3 +204,4 @@ class Match:
     hash: str
     actions: list
     inputs: list
+    uptimes: list
