@@ -87,3 +87,10 @@ class Postgame(Enum):
     """Postgame types."""
     WORLD_TIME = 1
     LEADERBOARDS = 2
+
+class Age(Enum):
+    """Age types."""
+    DARK_AGE = 1
+    FEUDAL_AGE = 2
+    CASTLE_AGE = 3
+    IMPERIAL_AGE = 4
