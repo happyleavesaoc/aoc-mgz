@@ -30,6 +30,15 @@ class Object:
 
 
 @dataclass
+class TimeseriesRow:
+    """Represents a timeseries row."""
+
+    timestamp: timedelta
+    total_resources: int
+    total_objects: int
+
+
+@dataclass
 class Player:
     """Represents a player."""
 
@@ -42,6 +51,7 @@ class Player:
     position: Position
     objects: list
     profile_id: int
+    timeseries: list[TimeseriesRow]
     prefer_random: bool = None
     team: list = None
     team_id: int = None

@@ -26,6 +26,8 @@ AGE_MARKERS = [
     'ha raggiunto',
     'avanzó a Ed',
     'đã nâng cấp',
+    'progressé vers',
+    'wkracza do',
 ]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',
