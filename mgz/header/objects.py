@@ -81,6 +81,7 @@ static = "static"/Struct(
         "pathing_group_len"/Int32ul,
         "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul)
     )),
+    If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(2)),
     "group_id"/Int32sl,
     "roo_already_called"/Byte,
     "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
@@ -130,6 +131,10 @@ static = "static"/Struct(
     ))
 )
 
+static_object = "static"/Struct(
+    Embedded(static),
+    If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
+)
 
 animated = "animated"/Struct(
     Embedded(static),
@@ -170,6 +175,7 @@ base_moving = "base_moving"/Struct(
     "de_move_byte"/If(lambda ctx: find_save_version(ctx) >= 20.16, Byte),
     "angle"/Float32l,
     "turn_towards_time"/Int32ul,
+    If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
     If(lambda ctx: find_save_version(ctx) < 37, Struct(
         "turn_timer"/Int32ul,
         "continue_counter"/Int32ul,
@@ -400,6 +406,7 @@ combat = "combat"/Struct(
     Embedded(base_combat),
     "de_pre"/If(lambda ctx: find_version(ctx) == Version.DE and find_save_version(ctx) < 37, Bytes(4)),
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(14)),
+    "de_unknown_66_3_1"/If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
     "de_2"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(16)),
     "de_3"/If(lambda ctx: 63 > find_save_version(ctx) >= 26.18, Bytes(1)),
     "de_4"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(4)),
@@ -497,6 +504,7 @@ building = "building"/Struct(
     "de_unk_5"/If(lambda ctx: find_save_version(ctx) >= 50.4, Bytes(4)),
     "de_unk_6"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(12)),
     "de_unk_7"/If(lambda ctx: find_save_version(ctx) >= 64.3, Bytes(4)),
+    "de_unknown_66_3_2"/If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(5)),
 )
 
 
@@ -505,7 +513,7 @@ existing_object = "objects"/Struct(
     "type"/Byte,
     "player_id"/Byte,
     Embedded("properties"/Switch(lambda ctx: ctx.type, {
-        10: static,
+        10: static_object,
         20: animated,
         25: animated,
         30: moving,
@@ -514,7 +522,7 @@ existing_object = "objects"/Struct(
         60: missile,
         70: combat,
         80: building,
-        90: static
+        90: static_object
     }, default=Pass))
 )
 
