@@ -132,6 +132,7 @@ static = "static"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
 )
 
+
 animated = "animated"/Struct(
     Embedded(static),
     "turn_speed"/Float32l
