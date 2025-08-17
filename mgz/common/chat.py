@@ -3,7 +3,66 @@ import json
 import logging
 from enum import Enum
 
+from mgz.fast import Age
+
 LOGGER = logging.getLogger(__name__)
+FEUDAL_AGE_MARKERS = [
+    '봉건 시대',
+    'Edad Feudal',
+    '封建时代',
+    'Feudalzeit',
+    'Feodal Çağ',
+    '封建時代',
+    'Edad Feudal',
+    '領主の時代',
+    'Zaman Feudal',
+    'Età feudale',
+    'Feudal Age',
+    'Thời phong kiến',
+    'सामंतवादी युग',
+    'Era Feudalna',
+    'Idade Feudal',
+    'Âge féodal',
+    'Феодальная эпоха',
+]
+CASTLE_AGE_MARKERS = [
+    '성주 시대',
+    'Ed. Castillos',
+    '城堡时代',
+    'Ritterzeit',
+    'Kale Çağı',
+    '城堡時代',
+    'Edad de los Castillos',
+    '城主の時代',
+    'Zaman Kastil',
+    'Età dei castelli',
+    'Castle Age',
+    'Thời lâu đài',
+    'परिवर्तन युग',
+    'Era Zamków',
+    'Idade dos Castelos',
+    'Âge des châteaux',
+    'Замковая эпоха',
+]
+IMPERIAL_AGE_MARKERS = [
+    '왕정 시대',
+    'Edad Imperial',
+    '帝王时代',
+    'Imperialzeit',
+    'İmparatorluk Çağı',
+    '帝王時代',
+    'Edad Imperial',
+    '帝王の時代',
+    'Zaman Empayar',
+    'Età imperiale',
+    'Imperial Age',
+    'Thời đế quốc',
+    'साम्राज्यवादी युग',
+    'Era Imperiów',
+    'Idade Imperial',
+    'Âge impérial',
+    'Имперская эпоха',
+]
 AGE_MARKERS = [
     'advanced to the',
     'a progressé vers',
@@ -28,6 +87,9 @@ AGE_MARKERS = [
     'đã nâng cấp',
     'progressé vers',
     'wkracza do',
+    'युग में उन्नत है।',   # hi
+    'telah mara ke', # ms
+    'geçti',         # tr
 ]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',
@@ -86,10 +148,6 @@ def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, originat
         if line.find(save_marker) > 0:
             data['type'] = Chat.SAVE
             return data
-    for age_marker in AGE_MARKERS:
-        if line.find(age_marker) > 0:
-            data['type'] = Chat.AGE
-            return data
     if line.find('Voobly: Ratings provided') > 0:
         _parse_ladder(data, line)
     elif line.find('Voobly') == 3:
@@ -104,6 +162,17 @@ def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, originat
         _parse_json(data, line, diplomacy_type)
     else:
         _parse_chat(data, line, players, diplomacy_type)
+
+    for age_marker in AGE_MARKERS:
+        if line.find(age_marker) > 0:
+            data['type'] = Chat.AGE
+            if any(marker in line for marker in FEUDAL_AGE_MARKERS):
+                data['age'] = Age.FEUDAL_AGE
+            if any(marker in line for marker in CASTLE_AGE_MARKERS):
+                data['age'] = Age.CASTLE_AGE
+            if any(marker in line for marker in IMPERIAL_AGE_MARKERS):
+                data['age'] = Age.IMPERIAL_AGE
+
     if not _validate(data, players):
         data['type'] = Chat.DISCARD
     return data

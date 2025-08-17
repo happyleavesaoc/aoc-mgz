@@ -22,6 +22,7 @@ scenario_header = "scenario_header"/Struct(
         "active"/Int32ul,
         "human"/Int32ul,
         "civilization"/Int32ul,
+        "civ_repeat"/If(lambda ctx: find_save_version(ctx) >= 13.34, Int32ul),
         "constant"/Int32ul, # 0x04 0x00 0x00 0x00
     )),
     Padding(5),
@@ -29,7 +30,7 @@ scenario_header = "scenario_header"/Struct(
     "scenario_filename"/PascalString(lengthfield="scenario_filename_length"/Int16ul),
     If(lambda ctx: ctx._._.version == Version.DE, Struct(
         Padding(64),
-        If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(64))
+        # If(lambda ctx: find_save_version(ctx) >= 13.34, Padding(64)) 4*16 = 64
     ))
 )
 
@@ -152,10 +153,11 @@ game_settings = "game_settings"/Struct(
             If(lambda ctx: 61.5 > find_save_version(ctx) >= 37, Find(struct.pack('<d', 3.5), None)),
             If(lambda ctx: 63 > find_save_version(ctx) >= 61.5, Find(struct.pack('<d', 3.6), None)),
             If(lambda ctx: 64.3 > find_save_version(ctx) >= 63, Find(struct.pack('<d', 3.9), None)),
-            If(lambda ctx: find_save_version(ctx) >= 64.3, Find(struct.pack('<d', 4.1), None)),
+            If(lambda ctx: 66.3 > find_save_version(ctx) >= 64.3, Find(struct.pack('<d', 4.1), None)),
+            If(lambda ctx: find_save_version(ctx) >= 66.3, Find(struct.pack('<d', 4.5), None)),
         ),
         "end_of_game_settings"/Find(b'\x9a\x99\x99\x99\x99\x99\xf9\\x3f', None),
-    )
+    ),
 )
 
 

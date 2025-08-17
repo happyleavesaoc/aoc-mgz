@@ -15,6 +15,7 @@ lobby = "lobby"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(5)),
     If(lambda ctx: find_save_version(ctx) >= 37, Bytes(8)),
     If(lambda ctx: find_save_version(ctx) >= 64.3, Bytes(16)),
+    If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(1)),
     Array(8, "teams"/Byte), # team number selected by each player
     If(lambda ctx: ctx._.version not in (Version.DE, Version.HD),
         Padding(1),
@@ -60,6 +61,7 @@ lobby = "lobby"/Struct(
             If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(4)),
             If(lambda ctx: find_save_version(ctx) >= 37, Bytes(4)),
             If(lambda ctx: find_save_version(ctx) >= 50, Bytes(1)),
+            If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
         )
     )
 )
