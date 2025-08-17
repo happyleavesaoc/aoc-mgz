@@ -128,11 +128,7 @@ static = "static"/Struct(
                 If(lambda ctx: ctx.type > 0, Bytes(16))
             ))
         ))
-    ))
-)
-
-static_object = "static"/Struct(
-    Embedded(static),
+    )),
     If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
 )
 
@@ -175,7 +171,6 @@ base_moving = "base_moving"/Struct(
     "de_move_byte"/If(lambda ctx: find_save_version(ctx) >= 20.16, Byte),
     "angle"/Float32l,
     "turn_towards_time"/Int32ul,
-    If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
     If(lambda ctx: find_save_version(ctx) < 37, Struct(
         "turn_timer"/Int32ul,
         "continue_counter"/Int32ul,
@@ -513,7 +508,7 @@ existing_object = "objects"/Struct(
     "type"/Byte,
     "player_id"/Byte,
     Embedded("properties"/Switch(lambda ctx: ctx.type, {
-        10: static_object,
+        10: static,
         20: animated,
         25: animated,
         30: moving,
@@ -522,7 +517,7 @@ existing_object = "objects"/Struct(
         60: missile,
         70: combat,
         80: building,
-        90: static_object
+        90: static
     }, default=Pass))
 )
 
