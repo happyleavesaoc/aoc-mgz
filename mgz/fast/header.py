@@ -516,7 +516,9 @@ def parse_de(data, version, save, skip=False):
     if save >= 63:
         data.read(5)
     if save >= 66.3:
-        data.read(16)
+        c = unpack('<I', data)
+        data.read(12)
+        data.read(c * 4)
     if not skip:
         de_string(data)
         data.read(8)
