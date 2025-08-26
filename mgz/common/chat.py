@@ -166,13 +166,14 @@ def parse_chat(line, encoding, timestamp, players, diplomacy_type=None, originat
     if data['type'] is not Chat.DISCARD:
         for age_marker in AGE_MARKERS:
             if line.find(age_marker) > 0:
-                data['type'] = Chat.AGE
                 if any(marker in line for marker in FEUDAL_AGE_MARKERS):
                     data['age'] = Age.FEUDAL_AGE
                 if any(marker in line for marker in CASTLE_AGE_MARKERS):
                     data['age'] = Age.CASTLE_AGE
                 if any(marker in line for marker in IMPERIAL_AGE_MARKERS):
                     data['age'] = Age.IMPERIAL_AGE
+                if "age" in data:
+                    data['type'] = Chat.AGE
 
     if not _validate(data, players):
         data['type'] = Chat.DISCARD
