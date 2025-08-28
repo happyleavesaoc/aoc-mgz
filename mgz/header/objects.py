@@ -205,7 +205,7 @@ moving = "moving"/Struct(
     "de_moving"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
     "ver2616"/If(lambda ctx: 37 > find_save_version(ctx) >= 26.16, Bytes(8)),
     "ver37"/If(lambda ctx: 63 > find_save_version(ctx) >= 37, Bytes(5)),
-    "ver63"/If(lambda ctx: find_save_version(ctx) >= 63, Bytes(4)),
+    "ver63"/If(lambda ctx: find_save_version(ctx) >= 63, Bytes(4))
 )
 
 move_to = "move_to"/Struct(

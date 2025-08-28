@@ -427,9 +427,9 @@ def parse_de(data, version, save, skip=False):
         de_string(data)
         data.read(1)
         ai_name = de_string(data)
-        name = de_string(data)
         if save >= 66.3:
-            _name2 = de_string(data)
+            censored_name = de_string(data)
+        name = de_string(data)
         type = unpack('<I', data)
         profile_id, number = unpack('<I4xi', data)
         if save < 25.22:
@@ -447,6 +447,7 @@ def parse_de(data, version, save, skip=False):
             team_id=team_id,
             ai_name=ai_name,
             name=name,
+            censored_name=censored_name if save >= 66.3 else name,
             type=type,
             profile_id=profile_id,
             civilization_id=civilization_id,
