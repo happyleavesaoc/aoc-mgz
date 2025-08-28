@@ -33,8 +33,8 @@ player = Struct(
     "ai_type"/de_string,
     "ai_civ_name_index"/Byte,
     "ai_name"/de_string,
+    "censored_name"/If(lambda ctx: find_save_version(ctx) >= 66.3,de_string),
     "name"/de_string,
-    "name2"/If(lambda ctx: find_save_version(ctx) >= 66.3,de_string),
     "type"/PlayerTypeEnum(Int32ul),
     "profile_id"/Int32sl, # -1 if it's an empty slot
     "ai_unknown" / Int32sl, # Often 0, sometimes -1 for AI players
