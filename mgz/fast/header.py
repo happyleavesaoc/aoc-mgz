@@ -175,6 +175,8 @@ def parse_lobby(data, version, save):
             data.read(8)
         if save >= 64.3:
             data.read(16)
+        if save >= 66.3:
+            data.read(1)
     data.read(8)
     if version not in (Version.DE, Version.HD):
         data.read(1)
@@ -280,7 +282,9 @@ def parse_scenario(data, num_players, version, save):
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
     if version is Version.DE:
-        if save >= 64.3:
+        if save >= 66.3:
+            settings_version = 4.5
+        elif save >= 64.3:
             settings_version = 4.1
         elif save >= 63:
             settings_version = 3.9
@@ -406,7 +410,7 @@ def parse_de(data, version, save, skip=False):
     if save > 50:
         data.read(1)
     players = []
-    for _ in range(num_players if save >= 37 else 8):
+    for _ in range(num_players if 66.3 > save >= 37 else 8):
         data.read(4)
         color_id = unpack('<i', data)
         data.read(2)
@@ -423,6 +427,8 @@ def parse_de(data, version, save, skip=False):
         de_string(data)
         data.read(1)
         ai_name = de_string(data)
+        if save >= 66.3:
+            censored_name = de_string(data)
         name = de_string(data)
         type = unpack('<I', data)
         profile_id, number = unpack('<I4xi', data)
@@ -441,6 +447,7 @@ def parse_de(data, version, save, skip=False):
             team_id=team_id,
             ai_name=ai_name,
             name=name,
+            censored_name=censored_name if save >= 66.3 else name,
             type=type,
             profile_id=profile_id,
             civilization_id=civilization_id,
@@ -448,7 +455,7 @@ def parse_de(data, version, save, skip=False):
             prefer_random=prefer_random == 1
         ))
     data.read(12)
-    if save >= 37:
+    if 66.3 > save >= 37:
         for _ in range(8 - num_players):
             if save >= 61.5:
                 data.read(4)
@@ -509,6 +516,10 @@ def parse_de(data, version, save, skip=False):
         data.read(1)
     if save >= 63:
         data.read(5)
+    if save >= 66.3:
+        c = unpack('<I', data)
+        data.read(12)
+        data.read(c * 4)
     if not skip:
         de_string(data)
         data.read(8)

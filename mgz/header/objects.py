@@ -81,6 +81,7 @@ static = "static"/Struct(
         "pathing_group_len"/Int32ul,
         "pathing_group"/Array(lambda ctx: ctx.pathing_group_len, "object_id"/Int32ul)
     )),
+    If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(2)),
     "group_id"/Int32sl,
     "roo_already_called"/Byte,
     "de_static_unk1"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
@@ -127,7 +128,8 @@ static = "static"/Struct(
                 If(lambda ctx: ctx.type > 0, Bytes(16))
             ))
         ))
-    ))
+    )),
+    If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
 )
 
 
@@ -203,7 +205,7 @@ moving = "moving"/Struct(
     "de_moving"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(17)),
     "ver2616"/If(lambda ctx: 37 > find_save_version(ctx) >= 26.16, Bytes(8)),
     "ver37"/If(lambda ctx: 63 > find_save_version(ctx) >= 37, Bytes(5)),
-    "ver63"/If(lambda ctx: find_save_version(ctx) >= 63, Bytes(4)),
+    "ver63"/If(lambda ctx: find_save_version(ctx) >= 63, Bytes(4))
 )
 
 move_to = "move_to"/Struct(
@@ -400,6 +402,7 @@ combat = "combat"/Struct(
     Embedded(base_combat),
     "de_pre"/If(lambda ctx: find_version(ctx) == Version.DE and find_save_version(ctx) < 37, Bytes(4)),
     "de"/If(lambda ctx: find_version(ctx) == Version.DE, Bytes(14)),
+    "de_unknown_66_3_1"/If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(4)),
     "de_2"/If(lambda ctx: find_save_version(ctx) >= 26.16, Bytes(16)),
     "de_3"/If(lambda ctx: 63 > find_save_version(ctx) >= 26.18, Bytes(1)),
     "de_4"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(4)),
@@ -497,6 +500,7 @@ building = "building"/Struct(
     "de_unk_5"/If(lambda ctx: find_save_version(ctx) >= 50.4, Bytes(4)),
     "de_unk_6"/If(lambda ctx: find_save_version(ctx) >= 61.5, Bytes(12)),
     "de_unk_7"/If(lambda ctx: find_save_version(ctx) >= 64.3, Bytes(4)),
+    "de_unknown_66_3_2"/If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(5)),
 )
 
 

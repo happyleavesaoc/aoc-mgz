@@ -186,7 +186,8 @@ def parse_match(handle):
                 for obj in player['objects']
             ],
             player.get('profile_id'),
-            player.get('prefer_random')
+            [],
+            player.get('prefer_random'),
         )
 
     # Assign teams
@@ -241,6 +242,17 @@ def parse_match(handle):
             op_type, op_data = fast.operation(handle)
             if op_type is fast.Operation.SYNC:
                 timestamp += op_data[0]
+                if op_data[2]:
+                    stat_row = op_data[2]
+                    for player in players.values():
+                        if player.number not in stat_row:
+                            continue
+                        stats = stat_row[player.number]
+                        player.timeseries.append(TimeseriesRow(
+                            timestamp=timedelta(milliseconds=stat_row['current_time']),
+                            total_resources=stats['total_res'],
+                            total_objects=stats['obj_count']
+                        ))
             elif op_type is fast.Operation.VIEWLOCK:
                 if op_data == last_viewlock:
                     continue
