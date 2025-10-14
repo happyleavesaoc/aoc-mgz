@@ -248,15 +248,36 @@ def parse_map(data, version, save):
 
 def parse_scenario(data, num_players, version, save):
     """Parse scenario section."""
-    next_uid, scenario_version = unpack('<II', data)
+    scenario_version = unpack('<f', data)
+    data.read(4)
     if save >= 61.5:
-        data.read(72)
-    data.read(4447)
-    scenario_filename = None
+        data.read(4)
+        if save < 66.6:
+            data.read(4)
+    data.read(16 * 256)
+    data.read(16 * 4)
+    if save >= 66.6:
+        for i in range(0, 16):
+            data.read(8)
+            de_string(data)
+            de_string(data)
+            data.read(4)
+    if save >= 61.5 and save < 66.6:
+        data.read(64)
+    if save < 66.6:
+        for i in range(0, 16):
+            data.read(12)
+            if save >= 13.34:
+                data.read(4)
+            data.read(4)
+    data.read(5)
+    elapsed_time = unpack('<f', data)
+    scenario_filename = aoc_string(data)
     if version is Version.DE:
-        data.read(102)
-        scenario_filename = aoc_string(data)
-        data.read(24)
+        data.read(64)
+    if save >= 66.6:
+        data.read(68)
+    data.read(20)
     instructions = aoc_string(data)
     for _ in range(0, 9):
         aoc_string(data)
