@@ -231,7 +231,7 @@ class ModelSummary:
             objects.append((player.number, player.objects))
         for player_number, objs in objects:
             for obj in objs:
-                if obj.class_id not in [10, 30, 70, 80]:
+                if obj.class_id not in [10, 20, 30, 70, 80]:
                     continue
                 if obj.index == 1:
                     continue

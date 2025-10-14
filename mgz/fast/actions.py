@@ -26,20 +26,20 @@ def parse_action_71094(action_type, player_id, raw):
         elif command_id in [13, 14, 17, 18]:
             payload['number'] = unpack('<4xh', data)
     if action_type is Action.DE_QUEUE:
-        selected, building_type, unit_id, amount, *object_ids = unpack('<h4xhhh', data)
+        selected, building_type, unit_id, amount, *object_ids = unpack('<h4xhhh4x', data)
         object_ids = list(unpack(f'<{selected}I', data, shorten=False))
         payload = dict(object_ids=object_ids, amount=amount, unit_id=unit_id)
     if action_type is Action.MOVE:
         x, y, selected = unpack('<4x2fh', data)
         object_ids = []
-        data.read(4)
+        data.read(6)
         if selected > 0:
             object_ids = list(unpack(f'<{selected}I', data, shorten=False))
         payload = dict(object_ids=object_ids, x=x, y=y)
     if action_type is Action.ORDER:
         target_id, x, y, selected = unpack('<I2fh', data)
         object_ids = []
-        data.read(4)
+        data.read(6)
         if selected > 0:
             object_ids = list(unpack(f'<{selected}I', data, shorten=False))
         payload = dict(object_ids=object_ids, target_id=target_id, x=x, y=y)
@@ -48,7 +48,7 @@ def parse_action_71094(action_type, player_id, raw):
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
         payload = dict(building_id=building_id, object_ids=object_ids, x=x, y=y)
     if action_type is Action.GATHER_POINT:
-        selected, x, y, target_id, target_type = unpack('<h2xffii', data)
+        selected, x, y, target_id, target_type = unpack('<h2xffiix', data)
         object_ids = list(unpack(f'{selected}I', data, shorten=False))
         payload = dict(target_id=target_id, target_type=target_type, x=x, y=y, object_ids=object_ids)
     if action_type is Action.DE_MULTI_GATHERPOINT:
