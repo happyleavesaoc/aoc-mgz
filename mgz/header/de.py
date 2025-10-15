@@ -163,6 +163,7 @@ de = "de"/Struct(
     If(lambda ctx: find_save_version(ctx) >= 50, Bytes(8)),
     If(lambda ctx: find_save_version(ctx) >= 61.5, Flag),
     If(lambda ctx: find_save_version(ctx) >= 63, Bytes(5)),
+    If(lambda ctx: find_save_version(ctx) >= 64.3 and ctx.game_type == 5, Bytes(4)), # Campaign ?
     "unknown_count"/If(lambda ctx: find_save_version(ctx) >= 66.3, Int32ul),
     If(lambda ctx: find_save_version(ctx) >= 66.3, Bytes(12)),
     If(lambda ctx: find_save_version(ctx) >= 66.3, Array(lambda ctx: ctx.unknown_count, Bytes(4))),
