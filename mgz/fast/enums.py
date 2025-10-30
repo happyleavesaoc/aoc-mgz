@@ -52,7 +52,6 @@ class Action(Enum):
     RESEARCH = 101
     BUILD = 102
     GAME = 103
-    DE_UNKNOWN_104 = 104
     WALL = 105
     DELETE = 106
     ATTACK_GROUND = 107
@@ -80,6 +79,7 @@ class Action(Enum):
     DE_UNKNOWN_137 = 137
     DE_UNKNOWN_138 = 138
     DE_107_B = 140
+    DE_UNKNOWN_141 = 141
     DE_TRIBUTE = 196
     POSTGAME = 255
 
