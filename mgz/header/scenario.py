@@ -14,9 +14,12 @@ from mgz.header.de import de_string
 scenario_header = "scenario_header"/Struct(
     "next_uid"/Int32ul,
     "scenario_version"/Float32l,
-    If(lambda ctx: find_save_version(ctx) >= 61.5, Padding(8)),
-    Array(16, "names"/String(256)),
-    Array(16, "player_ids"/Int32ul),
+    If(lambda ctx: find_save_version(ctx) >= 61.5, Struct(
+        "player_capacity"/Int32ul,
+        "gaia_player_index"/Int32ul
+    )),
+    Array(16, "tribe_names"/String(256)),
+    Array(16, "player_names"/Int32ul),
     If(lambda ctx: find_save_version(ctx) >= 66.6, Array(16, "player_data"/Struct(
         "zeros"/Int32ul,
         "active"/Int32ul,
