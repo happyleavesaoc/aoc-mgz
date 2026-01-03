@@ -43,6 +43,7 @@ CASTLE_AGE_MARKERS = [
     'Idade dos Castelos',
     'Âge des châteaux',
     'Замковая эпоха',
+    'Kale Çağı'
 ]
 IMPERIAL_AGE_MARKERS = [
     '왕정 시대',
@@ -90,6 +91,7 @@ AGE_MARKERS = [
     'युग में उन्नत है।',   # hi
     'telah mara ke', # ms
     'geçti',         # tr
+    'çağına ulaştı', # tr
 ]
 SAVE_MARKERS = [
     'Continuar con la partida en vez de guardar y salir',

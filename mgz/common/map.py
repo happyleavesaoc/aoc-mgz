@@ -189,6 +189,8 @@ def get_map_data(map_id, instructions, dimension, version, dataset_id, reference
         raise ValueError('empty instructions')
     
     encoding, language, name = extract_from_instructions(instructions)
+    if dataset_id == 100:
+        encoding = "utf-8"
     name, custom = lookup_name(map_id, name, version, reference)
     seed = get_map_seed(instructions)
     name, modes = get_modes(name)
