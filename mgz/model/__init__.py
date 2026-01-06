@@ -404,7 +404,41 @@ def serialize(obj):
                 return hash(obj)
             seen.add(obj)
         if type(obj) is list:
-            return [v for v in [impl(o) for o in obj] if v is not None]
+            """ 
+            Each object should be fully serialized only in the outermost layer where it is referenced.
+            
+            In a player list [P1, P2, P3, P4], the P1 object can have attribute {team: [P1, P3]}
+            To avoid duplicate serialization, all objects in outermost list are marked as seen 
+            in the first pass of list. In the second pass, when each object (e.g. P1) is 
+            recursively serialized, any inner references to objects in the outer list (e.g. {team: [P1, P3]})
+            will not be fully serialized as they were marked as seen. 
+            """
+            objects_to_serialize_in_this_layer = []
+            for item in obj: # first pass - no serialization yet
+                if dataclasses.is_dataclass(item) and isinstance(item, collections.abc.Hashable):
+                    if item not in seen:
+                        # This is the outermost layer where this object is seen. Serialize fully here.
+                        objects_to_serialize_in_this_layer.append(item)
+                        seen.add(item) # Mark as seen so inner layers do not serialize this
+
+            result = []
+            for item in obj: # second pass - now serialize
+                if dataclasses.is_dataclass(item) and isinstance(item, collections.abc.Hashable):
+                    if item in objects_to_serialize_in_this_layer:
+                        # This is the outermost layer for this object - serialize fully
+                        seen.discard(item)  # Temporarily allow recursion
+                        val = impl(item)
+                        seen.add(item)  # Mark as seen again
+                    else:
+                        # Inner layer reference to outer object - use hash
+                        val = hash(item)
+                else:
+                    val = impl(item)
+
+                if val is not None:
+                    result.append(val)
+            return result
+
         elif type(obj) is dict:
             return {k:v for k, v in {f:impl(d) for f, d in obj.items()}.items() if v is not None}
         elif dataclasses.is_dataclass(obj):
