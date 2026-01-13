@@ -297,6 +297,10 @@ def _parse_chat(data, line, players, diplomacy_type):
     for player_h in players:
         if player_h['name'] in player:
             number = player_h['number']
+
+    if not number and line.startswith('@#'):
+        number = int(line[2])
+    
     data.update({
         'type': Chat.MESSAGE,
         'player_number': number,
