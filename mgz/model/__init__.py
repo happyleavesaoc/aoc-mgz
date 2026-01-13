@@ -291,7 +291,7 @@ def parse_match(handle):
                 enrich_action(action, action_data, dataset, consts)
                 actions.append(action)
                 inputs.add_action(action)
-            elif op_type is fast.Operation.POSTGAME:
+            elif op_type is fast.Operation.POSTGAME and "leaderboards" in op_data:
                 by_number = {x["number"]: x["rating"] for x in op_data["leaderboards"][0]["players"]}
                 for player in players.values():
                     player.rate_snapshot = by_number.get(player.number - 1)
