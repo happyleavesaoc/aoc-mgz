@@ -8,6 +8,7 @@ import zlib
 
 from mgz.util import get_version, unpack, Version, as_hex
 
+PLAYER_END = b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b'
 ZLIB_WBITS = -15
 CLASSES = [b'\x0a', b'\x1e', b'\x46', b'\x50', b'\x14']
 BLOCK_END = b'\x00\x0b'
@@ -139,13 +140,19 @@ def parse_player(header, player_number, num_players, save):
         data = header.read(100)
         device = data[8]
         # Jump to the end of player data
-        player_end = re.search(b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b', data, re.DOTALL)
+        player_end = re.search(PLAYER_END, data, re.DOTALL)
         if not player_end:
-            # only a failure if this is not the last player, since we seek to the next block anyway
-            # this issue happens on restored games
-            if player_number < num_players - 1:
+            # Normally this is 26 bytes in,
+            # But in some cases (probably where object parsing failed),
+            # it can be tens of thousands of bytes. So we have to `read()` everything
+            offset = header.tell()
+            data = header.read()
+            player_end = re.search(PLAYER_END, data, re.DOTALL)
+            if not player_end and player_number < num_players - 1:
+                # this issue happens on restored games
+                # only a failure if this is not the last player, since we seek to the next block anyway
                 raise RuntimeError("could not find player end")
-        else:
+        if player_end:
             header.seek(offset + player_end.end())
 
     return dict(
