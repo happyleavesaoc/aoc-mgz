@@ -97,7 +97,6 @@ def extract_from_instructions(instructions):
                 break
     if encoding == 'unknown':
         raise ValueError('could not detect encoding')
-    print(encoding, language, name)
     return encoding, language, name
 
 
@@ -186,7 +185,6 @@ def get_mod_id(strings):
 
 def get_map_data(map_id, instructions, dimension, version, dataset_id, reference, tiles, de_seed=None, de_strings=[]):
     """Get the map metadata."""
-    print(instructions)
     if instructions == b'\x00':
         raise ValueError('empty instructions')
     
