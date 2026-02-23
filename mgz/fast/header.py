@@ -468,6 +468,8 @@ def parse_de(data, version, save, skip=False):
             data.read(8)
         if save >= 64.3:
             data.read(4)
+        if save >= 67.2:
+            _ = de_string(data)
 
         players.append(dict(
             number=number,
@@ -550,6 +552,9 @@ def parse_de(data, version, save, skip=False):
         data.read(c * 4)
     if not skip:
         de_string(data)
+        if save >= 67.2:
+            _ = de_string(data)
+            _ = de_string(data)
         data.read(8)
         if save >= 37:
             timestamp, x = unpack('<II', data)
