@@ -464,8 +464,10 @@ def parse_de(data, version, save, skip=False):
             data.read(8)
         prefer_random = unpack('b', data)
         data.read(1)
+        handicap = 100
         if save >= 25.06:
-            data.read(8)
+            handicap_data = data.read(8)
+            handicap = struct.unpack_from('<I', handicap_data, 4)[0]
         if save >= 64.3:
             data.read(4)
 
@@ -480,7 +482,8 @@ def parse_de(data, version, save, skip=False):
             profile_id=profile_id,
             civilization_id=civilization_id,
             custom_civ_selection=custom_civ_selection,
-            prefer_random=prefer_random == 1
+            prefer_random=prefer_random == 1,
+            handicap=handicap
         ))
     data.read(12)
     if 66.3 > save >= 37:
