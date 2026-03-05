@@ -188,6 +188,7 @@ def parse_match(handle):
             player.get('profile_id'),
             [],
             player.get('prefer_random'),
+            player.get('handicap', 100),
         )
 
     # Assign teams

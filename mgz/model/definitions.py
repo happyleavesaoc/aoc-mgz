@@ -54,6 +54,7 @@ class Player:
     profile_id: int
     timeseries: list[TimeseriesRow]
     prefer_random: bool = None
+    handicap: int = 100
     team: list = None
     team_id: int = None
     winner: bool = False
