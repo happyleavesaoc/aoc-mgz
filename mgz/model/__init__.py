@@ -171,7 +171,7 @@ def parse_match(handle):
             player['name'].decode(encoding),
             consts['player_colors'][str(player['color_id'])],
             player['color_id'],
-            dataset['civilizations'][str(player['civilization_id'])]['name'],
+            dataset['civilizations'].get(str(player['civilization_id']), {'name': f"<Unknown civ: {player['civilization_id']}>"})['name'],
             player['civilization_id'],
             Position(pos_x, pos_y),
             [
