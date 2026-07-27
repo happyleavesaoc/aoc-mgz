@@ -1,12 +1,13 @@
 """Fast(er) parsing for recorded game headers."""
-import io
 import hashlib
+import io
 import re
 import struct
 import uuid
 import zlib
+from typing import Any, cast
 
-from mgz.util import get_version, unpack, Version, as_hex
+from mgz.util import Version, as_hex, get_version, unpack
 
 PLAYER_END = b'\xff\xff\xff\xff\xff\xff\xff\xff.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b'
 ZLIB_WBITS = -15
@@ -253,118 +254,136 @@ def parse_map(data, version, save):
     )
 
 
-def parse_scenario(data, num_players, version, save):
-    """Parse scenario section."""
-    scenario_version = unpack('<f', data)
-    data.read(4)
-    if save >= 61.5:
-        data.read(4)
-        if save < 66.6:
-            data.read(4)
-    data.read(16 * 256)
-    data.read(16 * 4)
-    if save >= 66.6:
-        for i in range(0, 16):
-            data.read(8)
-            de_string(data)
-            de_string(data)
-            data.read(4)
-    if save >= 61.5 and save < 66.6:
-        data.read(64)
-    if save < 66.6:
-        for i in range(0, 16):
-            data.read(12)
-            if save >= 13.34:
-                data.read(4)
-            data.read(4)
-    data.read(5)
-    elapsed_time = unpack('<f', data)
-    scenario_filename = aoc_string(data)
+def parse_scenario(data: io.BytesIO, num_players: int, version: Version, save: float) -> dict[str, Any]:
+    """Parse scenario section - dispatches to version-specific parser."""
     if version is Version.DE:
-        data.read(64)
-    if save >= 66.6:
-        data.read(68)
-    data.read(20)
+        return _parse_scenario_de(data, save)
+    elif version is Version.HD:
+        return _parse_scenario_hd(data, save)
+    else:
+        # Currently treat all other versions identically
+        # however it could be useful to split them as needed
+        return _parse_scenario_generic(data, save)
+
+
+def _parse_scenario_de(data: io.BytesIO, save: float) -> dict[str, Any]:
+    """Parse DE-specific scenario section."""
+    data.seek(8, 1)  # next_uid, scenario_version
+    if save >= 61.5:
+        data.seek(72, 1)
+    data.seek(4447 + 102, 1)
+    scenario_filename = aoc_string(data)
+    data.seek(24, 1)
     instructions = aoc_string(data)
     for _ in range(0, 9):
         aoc_string(data)
-    data.read(78)
+    data.seek(78, 1)
     for _ in range(0, 16):
         aoc_string(data)
-    data.read(196)
-    for _ in range(0, 16):
-        data.read(24)
-        if version in (Version.DE, Version.HD):
-            data.read(4)
-    data.read(12672)
-    if version is Version.DE:
-        data.read(196)
-    else:
-        for _ in range(0, 16):
-            data.read(332)
-    if version is Version.HD:
-        data.read(644)
-    data.read(88)
-    if version is Version.HD:
-        data.read(16)
+    data.seek(196 + 16 * 28 + 12672 + 196 + 88, 1)  # skip player data and structures
     map_id, difficulty_id = unpack('<II', data)
     remainder = data.read()
-    if version is Version.DE:
-        if save >= 66.3:
-            settings_version = 4.5
-        elif save >= 64.3:
-            settings_version = 4.1
-        elif save >= 63:
-            settings_version = 3.9
-        elif save >= 61.5:
-            settings_version = 3.6
-        elif save >= 37:
-            settings_version = 3.5
-        elif save >= 26.21:
-            settings_version = 3.2
-        elif save >= 26.16:
-            settings_version = 3.0
-        elif save >= 25.22:
-            settings_version = 2.6
-        elif save >= 25.06:
-            settings_version = 2.5
-        elif save >= 13.34:
-            settings_version = 2.4
-        else:
-            settings_version = 2.2
-        end = remainder.find(struct.pack('<d', settings_version)) + 8
+    if save >= 66.3:
+        settings_version = 4.5
+    elif save >= 64.3:
+        settings_version = 4.1
+    elif save >= 63:
+        settings_version = 3.9
+    elif save >= 61.5:
+        settings_version = 3.6
+    elif save >= 37:
+        settings_version = 3.5
+    elif save >= 26.21:
+        settings_version = 3.2
+    elif save >= 26.16:
+        settings_version = 3.0
+    elif save >= 25.22:
+        settings_version = 2.6
+    elif save >= 25.06:
+        settings_version = 2.5
+    elif save >= 13.34:
+        settings_version = 2.4
     else:
-        end = remainder.find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f') + 13
+        settings_version = 2.2
+    end = remainder.find(struct.pack('<d', settings_version)) + 8
     data.seek(end - len(remainder), 1)
 
-    if version is Version.DE:
-        data.read(1)
-        n_triggers = unpack("<I", data)
+    data.seek(1, 1)
+    n_triggers = cast(int, unpack("<I", data))
 
-        for _ in range(n_triggers):
-            data.read(22)
-            data.read(4)
+    for _ in range(n_triggers):
+        data.seek(22 + 4, 1)
 
-            description = int_prefixed_string(data)
-            name = int_prefixed_string(data)
-            short_description = int_prefixed_string(data)
+        int_prefixed_string(data)  # description
+        int_prefixed_string(data)  # name
+        int_prefixed_string(data)  # short_description
 
-            n_effects = unpack("<I", data)
+        n_effects = cast(int, unpack("<I", data))
 
-            for _ in range(n_effects):
-                data.read(216)
+        for _ in range(n_effects):
+            data.seek(216, 1)
+            int_prefixed_string(data)  # text
+            int_prefixed_string(data)  # sound
 
-                text = int_prefixed_string(data)
-                sound = int_prefixed_string(data)
+        data.seek(n_effects * 4, 1)  # trigger_list_order
+        n_condition = cast(int, unpack("<I", data))
+        data.seek(n_condition * 125, 1)
 
-            data.read(n_effects * 4)
-            n_condition = unpack("<I", data)
+    data.seek(n_triggers * 4 + 1032, 1)  # trigger_list_order + default
 
-            data.read(n_condition * 125)
+    return dict(
+        map_id=map_id,
+        difficulty_id=difficulty_id,
+        instructions=instructions,
+        scenario_filename=scenario_filename,
+    )
 
-        trigger_list_order = unpack(f"<{n_triggers}I", data)
 
-        data.read(1032)  # default!
+def _parse_scenario_hd(data: io.BytesIO, save: float) -> dict[str, Any]:
+    """Parse HD-specific scenario section."""
+    data.seek(8, 1)  # next_uid, scenario_version
+    if save >= 61.5:
+        data.seek(72, 1)
+    data.seek(4447, 1)
+    scenario_filename = None
+    instructions = aoc_string(data)
+    for _ in range(0, 9):
+        aoc_string(data)
+    data.seek(78, 1)
+    for _ in range(0, 16):
+        aoc_string(data)
+    data.seek(196 + 16 * 28 + 12672 + 16 * 332 + 748, 1)  # skip player data and structures
+    map_id, difficulty_id = unpack('<II', data)
+    remainder = data.read()
+    end = remainder.find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f') + 13
+    data.seek(end - len(remainder), 1)
+
+    return dict(
+        map_id=map_id,
+        difficulty_id=difficulty_id,
+        instructions=instructions,
+        scenario_filename=scenario_filename,
+    )
+
+
+def _parse_scenario_generic(data: io.BytesIO, save: float) -> dict[str, Any]:
+    """Parse scenario sections for all other versions."""
+    data.seek(8, 1)  # next_uid, scenario_version
+    if save >= 61.5:
+        data.seek(72, 1)
+    data.seek(4447, 1)
+    scenario_filename = None
+    instructions = aoc_string(data)
+    for _ in range(0, 9):
+        aoc_string(data)
+    data.seek(78, 1)
+    for _ in range(0, 16):
+        aoc_string(data)
+    data.seek(196 + 16 * 24 + 12672 + 16 * 332 + 88, 1)  # skip player data and structures
+    map_id, difficulty_id = unpack('<II', data)
+    remainder = data.read()
+    end = remainder.find(b'\x9a\x99\x99\x99\x99\x99\xf9\x3f') + 13
+    data.seek(end - len(remainder), 1)
 
     return dict(
         map_id=map_id,
@@ -401,7 +420,7 @@ def parse_de(data, version, save, skip=False):
         dlc_ids.append(unpack('<I', data))
     data.read(4)
     if save >= 61.5:
-        map_dimension = unpack('<I', data)
+        data.seek(4, 1)  # map_dimension
     else:
         difficulty_id = unpack('<I', data)
     data.read(4)

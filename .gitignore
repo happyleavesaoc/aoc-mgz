@@ -1,5 +1,6 @@
 dist/
 build/
+.claude/
 mgz.egg-info/
 venv/
 .tox/
