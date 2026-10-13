@@ -215,11 +215,11 @@ def parse_lobby(data, version, save):
 
 def parse_map(data, version, save):
     """Parse map."""
-    tile_format = '<xbbx'
+    tile_format = '<xBbx'
     if version is Version.DE:
-        tile_format = '<bxb6x'
+        tile_format = '<Bxb6x'
         if save >= 62.0:
-            tile_format = '<bxxb6x'
+            tile_format = '<Bxxb6x'
         data.read(8)
     size_x, size_y, zone_num = unpack('<III', data)
     tile_num = size_x * size_y
