@@ -26,7 +26,15 @@ def parse_action_71094(action_type, player_id, raw):
         elif command_id in [13, 14, 17, 18]:
             payload['number'] = unpack('<4xh', data)
     if action_type is Action.DE_QUEUE:
-        selected, building_type, unit_id, amount, *object_ids = unpack('<h4xhhh4x', data)
+        # The trailing `4x` in the previous format string consumed the exact
+        # bytes meant to hold `object_ids`, so the unpack below always threw
+        # "unpack requires a buffer of 4 bytes" and every Queue action was
+        # silently downgraded to Action.ERROR by the caller (mgz/fast/__init__.py
+        # action()). Verified against known-good values recovered from an
+        # independent parse of the same replay (unit_id=83 "Villager",
+        # object_ids=[2266] "Town Center", amount=1) and cross-checked
+        # against multiple DE_QUEUE samples.
+        selected, building_type, unit_id, amount = unpack('<h4xhhh', data)
         object_ids = list(unpack(f'<{selected}I', data, shorten=False))
         payload = dict(object_ids=object_ids, amount=amount, unit_id=unit_id)
     if action_type is Action.MOVE:
