@@ -1,7 +1,7 @@
 """AI."""
 
 from mgz import Version
-from mgz.util import Find
+from mgz.util import Find, find_save_version
 from construct import (Array, Byte, If, Int16ul, Int32sl, Int32ul, Padding,
                        PascalString, Struct, this, IfThenElse)
 
@@ -28,6 +28,9 @@ script = "script"/Struct(
 )
 
 ai = "ai"/Struct(
+    # 67.2 inserted two words ahead of this field, the first a timestamp.
+    # Without skipping them `has_ai` reads that timestamp instead.
+    If(lambda ctx: find_save_version(ctx) >= 67.2, Padding(8)),
     "has_ai"/Int32ul, # if true, parse AI
     "yep"/If(
         this.has_ai == 1,

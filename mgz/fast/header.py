@@ -470,6 +470,8 @@ def parse_de(data, version, save, skip=False):
             handicap = struct.unpack_from('<I', handicap_data, 4)[0]
         if save >= 64.3:
             data.read(4)
+        if save >= 67.2:
+            de_string(data)
 
         players.append(dict(
             number=number,
@@ -707,6 +709,10 @@ def parse_players(header, num_players, version, save):
 
 def parse_metadata(header, save, skip_ai=True):
     """Parse recorded game metadata."""
+    if save >= 67.2:
+        # Two words were inserted ahead of the ai count, the first a
+        # timestamp. Reading it as the count makes it always non-zero.
+        header.read(8)
     ai = unpack('<I', header)
 
     if ai > 0:
