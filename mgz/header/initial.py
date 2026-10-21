@@ -6,6 +6,7 @@ from construct import (Array, Byte, Embedded, Flag, Float32l, If, Int16ul, Int32
                        Int32ul, Padding, Struct, Tell, this, Bytes, Const, IfThenElse)
 
 from mgz.enums import MyDiplomacyEnum, TheirDiplomacyEnum
+from mgz.header.de import de_string
 from mgz.header.objects import existing_object
 from mgz.header.playerstats import player_stats
 from mgz.util import Find, GotoObjectsEnd, RepeatUpTo, Version, find_save_version, find_version
@@ -42,6 +43,7 @@ attributes = "attributes"/Struct(
         "y"/Int16ul
     ),
     "culture"/Byte,
+    "name"/If(lambda ctx: find_save_version(ctx) >= 67.2, de_string),
     "civilization"/Byte,
     "game_status"/Byte,
     "resigned"/Flag,
